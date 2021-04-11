@@ -1,0 +1,205 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>多进程、多线程 | ShiHai'Blog</title><meta name="author" content="ShiHai-black"><meta name="copyright" content="ShiHai-black"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="多进程、多线程（python）[TOC]  此文章写于2020年  ​    这周接到1个需求，项目经理觉得我这边构造数据太过缓慢，由于数据量过大，以前数据构造完后将其导入MPP，利用copy_from速度还是很快的，一般为10W&#x2F;s。现在换成Kafka消息队列，又由于python库自带的原因（这个是组里大神告诉我的），无法像java开发利用list导数据，因此我只能一条一条以json的形式将数据">
+<meta property="og:type" content="article">
+<meta property="og:title" content="多进程、多线程">
+<meta property="og:url" content="https://shihai-black.github.io/2021/04/11/%E5%A4%9A%E8%BF%9B%E7%A8%8B%E3%80%81%E5%A4%9A%E7%BA%BF%E7%A8%8B%EF%BC%88python%EF%BC%89/index.html">
+<meta property="og:site_name" content="ShiHai&#39;Blog">
+<meta property="og:description" content="多进程、多线程（python）[TOC]  此文章写于2020年  ​    这周接到1个需求，项目经理觉得我这边构造数据太过缓慢，由于数据量过大，以前数据构造完后将其导入MPP，利用copy_from速度还是很快的，一般为10W&#x2F;s。现在换成Kafka消息队列，又由于python库自带的原因（这个是组里大神告诉我的），无法像java开发利用list导数据，因此我只能一条一条以json的形式将数据">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg">
+<meta property="article:published_time" content="2021-04-11T03:23:23.000Z">
+<meta property="article:modified_time" content="2021-04-11T03:43:16.710Z">
+<meta property="article:author" content="ShiHai-black">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://shihai-black.github.io/2021/04/11/%E5%A4%9A%E8%BF%9B%E7%A8%8B%E3%80%81%E5%A4%9A%E7%BA%BF%E7%A8%8B%EF%BC%88python%EF%BC%89/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isanchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = { 
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2021-04-11 11:43:16'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    })(window)</script><meta name="generator" content="Hexo 5.4.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="author-avatar"><img class="avatar-img" src="https://i.loli.net/2021/02/24/5O1day2nriDzjSu.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">文章</div><div class="length-num">4</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/tags/"><div class="headline">标签</div><div class="length-num">2</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/categories/"><div class="headline">分类</div><div class="length-num">4</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 链接</span></a></div><div class="menus_item"><a class="site-page" href="/messageboard/"><i class="fa-fw fa fa-paper-plane"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg')"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">ShiHai'Blog</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 链接</span></a></div><div class="menus_item"><a class="site-page" href="/messageboard/"><i class="fa-fw fa fa-paper-plane"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">多进程、多线程</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2021-04-11T03:23:23.000Z" title="发表于 2021-04-11 11:23:23">2021-04-11</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2021-04-11T03:43:16.710Z" title="更新于 2021-04-11 11:43:16">2021-04-11</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/python/">python</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="多进程、多线程"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h1 id="多进程、多线程（python）"><a href="#多进程、多线程（python）" class="headerlink" title="多进程、多线程（python）"></a>多进程、多线程（python）</h1><p>[TOC]</p>
+<blockquote>
+<p>此文章写于2020年</p>
+</blockquote>
+<p>​    这周接到1个需求，项目经理觉得我这边构造数据太过缓慢，由于数据量过大，以前数据构造完后将其导入MPP，利用copy_from速度还是很快的，一般为10W/s。现在换成Kafka消息队列，又由于python库自带的原因（这个是组里大神告诉我的），无法像java开发利用list导数据，因此我只能一条一条以json的形式将数据放入消息队列，一般为800条/s。原先构造5000W数据需要7H，经过优化后暂时需要3.5H，性能提升一倍。有点小开心，话不多说，石海同学开始将一下个人对于标题的理解。。。。</p>
+<p>​    进一步优化利用多进程的JoinableQueue，一边一直产生数据，另一边一直消费数据，现在5000W数据大约需要1.5H，性能较最初提升了近五倍。</p>
+<h2 id="历史"><a href="#历史" class="headerlink" title="历史"></a>历史</h2><p>上古年代：在很久很久以前，当时主流的磁盘操作系统MS-DOS是只支持单任务操作的，就打个比方，如果我想在电脑上听音乐和看电影，是不能同时开启的，只能先听音乐后看电影，或者位置互换。</p>
+<p>2002：横空出世的Intel Pentium 4HT处理器，提出了cpu多线程（SMT），其支持一个cpu进行多任务开启。</p>
+<p>————你总不能要求Guido1989年为了打发圣诞节假期发明的一种编译语言还要设计一下多线程的部分。</p>
+<p>2006：在秋季的英特尔信息技术峰会上，Inter总裁宣布，其在11月份将会交付第一台4核cpu处理器，而这距离双核发布还不到1年，支持多核时代就此拉开序幕。</p>
+<p>————为什么说python多线程是历史遗留问题，因为在当时想要在两个或者更多的处理器对同一个对象运行时，为了保护线程数据完整性和状态同步，最简单的方法就是加锁，于是出现了GIL这把超级大锁。</p>
+<p>2006-至今：GPU也浩浩荡荡发展了十几年了，过程我就不细说了（因为不懂），总之对于图象类任务GPU和CPU不是一个量级上的，以前看过一个视频，很好的解释了CPU和GPU的区别。比如我要画一幅图，cpu需要一笔一划将他画出来，而GPU是直接在脑子里构思好，一炮就把图打出来了。因此对于神经网络这个模型，多个神经元同时进行计算，GPU比CPU快太多。。。。。</p>
+<h2 id="编译器、解释器、IDE"><a href="#编译器、解释器、IDE" class="headerlink" title="编译器、解释器、IDE"></a>编译器、解释器、IDE</h2><p><strong>编译器</strong>：对于C、C++这类语言需要先编译后运行，其中编译的时候就是编译器。</p>
+<p><strong>解释器</strong>：对于python、PHP、JavaScript等就是利用解释器，’一边编译一边解释‘，不过速度会比较慢，因此产生一种叫预编译的东西，python在运行时就先生成pyc的二进制临时文件，在出结果。</p>
+<p>预编译：Java、C#，运行前将源代码编译成中间代码，然后再解释器运行，这种执行效率比编译运行会有效率一些，避免重复编译。</p>
+<p><strong>IDE</strong>：集成<a target="_blank" rel="noopener" href="https://baike.baidu.com/item/%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83">开发环境</a>（<a target="_blank" rel="noopener" href="https://baike.baidu.com/item/IDE">IDE</a>，Integrated Development Environment ），用于提供程序开发环境的应用程序，python常用的就是pycharm和jupyter notebook。</p>
+<h2 id="GIL锁"><a href="#GIL锁" class="headerlink" title="GIL锁"></a>GIL锁</h2><p><strong>概念：</strong>GIL全称Global Interpreter Lock,其并不是python的特性，由于Cpython是大部分环境下默认的python执行环境，而在实现python解释器会自动上锁。</p>
+<p><strong>目的：</strong>确保每个进程只有一个线程运行，所以在外面我们一般说python的多线程是伪线程。因为不管你有几个核，你用多线程也只能跑一个核。</p>
+<h2 id="进程、线程、协程的利用"><a href="#进程、线程、协程的利用" class="headerlink" title="进程、线程、协程的利用"></a>进程、线程、协程的利用</h2><p><strong>进程</strong>：拥有代码和打开的文件资源、数据资源、独立的内存空间。</p>
+<p><strong>线程</strong>：从属于进程，是程序的实际执行者，线程拥有自己的栈空间。</p>
+<p><strong>协程</strong>：从属于线程，是一种比线程更加轻量级的存在。</p>
+<p><strong>总结：</strong></p>
+<p><strong>对操作系统来说，线程是最小的执行单元，进程是最小的资源管理单元。</strong></p>
+<h2 id="多进程"><a href="#多进程" class="headerlink" title="多进程"></a>多进程</h2><p>我觉得最简单的讲，多进程就是你在任务窗口看建了几个任务。比如你电脑上有16个核，理论上你可以开16个进程，每个进程占满一个cpu。对python而言由于没有多线程的利用，所有在单进程无法满足需求时，自然得利用多进程。</p>
+<h3 id="单任务单进程"><a href="#单任务单进程" class="headerlink" title="单任务单进程"></a>单任务单进程</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> multiprocessing <span class="keyword">import</span> Process</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">work</span>(<span class="params">name</span>):</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;<span class="subst">&#123;name&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    p = Process(target=work,args=(<span class="string">&#x27;single task&#x27;</span>,))</span><br><span class="line">    p.start()</span><br><span class="line">    p.join()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>我还看到一种是用run不用start的，但大概看了下没什么特殊的，不过这个join只能用于start.所以建议还是都用start，这个join是阻塞的意思，简单来说：主进程和其他子进程结束的话，都等着，等我结束了才能结束。</p>
+<p>举个例子：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> multiprocessing <span class="keyword">import</span> Process</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">work1</span>(<span class="params">name</span>):</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">5</span>):</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&#x27;<span class="subst">&#123;name&#125;</span>:<span class="subst">&#123;os.getpid()&#125;</span>&#x27;</span>)</span><br><span class="line">        time.sleep(<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">work2</span>(<span class="params">name</span>):</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">5</span>):</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&#x27;<span class="subst">&#123;name&#125;</span>:<span class="subst">&#123;os.getpid()&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    p1 = Process(target=work1,args=(<span class="string">&#x27;single task1&#x27;</span>,))</span><br><span class="line">    p2 = Process(target=work2,args=(<span class="string">&#x27;single task2&#x27;</span>,))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;主进程:<span class="subst">&#123;os.getpid()&#125;</span>&#x27;</span>)</span><br><span class="line">    p1.start()</span><br><span class="line">    p1.join()</span><br><span class="line">    p2.start()</span><br><span class="line">    p2.join()</span><br></pre></td></tr></table></figure>
+
+<p>如果这么写，主进程你走你的，work2子进程你给我等一下。等我run完你在run。</p>
+<p><strong>注意：</strong>每个子进程之间的join不是串行的，是并行的。既无论你多少个子进程，谁最后结束，谁关闭文件。</p>
+<h3 id="单任务多进程"><a href="#单任务多进程" class="headerlink" title="单任务多进程"></a>单任务多进程</h3><p>比如你要启动50个进程，然后写50个子进程就太慢了。因此，对于多进程有一种新的形式。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">long_time_task</span>(<span class="params">name</span>):</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;Run task %s (%s)...&#x27;</span> % (name, os.getpid()))</span><br><span class="line">    start = time.time()</span><br><span class="line">    time.sleep(random.random() * <span class="number">3</span>)</span><br><span class="line">    end = time.time()</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;Task %s runs %0.2f seconds.&#x27;</span> % (name, (end - start)))</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__==<span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;Parent process %s.&#x27;</span> % os.getpid())</span><br><span class="line">    p = Pool(<span class="number">4</span>)</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">5</span>):</span><br><span class="line">        p.apply_async(long_time_task, args=(i,))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;Waiting for all subprocesses done...&#x27;</span>)</span><br><span class="line">    p.close()</span><br><span class="line">    p.join()</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;All subprocesses done.&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">########################################################</span></span><br><span class="line"><span class="comment">#运行结果</span></span><br><span class="line"><span class="comment">########################################################</span></span><br><span class="line">Parent process <span class="number">7748.</span></span><br><span class="line">Waiting <span class="keyword">for</span> <span class="built_in">all</span> subprocesses done...</span><br><span class="line">Run task <span class="number">0</span> (<span class="number">7780</span>)...</span><br><span class="line">Run task <span class="number">1</span> (<span class="number">7781</span>)...</span><br><span class="line">Run task <span class="number">2</span> (<span class="number">7782</span>)...</span><br><span class="line">Run task <span class="number">3</span> (<span class="number">7783</span>)...</span><br><span class="line">Run task <span class="number">4</span> (<span class="number">7781</span>)...</span><br><span class="line">All subprocesses done.</span><br></pre></td></tr></table></figure>
+
+<p>可以看到task1和task4的进程是一样的，因为只启动了4个进程，因此第5个进程需要等待其他进程结束才开始运行。</p>
+<p><strong>注意：</strong>close不加直接写join是会报错的。</p>
+<h3 id="多任务多进程"><a href="#多任务多进程" class="headerlink" title="多任务多进程"></a>多任务多进程</h3><p>我这边用的是经典的生产者和消费者模型，及一个模型构造生产者，一个模型构造消费者，两者通过自带的JoinableQueue进行通信。（不要用deque里面的队列！！）</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> random</span><br><span class="line"><span class="keyword">from</span>  multiprocessing <span class="keyword">import</span> JoinableQueue,Process</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">producer</span>(<span class="params">q,name,food</span>):</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">5</span>):</span><br><span class="line">        time.sleep(random.random())</span><br><span class="line">        fd = <span class="string">&#x27;%s%s&#x27;</span>%(food,i+<span class="number">1</span>)</span><br><span class="line">        q.put(fd)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&#x27;%s生产了一个%s&#x27;</span>%(name,food))</span><br><span class="line">    q.join()  <span class="comment"># 我启动了生产者之后，生产者函数一直在生成数据，直到生产完所有数据将队列q.join()一下，意思是当我生产的数据都被消费者消费完之后 队列的阻塞才结束。</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">consumer</span>(<span class="params">q,name</span>):</span>  <span class="comment"># 消费者不需要像Queue那样判断从队列里拿到None再退出执行消费者函数了</span></span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        food = q.get()</span><br><span class="line">        time.sleep(random.random())</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&#x27;%s吃了%s&#x27;</span>%(name,food))</span><br><span class="line">        q.task_done()  <span class="comment"># 消费者每次从队列里面q.get()一个数据，处理过后就使用队列.task_done()</span></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    jq = JoinableQueue()</span><br><span class="line">    p =Process(target=producer,args=(jq,<span class="string">&#x27;喜洋洋&#x27;</span>,<span class="string">&#x27;包子&#x27;</span>))</span><br><span class="line">    p.start()</span><br><span class="line">    c = Process(target=consumer,args=(jq,<span class="string">&#x27;灰太狼&#x27;</span>))</span><br><span class="line">    c.daemon = <span class="literal">True</span>  <span class="comment"># 守护进程，如果用Pool就不用这个也没事</span></span><br><span class="line">    c.start()</span><br><span class="line">    p.join()  <span class="comment"># 阻塞生产者</span></span><br></pre></td></tr></table></figure>
+
+<p>具体实现情况</p>
+<ol>
+<li>启动一个生产者，和一个消费者（这里可以用多进程消费），看具体时间</li>
+<li>生产者结束后将JoinableQueue进行阻塞，直到队列全部被消费后，才结束进程。</li>
+</ol>
+<p>Queue与JoinableQueue的区别</p>
+<ol>
+<li>Queue在消费者中需要if判断队列，不然的话就陷入死循环。而jionableQueue不用，其只需要将队列堵塞后，队列消费完程序才解决。</li>
+<li>Queue很难控制，因为如果只是判断队列是否存在，就需要考虑产生和消耗队列的时间。因此我认为还是JoinableQueue好</li>
+</ol>
+<h2 id="多线程"><a href="#多线程" class="headerlink" title="多线程"></a>多线程</h2><p>开头就说了，python虽然线程是真正的线程，但在解释器执行的时候会遇到GIL锁，导致其无论多少核，只能跑满一个核，所以对于比较简单的可以运行多线程，好像在爬虫里面运用多线程的比较多。</p>
+<p>那为什么有的程序一个进程一开用了N个cpu，那是因为他进程中存在利用c扩写的库，他将关键的部分用C/C++写成python扩展，其他还用python写。一般计算密集型的程序都会用C代码编写并通过扩展的方式集成到python脚本（numpy）。在扩展中完全可以用C创建原生线程，而且不用锁GIL，充分利用CPU的计算资源。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> threading  <span class="keyword">import</span> Thread</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">work1</span>():</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;work1 has working&#x27;</span>)</span><br><span class="line">    time.sleep(<span class="number">3</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">work2</span>():</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;work2 has working&#x27;</span>)</span><br><span class="line">    time.sleep(<span class="number">5</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">work3</span>():</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;work3 has working&#x27;</span>)</span><br><span class="line">    time.sleep(<span class="number">8</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    start_time =time.time()</span><br><span class="line">    p1 = Thread(target=work1)</span><br><span class="line">    p2 = Thread(target=work2)</span><br><span class="line">    p3 = Thread(target=work3)</span><br><span class="line">    p1.start()</span><br><span class="line">    p2.start()</span><br><span class="line">    p3.start()</span><br><span class="line">    p3.join()</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;cost time <span class="subst">&#123;time.time()-start_time&#125;</span>&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">能否利用Pool批量构造生产者和消费者，</span><br><span class="line">暂时只能做到Pool构造消费者，多个Process构造生产者进行生产。。。</span><br><span class="line">（除非使用process分别构造生产者和消费者模型）</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+
+
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">ShiHai-black</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://shihai-black.github.io/2021/04/11/%E5%A4%9A%E8%BF%9B%E7%A8%8B%E3%80%81%E5%A4%9A%E7%BA%BF%E7%A8%8B%EF%BC%88python%EF%BC%89/">https://shihai-black.github.io/2021/04/11/%E5%A4%9A%E8%BF%9B%E7%A8%8B%E3%80%81%E5%A4%9A%E7%BA%BF%E7%A8%8B%EF%BC%88python%EF%BC%89/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://shihai-black.github.io" target="_blank">ShiHai'Blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"></div><div class="post_share"><div class="social-share" data-image="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="next-post pull-full"><a href="/2021/04/11/%E5%88%9D%E8%AF%86NLP/"><img class="next-cover" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">初识NLP</div></div></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="card-info-avatar is-center"><img class="avatar-img" src="https://i.loli.net/2021/02/24/5O1day2nriDzjSu.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/><div class="author-info__name">ShiHai-black</div><div class="author-info__description">爱打球爱烧饭的猫爸爸</div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">4</div></a></div><div class="card-info-data-item is-center"><a href="/tags/"><div class="headline">标签</div><div class="length-num">2</div></a></div><div class="card-info-data-item is-center"><a href="/categories/"><div class="headline">分类</div><div class="length-num">4</div></a></div></div><a class="button--animated" id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn card-announcement-animation"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%A4%9A%E8%BF%9B%E7%A8%8B%E3%80%81%E5%A4%9A%E7%BA%BF%E7%A8%8B%EF%BC%88python%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">多进程、多线程（python）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8E%86%E5%8F%B2"><span class="toc-number">1.1.</span> <span class="toc-text">历史</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%96%E8%AF%91%E5%99%A8%E3%80%81%E8%A7%A3%E9%87%8A%E5%99%A8%E3%80%81IDE"><span class="toc-number">1.2.</span> <span class="toc-text">编译器、解释器、IDE</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#GIL%E9%94%81"><span class="toc-number">1.3.</span> <span class="toc-text">GIL锁</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%9B%E7%A8%8B%E3%80%81%E7%BA%BF%E7%A8%8B%E3%80%81%E5%8D%8F%E7%A8%8B%E7%9A%84%E5%88%A9%E7%94%A8"><span class="toc-number">1.4.</span> <span class="toc-text">进程、线程、协程的利用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%9A%E8%BF%9B%E7%A8%8B"><span class="toc-number">1.5.</span> <span class="toc-text">多进程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8D%95%E4%BB%BB%E5%8A%A1%E5%8D%95%E8%BF%9B%E7%A8%8B"><span class="toc-number">1.5.1.</span> <span class="toc-text">单任务单进程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8D%95%E4%BB%BB%E5%8A%A1%E5%A4%9A%E8%BF%9B%E7%A8%8B"><span class="toc-number">1.5.2.</span> <span class="toc-text">单任务多进程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%9A%E4%BB%BB%E5%8A%A1%E5%A4%9A%E8%BF%9B%E7%A8%8B"><span class="toc-number">1.5.3.</span> <span class="toc-text">多任务多进程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%9A%E7%BA%BF%E7%A8%8B"><span class="toc-number">1.6.</span> <span class="toc-text">多线程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%97%AE%E9%A2%98"><span class="toc-number">1.7.</span> <span class="toc-text">问题</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2021/04/11/%E5%A4%9A%E8%BF%9B%E7%A8%8B%E3%80%81%E5%A4%9A%E7%BA%BF%E7%A8%8B%EF%BC%88python%EF%BC%89/" title="多进程、多线程"><img src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="多进程、多线程"/></a><div class="content"><a class="title" href="/2021/04/11/%E5%A4%9A%E8%BF%9B%E7%A8%8B%E3%80%81%E5%A4%9A%E7%BA%BF%E7%A8%8B%EF%BC%88python%EF%BC%89/" title="多进程、多线程">多进程、多线程</a><time datetime="2021-04-11T03:23:23.000Z" title="发表于 2021-04-11 11:23:23">2021-04-11</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/04/11/%E5%88%9D%E8%AF%86NLP/" title="初识NLP"><img src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="初识NLP"/></a><div class="content"><a class="title" href="/2021/04/11/%E5%88%9D%E8%AF%86NLP/" title="初识NLP">初识NLP</a><time datetime="2021-04-11T03:14:55.000Z" title="发表于 2021-04-11 11:14:55">2021-04-11</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/04/11/Transomer%E5%AD%A6%E4%B9%A0/" title="Transomer学习"><img src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Transomer学习"/></a><div class="content"><a class="title" href="/2021/04/11/Transomer%E5%AD%A6%E4%B9%A0/" title="Transomer学习">Transomer学习</a><time datetime="2021-04-11T03:10:00.000Z" title="发表于 2021-04-11 11:10:00">2021-04-11</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/04/08/%E5%BC%82%E5%B8%B8%E6%A3%80%E6%B5%8B/" title="异常检测整理"><img src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="异常检测整理"/></a><div class="content"><a class="title" href="/2021/04/08/%E5%BC%82%E5%B8%B8%E6%A3%80%E6%B5%8B/" title="异常检测整理">异常检测整理</a><time datetime="2021-04-08T08:25:05.000Z" title="发表于 2021-04-08 16:25:05">2021-04-08</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2021 By ShiHai-black</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div></div><hr/><div id="local-search-results"></div><span class="search-close-button"><i class="fas fa-times"></i></span></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/search/local-search.js"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
