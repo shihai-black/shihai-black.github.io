@@ -468,7 +468,7 @@
   </entry>
   <entry>
     <title>Transomer学习</title>
-    <url>/2021/04/11/Transomer%E5%AD%A6%E4%B9%A0/</url>
+    <url>/2021/04/11/Transomer%D1%A7%CF%B0/</url>
     <content><![CDATA[<h1 id="Transfomer拆分"><a href="#Transfomer拆分" class="headerlink" title="Transfomer拆分"></a>Transfomer拆分</h1><p>为了更好的学习当前NLP主流模型，如Bert，GPT2及Bert一系列的衍生物，Transfomer是这一系列的基础。因此本文的主要目的是记录个人基于一些博客和原论文对Transfomer模型进行拆分的结果。</p>
 <p><strong>目的</strong>：减少计算量并提高并行效率，同时不减弱最终的实验结果。</p>
 <p><strong>创新点</strong>：</p>
