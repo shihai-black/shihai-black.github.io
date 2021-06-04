@@ -50,7 +50,7 @@ git init
 #创建hexo分支，用来存放源码
 git checkout -b hexo
 #git 文件添加
-git add .
+git add --all
 #git 提交
 git commit -m "init"
 #添加远程仓库
@@ -90,3 +90,8 @@ hexo d -g #生成加部署
 hexo s -g #生成加预览
 ```
 
+## reference
+
+https://www.jianshu.com/p/aebeaf050969
+
+https://www.jianshu.com/p/c058fbd7bb90
