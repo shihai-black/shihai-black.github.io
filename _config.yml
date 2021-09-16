@@ -107,5 +107,5 @@ theme: butterfly
 ## Docs: https://hexo.io/docs/one-command-deployment
 deploy:
     type: git
-    repo: https://github.com/shihai-black/shihai-black.github.io.git
+    repo: https://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@github.com/shihai-black/shihai-black.github.io.git
     branch: master

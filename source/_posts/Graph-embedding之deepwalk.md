@@ -1,7 +1,7 @@
 ---
 title: Graph_embedding之deepwalk
 categories:
-  - Graph
+  - 深度学习
 tags:
   - Graph Embedding
 date: 2021-06-04 14:20:54
@@ -14,7 +14,7 @@ deepwalk的作者Bryan参照word2vec的思想，将文本应用到图的结构�
 
 ### 流程图
 
-![deepwalk](../images/deepwalk.png)
+![deepwalk](/images/deepwalk.png)
 
 ### 论文理解
 
