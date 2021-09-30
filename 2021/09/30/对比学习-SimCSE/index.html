@@ -1,0 +1,338 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>对比学习_SimCSE | ShiHai'Blog</title><meta name="keywords" content="对比学习"><meta name="author" content="ShiHai-black"><meta name="copyright" content="ShiHai-black"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="对比学习之SimCSE 前短时间接到一个title i2i召回数据的任务，最开始只是想用简单的Doc2vec输出每个title的emb然后用faiss做召回，但是效果很差。后来尝试了用Bert直接输出结果，效果也很差。后面看论文发现Bert的emb存在模型坍塌问题【详细可以参考美团的ConSERT任务】。最后利用SimCSE比较合理的解决了需求  问题 什么是自监督学习，什么是对比学习？ SimC">
+<meta property="og:type" content="article">
+<meta property="og:title" content="对比学习_SimCSE">
+<meta property="og:url" content="https://shihai-black.github.io/2021/09/30/%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0-SimCSE/index.html">
+<meta property="og:site_name" content="ShiHai&#39;Blog">
+<meta property="og:description" content="对比学习之SimCSE 前短时间接到一个title i2i召回数据的任务，最开始只是想用简单的Doc2vec输出每个title的emb然后用faiss做召回，但是效果很差。后来尝试了用Bert直接输出结果，效果也很差。后面看论文发现Bert的emb存在模型坍塌问题【详细可以参考美团的ConSERT任务】。最后利用SimCSE比较合理的解决了需求  问题 什么是自监督学习，什么是对比学习？ SimC">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg">
+<meta property="article:published_time" content="2021-09-30T09:10:39.000Z">
+<meta property="article:modified_time" content="2021-09-30T09:13:07.991Z">
+<meta property="article:author" content="ShiHai-black">
+<meta property="article:tag" content="对比学习">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://shihai-black.github.io/2021/09/30/%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0-SimCSE/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isanchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = { 
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2021-09-30 17:13:07'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    })(window)</script><meta name="generator" content="Hexo 5.4.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="author-avatar"><img class="avatar-img" src="/img/%E5%A4%B4%E5%83%8F.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">文章</div><div class="length-num">14</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/tags/"><div class="headline">标签</div><div class="length-num">11</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 链接</span></a></div><div class="menus_item"><a class="site-page" href="/messageboard/"><i class="fa-fw fa fa-paper-plane"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg')"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">ShiHai'Blog</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 链接</span></a></div><div class="menus_item"><a class="site-page" href="/messageboard/"><i class="fa-fw fa fa-paper-plane"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">对比学习_SimCSE</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2021-09-30T09:10:39.000Z" title="发表于 2021-09-30 17:10:39">2021-09-30</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2021-09-30T09:13:07.991Z" title="更新于 2021-09-30 17:13:07">2021-09-30</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="对比学习_SimCSE"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span><span class="post-meta-separator">|</span><span class="post-meta-commentcount"><i class="far fa-comments fa-fw post-meta-icon"></i><span class="post-meta-label">评论数:</span><a href="/2021/09/30/%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0-SimCSE/#post-comment" itemprop="discussionUrl"><span class="valine-comment-count" data-xid="/2021/09/30/%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0-SimCSE/" itemprop="commentCount"></span></a></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h1 id="对比学习之SimCSE"><a href="#对比学习之SimCSE" class="headerlink" title="对比学习之SimCSE"></a>对比学习之SimCSE</h1><blockquote>
+<p>前短时间接到一个title i2i召回数据的任务，最开始只是想用简单的Doc2vec输出每个title的emb然后用faiss做召回，但是效果很差。后来尝试了用Bert直接输出结果，效果也很差。后面看论文发现Bert的emb存在模型坍塌问题【详细可以参考美团的ConSERT任务】。最后利用SimCSE比较合理的解决了需求</p>
+</blockquote>
+<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><ol>
+<li>什么是自监督学习，什么是对比学习？</li>
+<li>SimCSE生成监督数据的方法是什么？</li>
+<li>为什么生成的句向量这么有用？</li>
+<li>他的优劣势是什么？</li>
+</ol>
+<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><h3 id="自监督学习"><a href="#自监督学习" class="headerlink" title="自监督学习"></a>自监督学习</h3><p>首先，我们知道现在训练模型的方式主要是两种：有监督和无监督，并且我个人认为无监督的使用场景是远远大于有监督的。无监督有一个比较特比的分支是自监督，他的特点就是不需要人工标注的类别标签信息，直接利用数据本身作为监督信息，来学习样本数据的特征表达。</p>
+<p>自监督主要分为两类：</p>
+<ul>
+<li>Generative Methods：其中的典型代表就是自编码器，其利用数据本身压缩再重构去比较生成的数据与原始数据的差距。</li>
+<li>Contrastive Methods：这类方法则是通过将数据分别与正例样本和负例样本在特征空间进行对比，来学习样本的特征表示。</li>
+</ul>
+<p><strong>备注</strong>：我个人任务word2vec也可以属于自监督范畴，不过不属于上面两类，他是利用文本词与词之间关系去学习每个单词的embedding</p>
+<h3 id="对比学习"><a href="#对比学习" class="headerlink" title="对比学习"></a>对比学习</h3><p>上面说了，对比学习属于自监督学习的一个大类，他主要的难点就是如何生成相似的正样本。其最开始是在cv中使用的，后面NLPer也不甘示弱的进行研究，才有了今天NLP在对比学习领域的百花齐放，具体的进展可以看<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/367290573">张俊林博客</a>。</p>
+<p>SimCSE全称(Simple Contrastive Learning of Sentence Embeddings)，是一种在没有监督训练数据的情况下训练句子向量的对比学习框架。并且从无监督和有监督两种方法给出了结果。</p>
+<ul>
+<li>无监督SimCSE：仅使用dropout进行数据增强操作。具体来说，将同一个样本输入预训练编码器两次(BERT)，由于每次的dropout是不同的，那么就会生成两个经过dropout后的句向量表示。这里的dropout主要是指传统的feature dropout，在标准的Transformer实现中，每个sub-layer后都默认配置了dropout。除此之外，Transformer也在multi-head attention和feed-forward network的激活函数层添加了dropout。利用dropout将这两个样本作为“正样本对”，于此同时，同一个batch里面不同样本做诶”负样本对”</li>
+<li>有监督SimCSE：基于natural language inference (NLI) 数据集进行具体来说，论文将entailment样本作为“正样本对”，并将contradiction样本作为hard“负样本对”，并且 从实验证明该方法是有效的。</li>
+</ul>
+<h2 id="指标详解"><a href="#指标详解" class="headerlink" title="指标详解"></a>指标详解</h2><p>在《<strong>Understanding Contrastive Representation Learning through Alignment and Uniformity on the Hypersphere</strong>》一文中，作者指出了现有的对比学习都遵循以下两大原则即：相似样本应该保持靠近，并且不同的样本应该分散嵌入在高维球体。于此同时SimCSE的作者也提到了这两点，他也认为这两点是衡量表示质量很重要的指标。</p>
+<h3 id="alignment"><a href="#alignment" class="headerlink" title="alignment"></a>alignment</h3><p>用于衡量两个样本的相似程度，其计算公式如下：</p>
+<script type="math/tex; mode=display">
+L=E\left \| f(x)-f(y)\right \|_{2 }^{\alpha}</script><p>同时作者给出了在pytorch中的代码</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">lalign</span>(<span class="params">x, y, alpha=<span class="number">2</span></span>):</span></span><br><span class="line">  <span class="keyword">return</span> (x - y).norm(dim=<span class="number">1</span>).<span class="built_in">pow</span>(alpha).mean()</span><br></pre></td></tr></table></figure>
+<h3 id="uniformity"><a href="#uniformity" class="headerlink" title="uniformity"></a>uniformity</h3><p>衡量规整后的特征在unit 超球体上的分布的均匀性，其计算公式如下：</p>
+<script type="math/tex; mode=display">
+L=log(E[e^{-t\left \| f(x)-f(y)\right \|^{2}}])</script><p>同时作者给出了在pytorch中的代码</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">lunif</span>(<span class="params">x, t=<span class="number">2</span></span>):</span></span><br><span class="line">  sq_pdist = torch.pdist(x, p=<span class="number">2</span>).<span class="built_in">pow</span>(<span class="number">2</span>)</span><br><span class="line">	<span class="keyword">return</span> sq_pdist.mul(-t).exp().mean().log()</span><br></pre></td></tr></table></figure>
+<p>两者结合，作者是介绍可以直接作为损失进行优化的：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">loss = lalign(x, y) + lam * (lunif(x) + lunif(y)) / <span class="number">2</span></span><br></pre></td></tr></table></figure>
+<h2 id="损失函数"><a href="#损失函数" class="headerlink" title="损失函数"></a>损失函数</h2><h3 id="unsup"><a href="#unsup" class="headerlink" title="unsup"></a>unsup</h3><script type="math/tex; mode=display">
+L=-log\frac{e^{sim(h_{i},{h_{i}}^{+})/\tau }}{\sum_{j=1}^{N}e^{sim(h_{i},{h_{j}}^{+})/\tau}}</script><ul>
+<li>$h_{i}$表示查询向量，+表示对比向量，j表示大小为N的batch下其他向量</li>
+<li>$\tau$表示温度参数，默认是0.07，<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/357071960">详解温度参数</a></li>
+<li>sim()表示余弦相似度，当然用内积也是一样的，因为l2标准化后的内积等价于余弦相似度</li>
+</ul>
+<h3 id="Sup"><a href="#Sup" class="headerlink" title="Sup"></a>Sup</h3><script type="math/tex; mode=display">
+L = -log\frac{e^{sim(h_{i},{h_{i}}^{+})/\tau}}{\sum_{j=1}^{N}(e^{sim(h_{i},{h_{j}}^{+})/\tau}+e^{sim(h_{i},{h_{j}}^{-})/\tau})}</script><ul>
+<li>其他和无监督方法没有区别，只是将负向量也纳入分母</li>
+</ul>
+<p><strong>备注</strong>：其实他的目标就是为了让分子尽可能的小，分母尽可能的大，那分子其实就代表alignment指标，分母就是代表uniformity指标，其实简单看和交叉墒损失函数很想，并且实际的实现也是这样子的，但是具体的细节区别我也不是很清楚。以后在专门写一下吧。</p>
+<h2 id="代码详解"><a href="#代码详解" class="headerlink" title="代码详解"></a>代码详解</h2><h3 id="SimCSE包"><a href="#SimCSE包" class="headerlink" title="SimCSE包"></a>SimCSE包</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> simcse <span class="keyword">import</span> SimCSE</span><br><span class="line">model = SimCSE(<span class="string">&quot;princeton-nlp/sup-simcse-bert-base-uncased&quot;</span>)</span><br><span class="line">sentences = [<span class="string">&#x27;A woman is reading.&#x27;</span>, <span class="string">&#x27;A man is playing a guitar.&#x27;</span>]</span><br><span class="line">model.build_index(sentences)</span><br><span class="line">results = model.search(<span class="string">&quot;He plays guitar.&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p>作者直接将训练好的模型放在huggingface上，并且下游利用Faiss进行向量搜索，详情可以直接看github代码，如果想自己训练也很简单，利用Sentence_transfomer包有现成的demo</p>
+<h3 id="Sentence-transfomer包"><a href="#Sentence-transfomer包" class="headerlink" title="Sentence_transfomer包"></a>Sentence_transfomer包</h3><p><strong>unsup</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> torch.utils.data <span class="keyword">import</span> DataLoader</span><br><span class="line"><span class="keyword">import</span> math</span><br><span class="line"><span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> models, losses</span><br><span class="line"><span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> LoggingHandler, SentenceTransformer, util, InputExample</span><br><span class="line"><span class="keyword">from</span> sentence_transformers.evaluation <span class="keyword">import</span> EmbeddingSimilarityEvaluator</span><br><span class="line"><span class="keyword">import</span> logging</span><br><span class="line"><span class="keyword">from</span> torch <span class="keyword">import</span> nn</span><br><span class="line"><span class="keyword">from</span> datetime <span class="keyword">import</span> datetime</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> gzip</span><br><span class="line"><span class="keyword">import</span> csv</span><br><span class="line"></span><br><span class="line">os.environ[<span class="string">&#x27;CUDA_VISIBLE_DEVICES&#x27;</span>] = <span class="string">&#x27;0,1&#x27;</span></span><br><span class="line">model_name = <span class="string">&#x27;distilbert-base-uncased&#x27;</span></span><br><span class="line">train_batch_size = <span class="number">128</span></span><br><span class="line">num_epochs = <span class="number">1</span></span><br><span class="line">max_seq_length = <span class="number">32</span></span><br><span class="line">model_save_path = <span class="string">&#x27;output/training_stsb_simcse-&#123;&#125;-&#123;&#125;-&#123;&#125;&#x27;</span>.<span class="built_in">format</span>(model_name, train_batch_size,</span><br><span class="line">                                                                datetime.now().strftime(<span class="string">&quot;%Y-%m-%d_%H-%M-%S&quot;</span>))</span><br><span class="line">sts_dataset_path = <span class="string">&#x27;data/stsbenchmark.tsv.gz&#x27;</span></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> os.path.exists(sts_dataset_path):</span><br><span class="line">    util.http_get(<span class="string">&#x27;https://sbert.net/datasets/stsbenchmark.tsv.gz&#x27;</span>, sts_dataset_path)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Here we define our SentenceTransformer model</span></span><br><span class="line">word_embedding_model = models.Transformer(model_name, max_seq_length=max_seq_length,</span><br><span class="line">                                          cache_dir=<span class="string">&#x27;../distilbert-base-uncased&#x27;</span>)</span><br><span class="line">pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())</span><br><span class="line">dense = models.Dense(pooling_model.pooling_output_dimension,<span class="number">512</span>,activation_function=nn.ReLU())  <span class="comment"># 降维操作</span></span><br><span class="line">model = SentenceTransformer(modules=[word_embedding_model, pooling_model,dense],device=<span class="string">&quot;cuda:1&quot;</span>)</span><br><span class="line">wikipedia_dataset_path = <span class="string">&#x27;data/wiki1m_for_simcse.txt&#x27;</span></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> os.path.exists(wikipedia_dataset_path):</span><br><span class="line">    util.http_get(</span><br><span class="line">        <span class="string">&#x27;https://huggingface.co/datasets/princeton-nlp/datasets-for-simcse/resolve/main/wiki1m_for_simcse.txt&#x27;</span>,</span><br><span class="line">        wikipedia_dataset_path)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;read wiki data&#x27;</span>)</span><br><span class="line">train_samples = []</span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(wikipedia_dataset_path, <span class="string">&#x27;r&#x27;</span>, encoding=<span class="string">&#x27;utf8&#x27;</span>) <span class="keyword">as</span> fIn:</span><br><span class="line">    <span class="keyword">for</span> line <span class="keyword">in</span> fIn.readlines()[:<span class="number">10000</span>]:</span><br><span class="line">        line = line.strip()</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(line) &gt;= <span class="number">10</span>:</span><br><span class="line">            train_samples.append(InputExample(texts=[line, line]))</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">len</span>(train_samples))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Read STSB dev dataset&#x27;</span>)</span><br><span class="line">dev_samples = []</span><br><span class="line">test_samples = []</span><br><span class="line"><span class="keyword">with</span> gzip.<span class="built_in">open</span>(sts_dataset_path, <span class="string">&#x27;rt&#x27;</span>, encoding=<span class="string">&#x27;utf8&#x27;</span>) <span class="keyword">as</span> fIn:</span><br><span class="line">    reader = csv.DictReader(fIn, delimiter=<span class="string">&#x27;\t&#x27;</span>, quoting=csv.QUOTE_NONE)</span><br><span class="line">    <span class="keyword">for</span> row <span class="keyword">in</span> reader:</span><br><span class="line">        score = <span class="built_in">float</span>(row[<span class="string">&#x27;score&#x27;</span>]) / <span class="number">5.0</span>  <span class="comment"># Normalize score to range 0 ... 1</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> row[<span class="string">&#x27;split&#x27;</span>] == <span class="string">&#x27;dev&#x27;</span>:</span><br><span class="line">            dev_samples.append(InputExample(texts=[row[<span class="string">&#x27;sentence1&#x27;</span>], row[<span class="string">&#x27;sentence2&#x27;</span>]], label=score))</span><br><span class="line">        <span class="keyword">elif</span> row[<span class="string">&#x27;split&#x27;</span>] == <span class="string">&#x27;test&#x27;</span>:</span><br><span class="line">            test_samples.append(InputExample(texts=[row[<span class="string">&#x27;sentence1&#x27;</span>], row[<span class="string">&#x27;sentence2&#x27;</span>]], label=score))</span><br><span class="line"></span><br><span class="line">dev_evaluator = EmbeddingSimilarityEvaluator.from_input_examples(dev_samples, batch_size=train_batch_size,</span><br><span class="line">                                                                 name=<span class="string">&#x27;sts-dev&#x27;</span>)</span><br><span class="line">test_evaluator = EmbeddingSimilarityEvaluator.from_input_examples(test_samples, batch_size=train_batch_size,</span><br><span class="line">                                                                  name=<span class="string">&#x27;sts-test&#x27;</span>)</span><br><span class="line"></span><br><span class="line">train_dataloader = DataLoader(train_samples, shuffle=<span class="literal">True</span>, batch_size=train_batch_size, drop_last=<span class="literal">True</span>)</span><br><span class="line">train_loss = losses.MultipleNegativesRankingLoss(model)</span><br><span class="line">warmup_steps = math.ceil(<span class="built_in">len</span>(train_dataloader) * num_epochs * <span class="number">0.1</span>)  <span class="comment"># 10% of train data for warm-up</span></span><br><span class="line">evaluation_steps = <span class="built_in">int</span>(<span class="built_in">len</span>(train_dataloader) * <span class="number">0.1</span>) <span class="comment">#Evaluate every 10% of the data</span></span><br><span class="line"></span><br><span class="line">dev_evaluator(model)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Start train model&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># train the model</span></span><br><span class="line">model.fit(train_objectives=[(train_dataloader,train_loss)],</span><br><span class="line">          evaluator=dev_evaluator,</span><br><span class="line">          epochs=num_epochs,</span><br><span class="line">          evaluation_steps=evaluation_steps,</span><br><span class="line">          warmup_steps=warmup_steps,</span><br><span class="line">          output_path=model_save_path,</span><br><span class="line">          optimizer_params=&#123;<span class="string">&#x27;lr&#x27;</span>:<span class="number">5e-5</span>&#125;,</span><br><span class="line">          use_amp=<span class="literal">False</span></span><br><span class="line">          )</span><br><span class="line"></span><br><span class="line">model = SentenceTransformer(model_save_path)</span><br><span class="line">test_evaluator(model, output_path=model_save_path)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><strong>sup</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> torch.utils.data <span class="keyword">import</span> DataLoader</span><br><span class="line"><span class="keyword">import</span> math</span><br><span class="line"><span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> models, losses</span><br><span class="line"><span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> LoggingHandler, SentenceTransformer, util, InputExample</span><br><span class="line"><span class="keyword">from</span> sentence_transformers.evaluation <span class="keyword">import</span> EmbeddingSimilarityEvaluator</span><br><span class="line"><span class="keyword">import</span> logging</span><br><span class="line"><span class="keyword">from</span> datetime <span class="keyword">import</span> datetime</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> gzip</span><br><span class="line"><span class="keyword">import</span> csv</span><br><span class="line"></span><br><span class="line"><span class="comment"># argument</span></span><br><span class="line">model_name = <span class="string">&#x27;distilbert-base-uncased&#x27;</span>  <span class="comment"># 可以自行替换</span></span><br><span class="line">train_batch_size = <span class="number">32</span></span><br><span class="line">num_epochs = <span class="number">1</span></span><br><span class="line">max_seq_length = <span class="number">64</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Here we define our SentenceTransformer model</span></span><br><span class="line">word_embedding_model = models.Transformer(<span class="string">&#x27;bert-base-uncased&#x27;</span>, max_seq_length=max_seq_length,</span><br><span class="line">                                          cache_dir=<span class="string">&#x27;../distilbert-base-uncased&#x27;</span>)</span><br><span class="line">pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())</span><br><span class="line">model = SentenceTransformer(modules=[word_embedding_model, pooling_model])</span><br><span class="line"></span><br><span class="line"><span class="comment"># Use label sentences from NLI dataset train to train out model</span></span><br><span class="line"></span><br><span class="line">nli_dataset_path = <span class="string">&#x27;data/AllNLI.tsv.gz&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> os.path.exists(nli_dataset_path):</span><br><span class="line">    util.http_get(<span class="string">&#x27;https://sbert.net/datasets/AllNLI.tsv.gz&#x27;</span>, nli_dataset_path)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Read NLI dataset&#x27;</span>)</span><br><span class="line">model_save_path = <span class="string">&#x27;output/simcse-&#123;&#125;-&#123;&#125;-&#123;&#125;&#x27;</span>.<span class="built_in">format</span>(model_name, train_batch_size,</span><br><span class="line">                                                  datetime.now().strftime(<span class="string">&quot;%Y-%m-%d_%H-%M-%S&quot;</span>))</span><br><span class="line">train_samples = []</span><br><span class="line"><span class="keyword">with</span> gzip.<span class="built_in">open</span>(nli_dataset_path, <span class="string">&#x27;rt&#x27;</span>, encoding=<span class="string">&#x27;utf8&#x27;</span>) <span class="keyword">as</span> fIn:</span><br><span class="line">    reader = csv.DictReader(fIn, delimiter=<span class="string">&#x27;\t&#x27;</span>, quoting=csv.QUOTE_NONE)</span><br><span class="line">    count = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> row <span class="keyword">in</span> reader:</span><br><span class="line">        count += <span class="number">1</span></span><br><span class="line">        label = row[<span class="string">&#x27;label&#x27;</span>]</span><br><span class="line">        <span class="keyword">if</span> label == <span class="string">&#x27;contradiction&#x27;</span>:</span><br><span class="line">            premise = row[<span class="string">&#x27;sentence1&#x27;</span>]</span><br><span class="line">            negative = row[<span class="string">&#x27;sentence2&#x27;</span>]</span><br><span class="line">        <span class="keyword">elif</span> label == <span class="string">&#x27;entailment&#x27;</span>:</span><br><span class="line">            premise = row[<span class="string">&#x27;sentence1&#x27;</span>]</span><br><span class="line">            positive = row[<span class="string">&#x27;sentence2&#x27;</span>]</span><br><span class="line">        <span class="keyword">if</span> count % <span class="number">3</span> == <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">if</span> row[<span class="string">&#x27;split&#x27;</span>] == <span class="string">&#x27;train&#x27;</span>:</span><br><span class="line">                train_samples.append(InputExample(texts=[premise, positive, negative]))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&#x27;train sample length:<span class="subst">&#123;<span class="built_in">len</span>(train_samples)&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Check if dataset exsist. If not, download and extract  it</span></span><br><span class="line">sts_dataset_path = <span class="string">&#x27;data/stsbenchmark.tsv.gz&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> os.path.exists(sts_dataset_path):</span><br><span class="line">    util.http_get(<span class="string">&#x27;https://sbert.net/datasets/stsbenchmark.tsv.gz&#x27;</span>, sts_dataset_path)</span><br><span class="line"></span><br><span class="line">dev_samples = []</span><br><span class="line">test_samples = []</span><br><span class="line"><span class="keyword">with</span> gzip.<span class="built_in">open</span>(sts_dataset_path, <span class="string">&#x27;rt&#x27;</span>, encoding=<span class="string">&#x27;utf8&#x27;</span>) <span class="keyword">as</span> fIn:</span><br><span class="line">    reader = csv.DictReader(fIn, delimiter=<span class="string">&#x27;\t&#x27;</span>, quoting=csv.QUOTE_NONE)</span><br><span class="line">    <span class="keyword">for</span> row <span class="keyword">in</span> reader:</span><br><span class="line">        score = <span class="built_in">float</span>(row[<span class="string">&#x27;score&#x27;</span>]) / <span class="number">5.0</span>  <span class="comment"># Normalize score to range 0 ... 1</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> row[<span class="string">&#x27;split&#x27;</span>] == <span class="string">&#x27;dev&#x27;</span>:</span><br><span class="line">            dev_samples.append(InputExample(texts=[row[<span class="string">&#x27;sentence1&#x27;</span>], row[<span class="string">&#x27;sentence2&#x27;</span>]], label=score))</span><br><span class="line">        <span class="keyword">elif</span> row[<span class="string">&#x27;split&#x27;</span>] == <span class="string">&#x27;test&#x27;</span>:</span><br><span class="line">            test_samples.append(InputExample(texts=[row[<span class="string">&#x27;sentence1&#x27;</span>], row[<span class="string">&#x27;sentence2&#x27;</span>]], label=score))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">train_dataloader = DataLoader(train_samples, shuffle=<span class="literal">True</span>, batch_size=train_batch_size, drop_last=<span class="literal">True</span>)</span><br><span class="line">train_loss = losses.MultipleNegativesRankingLoss(model)</span><br><span class="line">dev_evaluator = EmbeddingSimilarityEvaluator.from_input_examples(dev_samples, batch_size=train_batch_size,</span><br><span class="line">                                                                 name=<span class="string">&#x27;nli-dev&#x27;</span>)</span><br><span class="line">test_evaluator = EmbeddingSimilarityEvaluator.from_input_examples(test_samples, batch_size=train_batch_size,</span><br><span class="line">                                                                  name=<span class="string">&#x27;nli-test&#x27;</span>)</span><br><span class="line">warmup_steps = math.ceil(<span class="built_in">len</span>(train_dataloader) * num_epochs * <span class="number">0.1</span>)  <span class="comment"># 10% of train data for warm-up</span></span><br><span class="line">evaluation_steps = <span class="built_in">int</span>(<span class="built_in">len</span>(train_dataloader) * <span class="number">0.1</span>)  <span class="comment"># Evaluate every 10% of the data</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Start training&#x27;</span>)</span><br><span class="line">model.fit(train_objectives=[(train_dataloader, train_loss)],</span><br><span class="line">          evaluator=dev_evaluator,</span><br><span class="line">          epochs=num_epochs,</span><br><span class="line">          evaluation_steps=evaluation_steps,</span><br><span class="line">          warmup_steps=warmup_steps,</span><br><span class="line">          output_path=model_save_path,</span><br><span class="line">          optimizer_params=&#123;<span class="string">&#x27;lr&#x27;</span>: <span class="number">5e-5</span>&#125;,</span><br><span class="line">          use_amp=<span class="literal">True</span>  <span class="comment"># Set to True, if your GPU supports FP16 cores</span></span><br><span class="line">          )</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Start test&#x27;</span>)</span><br><span class="line">model = SentenceTransformer(model_save_path)</span><br><span class="line">test_evaluator(model, output_path=model_save_path)</span><br></pre></td></tr></table></figure>
+<p>如果是简单的复现，用上面几个包就可以了，避免重复造轮子，但如果想做一些相应的替换，那就得自己写，以后有时间尝试复现一下。</p>
+<h2 id="实际对比效果"><a href="#实际对比效果" class="headerlink" title="实际对比效果"></a>实际对比效果</h2><p><strong>query</strong>:Sexy Elegant Base Tanks &amp; Camis Female Smooth Sling Dress</p>
+<p><strong>result</strong>：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Doc2vec</th>
+<th>SimCSE</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Glossy Stainless Steel Simple Laser Open Bracelet</td>
+<td>Sexy Tanks &amp; Camis Female Viscose Sling Dress</td>
+</tr>
+<tr>
+<td>Elegant Small Smile Face Cute Letter Earrings</td>
+<td>Waisted Sexy Fitting Base Tanks &amp; Camis Sling Dress</td>
+</tr>
+<tr>
+<td>Elegant Simple Cross Shell Beads Earrings</td>
+<td>Sexy Base Tanks &amp; Camis Summer Female Sling Dress</td>
+</tr>
+<tr>
+<td>Sexy Takato Ultra-thin Lace Lace Sexy Stockings</td>
+<td>Waisted Split Elegant Base Tanks &amp; Camis Female New Style Sling Dress</td>
+</tr>
+<tr>
+<td>Magnet Pillow Core Will Gift Magnet Gift Pillow</td>
+<td>Waisted Base Tanks &amp; Camis Vintage Female Sling Dress</td>
+</tr>
+<tr>
+<td>Fitting Suit Collar Short Sleeve Spring Summer High Waist Female Knit Dress</td>
+<td>Elegant V-neck Satin Fitting Thin Sling Dress Female Tanks &amp; Camis External Wear Dress</td>
+</tr>
+<tr>
+<td>Elegant Heart Simple Small Piercing Jewelry</td>
+<td>Sexy Off-the-shoulder Casual Pirinted Sling Dress</td>
+</tr>
+<tr>
+<td>Sexy Dress Women’s One Shoulder Slit Long Skirt</td>
+<td>Thin Long Split Sexy Fitting Elegant Base Tanks &amp; Camis Female Black Sling Dress</td>
+</tr>
+<tr>
+<td>Leather Spring Summer Leather New Arrived First Layer Vintage Manual Simple Single Shoes</td>
+<td>Mid-length Sexy Tanks &amp; Camis Ultrashort Female Smooth Dress</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>我只能说，对比学习在语句表达上确实和docvec不是一个量级的，太强了。。。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ol>
+<li>SimCSE在语句表达上很不错，而且他好像还比美团后出的Consert还要强一些</li>
+<li>至少这篇论文说明了在模型中数据做增强，比从源头做替换/裁剪等方式效果更好</li>
+<li>SimCSE有两个问题，在原作者近期的论文中【ESimCSE】提出来了，并且提出了解决方案：<ol>
+<li>由于正样本长度都是一样的，因此从长度这个特征来说，就可以区分很多样本</li>
+<li>他承担不了大的batch-size,一方面是内存不允许，一方面是效果也会下降。</li>
+</ol>
+</li>
+<li>这篇论文的模型就是用的Sentence Bert，只是损失函数换了，原论文是CosineSimilarityLoss，而这篇论文改成了infonce。</li>
+</ol>
+<h2 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h2><p><a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2005.10242.pdf">Alignment &amp; Uniformity</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/princeton-nlp/SimCSE">github_simcse</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/UKPLab/sentence-transformers/">github_sen_tran</a></p>
+<p><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2104.08821">paper_simcse</a></p>
+<p><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2105.11741">paper_consert</a></p>
+<p>[paper_esimcse](</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">ShiHai-black</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://shihai-black.github.io/2021/09/30/%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0-SimCSE/">https://shihai-black.github.io/2021/09/30/%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0-SimCSE/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://shihai-black.github.io" target="_blank">ShiHai'Blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0/">对比学习</a></div><div class="post_share"><div class="social-share" data-image="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="next-post pull-full"><a href="/2021/09/18/%E5%85%B3%E8%81%94%E6%8C%96%E6%8E%98/"><img class="next-cover" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">关联挖掘</div></div></a></div></nav><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="card-info-avatar is-center"><img class="avatar-img" src="/img/%E5%A4%B4%E5%83%8F.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/><div class="author-info__name">ShiHai-black</div><div class="author-info__description">爱打球爱烧饭的猫爸爸</div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">14</div></a></div><div class="card-info-data-item is-center"><a href="/tags/"><div class="headline">标签</div><div class="length-num">11</div></a></div><div class="card-info-data-item is-center"><a href="/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div></div><a class="button--animated" id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/shihai-black"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn card-announcement-animation"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0%E4%B9%8BSimCSE"><span class="toc-number">1.</span> <span class="toc-text">对比学习之SimCSE</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%97%AE%E9%A2%98"><span class="toc-number">1.1.</span> <span class="toc-text">问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E5%BF%B5"><span class="toc-number">1.2.</span> <span class="toc-text">概念</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%87%AA%E7%9B%91%E7%9D%A3%E5%AD%A6%E4%B9%A0"><span class="toc-number">1.2.1.</span> <span class="toc-text">自监督学习</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0"><span class="toc-number">1.2.2.</span> <span class="toc-text">对比学习</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8C%87%E6%A0%87%E8%AF%A6%E8%A7%A3"><span class="toc-number">1.3.</span> <span class="toc-text">指标详解</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#alignment"><span class="toc-number">1.3.1.</span> <span class="toc-text">alignment</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#uniformity"><span class="toc-number">1.3.2.</span> <span class="toc-text">uniformity</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8D%9F%E5%A4%B1%E5%87%BD%E6%95%B0"><span class="toc-number">1.4.</span> <span class="toc-text">损失函数</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#unsup"><span class="toc-number">1.4.1.</span> <span class="toc-text">unsup</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Sup"><span class="toc-number">1.4.2.</span> <span class="toc-text">Sup</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81%E8%AF%A6%E8%A7%A3"><span class="toc-number">1.5.</span> <span class="toc-text">代码详解</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#SimCSE%E5%8C%85"><span class="toc-number">1.5.1.</span> <span class="toc-text">SimCSE包</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Sentence-transfomer%E5%8C%85"><span class="toc-number">1.5.2.</span> <span class="toc-text">Sentence_transfomer包</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E9%99%85%E5%AF%B9%E6%AF%94%E6%95%88%E6%9E%9C"><span class="toc-number">1.6.</span> <span class="toc-text">实际对比效果</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">1.7.</span> <span class="toc-text">总结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%E5%BD%95"><span class="toc-number">1.8.</span> <span class="toc-text">附录</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2021/09/30/%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0-SimCSE/" title="对比学习_SimCSE"><img src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="对比学习_SimCSE"/></a><div class="content"><a class="title" href="/2021/09/30/%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0-SimCSE/" title="对比学习_SimCSE">对比学习_SimCSE</a><time datetime="2021-09-30T09:10:39.000Z" title="发表于 2021-09-30 17:10:39">2021-09-30</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/09/18/%E5%85%B3%E8%81%94%E6%8C%96%E6%8E%98/" title="关联挖掘"><img src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="关联挖掘"/></a><div class="content"><a class="title" href="/2021/09/18/%E5%85%B3%E8%81%94%E6%8C%96%E6%8E%98/" title="关联挖掘">关联挖掘</a><time datetime="2021-09-18T08:46:37.000Z" title="发表于 2021-09-18 16:46:37">2021-09-18</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/09/16/Louvain%E7%AE%97%E6%B3%95/" title="Louvain算法"><img src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Louvain算法"/></a><div class="content"><a class="title" href="/2021/09/16/Louvain%E7%AE%97%E6%B3%95/" title="Louvain算法">Louvain算法</a><time datetime="2021-09-16T13:49:43.000Z" title="发表于 2021-09-16 21:49:43">2021-09-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/08/19/GNN%E7%B3%BB%E5%88%97%E4%B9%8B-GCN/" title="GNN系列之_GCN"><img src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="GNN系列之_GCN"/></a><div class="content"><a class="title" href="/2021/08/19/GNN%E7%B3%BB%E5%88%97%E4%B9%8B-GCN/" title="GNN系列之_GCN">GNN系列之_GCN</a><time datetime="2021-08-19T03:05:12.000Z" title="发表于 2021-08-19 11:05:12">2021-08-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/08/19/%E6%95%B0%E6%8D%AE%E6%A0%87%E5%87%86%E5%8C%96%E5%92%8C%E4%B8%AD%E5%BF%83%E5%8C%96/" title="数据标准化和中心化"><img src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="数据标准化和中心化"/></a><div class="content"><a class="title" href="/2021/08/19/%E6%95%B0%E6%8D%AE%E6%A0%87%E5%87%86%E5%8C%96%E5%92%8C%E4%B8%AD%E5%BF%83%E5%8C%96/" title="数据标准化和中心化">数据标准化和中心化</a><time datetime="2021-08-19T02:51:19.000Z" title="发表于 2021-08-19 10:51:19">2021-08-19</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2021 By ShiHai-black</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div></div><hr/><div id="local-search-results"></div><span class="search-close-button"><i class="fas fa-times"></i></span></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/search/local-search.js"></script><div class="js-pjax"><script>if (!window.MathJax) {
+  window.MathJax = {
+    loader: {
+      source: {
+        '[tex]/amsCd': '[tex]/amscd'
+      }
+    },
+    tex: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"]],
+      tags: 'ams'
+    },
+    options: {
+      renderActions: {
+        findScript: [10, doc => {
+          for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+            const display = !!node.type.match(/; *mode=display/)
+            const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+            const text = document.createTextNode('')
+            node.parentNode.replaceChild(text, node)
+            math.start = {node: text, delim: '', n: 0}
+            math.end = {node: text, delim: '', n: 0}
+            doc.math.push(math)
+          }
+        }, ''],
+        addClass: [200,() => {
+          document.querySelectorAll('mjx-container:not([display=\'true\']').forEach( node => {
+            const target = node.parentNode
+            if (!target.classList.contains('has-jax')) {
+              target.classList.add('mathjax-overflow')
+            }
+          })
+        }, '', false]
+      }
+    }
+  }
+  
+  const script = document.createElement('script')
+  script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+  script.id = 'MathJax-script'
+  script.async = true
+  document.head.appendChild(script)
+} else {
+  MathJax.startup.document.state(0)
+  MathJax.texReset()
+  MathJax.typeset()
+}</script><script>function loadValine () {
+  function initValine () {
+    const valine = new Valine(Object.assign({
+      el: '#vcomment',
+      appId: '5d2G4qaJCSGGzlvVsvXc2sjI-gzGzoHsz',
+      appKey: 'wpw1ViJnypU3RxqomPOuitvc',
+      placeholder: 'Please leave your footprints',
+      avatar: 'monsterid',
+      meta: 'nick,mail,link'.split(','),
+      pageSize: '10',
+      lang: 'zh-CN',
+      recordIP: false,
+      serverURLs: '',
+      emojiCDN: '',
+      emojiMaps: "",
+      enableQQ: false,
+      path: window.location.pathname,
+      requiredFields: ["nick,mail"],
+      visitor: false
+    }, null))
+  }
+
+  if (typeof Valine === 'function') initValine() 
+  else getScript('https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js').then(initValine)
+}
+
+if ('Valine' === 'Valine' || !false) {
+  if (false) btf.loadComment(document.getElementById('vcomment'),loadValine)
+  else setTimeout(loadValine, 0)
+} else {
+  function loadOtherComment () {
+    loadValine()
+  }
+}</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
