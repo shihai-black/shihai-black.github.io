@@ -42,63 +42,6 @@ H^{(l+1)}=\sigma (\tilde{D}^{-1/2}\tilde{A}\tilde{D}^{-1/2}H^{l}W^{l})</script><
       </tags>
   </entry>
   <entry>
-    <title>GNN系列之_GraphSAGE</title>
-    <url>/2021/08/17/GNN%E7%B3%BB%E5%88%97%E4%B9%8B-GraphSAGE/</url>
-    <content><![CDATA[<h1 id="GraphSAGE"><a href="#GraphSAGE" class="headerlink" title="GraphSAGE"></a>GraphSAGE</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>17年<strong>Hamilton</strong>在GCN发布不久以后就发布了这篇文章，原文是《Inductive Representation Learning on Large Graphs》，从题目很明显可以看出，该论文强调两个事情：1.inductive；2.Large Graphs。</p>
-<p>1.什么是inductive</p>
-<p>在常用的机器学习或者深度学习模型中，我们通常会讲数据集分为训练集，测试集，验证集，各个集合之间相互是独立的，因为如果存在交集就变成了数据泄漏，那测试集的效果就不能正确的反应结果。但是在GCN中，由于模型中存在领结矩阵，这个是数据集通用的，这样的训练方式叫做transductive。因为为了避免这种类似数据泄漏的操作，GraphSAGE是一种inductive模式，即训练集，测试集，验证集相互独立。</p>
-<p>2.为什么叫适用于大规模图</p>
-<p>从GCN的公式中我们可以知道，GCN的训练需要将全部的领结矩阵放入训练，这样对于大规模图训练是不可用的，而GraphSAGE是利用采样聚合的方式，训练聚合函数，因此可以用minbatch来训练大规模图。</p>
-<p>3.为什么叫GraphSAGE</p>
-<p>这个是我在一开始就想问的，一个图表示训练模型为什么取这个名字，后来看论文才知道，SAGE取自两个单词：(SAmple and aggreGatE），也是简单的表明该模型的两个特色。</p>
-<h2 id="实现步骤"><a href="#实现步骤" class="headerlink" title="实现步骤"></a>实现步骤</h2><p><strong>伪代码</strong></p>
-<p><img src="/images/GraphSAGE.png" alt="伪代码"></p>
-<p>参数解释：</p>
-<ul>
-<li>K：层数</li>
-<li>AGGREGATE：聚合函数，有3种</li>
-<li>concat：拼接矩阵</li>
-</ul>
-<p>个人理解：输入初始特征矩阵（可以是one-hot/随机初始化），经过K层聚合矩阵，其实也是聚合了K步的领结信息，利用某种<strong>聚合</strong>函数，将每个节点的特征和其<strong>采样</strong>的领结节点特征进行融合。</p>
-<p><strong>损失函数</strong></p>
-<script type="math/tex; mode=display">
-J_{g}(z_{u})=-log(\sigma (z_{u}^{T}z_{v}))-Q\cdot E_{v_{n}\sim P{_{n}}^{(v)}}log(\sigma (-z_{u}^{T}z_{v_{n}}))</script><ul>
-<li>$z_{u}$为节点u通过GraphSAGE生成的embedding。</li>
-<li>节点v是节点u随机游走访达“邻居”。</li>
-<li>$v<em>{n}\sim P{</em>{n}}$表示负采样：节点$v_{n}$是从节点u的负采样分布 <img src="https://www.zhihu.com/equation?tex=P_n" alt="[公式]"> 采样的，Q为采样样本数。</li>
-</ul>
-<p>简单理解就是希望节点u与“邻居”v的embedding也相似（对应公式第一项），而与“没有交集”的节点 <img src="https://www.zhihu.com/equation?tex=v_n" alt="[公式]"> 不相似（对应公式第二项)。</p>
-<h2 id="聚合函数"><a href="#聚合函数" class="headerlink" title="聚合函数"></a>聚合函数</h2><h3 id="Mean-aggregator"><a href="#Mean-aggregator" class="headerlink" title="Mean aggregator"></a>Mean aggregator</h3><p><strong>平均聚合</strong></p>
-<script type="math/tex; mode=display">
-\begin{matrix}
-h_{N(v)}^{k}=mean(\{h_{u}^{k-1},u\in N(v)\})
-\\ 
-h_{v}^{k}=\sigma (W^{k}\cdot CONCAT(h_{v}^{k-1},h_{N_{(u)}}^{k}))
-\end{matrix}</script><p>就是伪代码写的那种，先对k-1采样的领结节点特征进行求平均，然后和K-1层的节点进行拼接，在利用参数Wk进行纬度转换。</p>
-<p><strong>归纳式聚合</strong></p>
-<script type="math/tex; mode=display">
-h_{v}^{k}=\sigma (W^{k}\cdot mean(\{h_{v}^{k-1}\}\cup \{h_{u}^{k-1},\forall u\in N(v) \}))</script><p>直接对k-1层，v节点+采样的领结节点特征进行求平均，利用参数$W^{k}$进行纬度转换。</p>
-<h3 id="LSTM"><a href="#LSTM" class="headerlink" title="LSTM"></a>LSTM</h3><p>对领结节点进行随机排序，因为采样的LSTM是固定的，然后作为序列放入LSTM最后输出一个embedding就是v。</p>
-<h3 id="Pooling"><a href="#Pooling" class="headerlink" title="Pooling"></a>Pooling</h3><script type="math/tex; mode=display">
-Aggregate_{k}^{pool}=max(\{\sigma (W_{pool}h_{u_{i}}^{k}+b),\forall u_{i}\in N(v)\})</script><p>把各个邻居节点单独经过一个MLP得到一个向量，最后把所有邻居的向量做一个max-pooling或者mean-pooling来获取。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><strong>优点：</strong></p>
-<ol>
-<li>GraphSAGE基于采样+聚合的策略，可以很好的解决GCN将整个邻接矩阵放入训练导致内存溢出的问题，可以用于大规模图中。</li>
-<li>GCN不能去推测没有看到的节点，因为他的训练依赖邻接矩阵，而GraphSAGE训练的是一个聚合函数，所以他可以用已只节点去推测未知节点，前提是未知节点的领结节点存在于GraphSAGE中。</li>
-</ol>
-<p><strong>不足</strong>：</p>
-<ol>
-<li>他既然是聚合函数，没有用到Attention，也就是说对于权重的分配没有采取更好的策略。因此才诞生了GAT。</li>
-</ol>
-]]></content>
-      <categories>
-        <category>深度学习</category>
-      </categories>
-      <tags>
-        <tag>GNNs</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Graph_embedding之SDNE</title>
     <url>/2021/07/05/Graph-embedding%E4%B9%8BSDNE/</url>
     <content><![CDATA[<h1 id="目标"><a href="#目标" class="headerlink" title="目标"></a>目标</h1><p>复现SDNE，思考如何利用点击和相关属性获取合适的商品embedding，用于以后的商品聚类。</p>
@@ -572,82 +515,60 @@ $$
       </tags>
   </entry>
   <entry>
-    <title>熵</title>
-    <url>/2021/05/31/%E7%86%B5/</url>
-    <content><![CDATA[<blockquote>
-<p>工作了一年多才深度理解熵的各种关系，因此梳理一下形成这篇博客</p>
-</blockquote>
-<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><ol>
-<li>什么是信息熵，相对熵，交叉熵</li>
-<li>KL散度到底是什么</li>
-<li>为什么在机器学习中分类任务经常用交叉熵作为损失函数来衡量一个算法的区别</li>
-<li>交叉熵和均方误差的区别和联系</li>
-</ol>
-<p>我个人认为带着问题去思考会更有组与理解事情的本质，更容易聚焦</p>
-<h2 id="信息熵"><a href="#信息熵" class="headerlink" title="信息熵"></a>信息熵</h2><p><strong>定义</strong></p>
-<p>公式：<img src="/images/shang.webp" alt="shang"></p>
-<p><strong>信息熵表达了什么？</strong></p>
+    <title>GNN系列之_GraphSAGE</title>
+    <url>/2021/08/17/GNN%E7%B3%BB%E5%88%97%E4%B9%8B-GraphSAGE/</url>
+    <content><![CDATA[<h1 id="GraphSAGE"><a href="#GraphSAGE" class="headerlink" title="GraphSAGE"></a>GraphSAGE</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>17年<strong>Hamilton</strong>在GCN发布不久以后就发布了这篇文章，原文是《Inductive Representation Learning on Large Graphs》，从题目很明显可以看出，该论文强调两个事情：1.inductive；2.Large Graphs。</p>
+<p>1.什么是inductive</p>
+<p>在常用的机器学习或者深度学习模型中，我们通常会讲数据集分为训练集，测试集，验证集，各个集合之间相互是独立的，因为如果存在交集就变成了数据泄漏，那测试集的效果就不能正确的反应结果。但是在GCN中，由于模型中存在领结矩阵，这个是数据集通用的，这样的训练方式叫做transductive。因为为了避免这种类似数据泄漏的操作，GraphSAGE是一种inductive模式，即训练集，测试集，验证集相互独立。</p>
+<p>2.为什么叫适用于大规模图</p>
+<p>从GCN的公式中我们可以知道，GCN的训练需要将全部的领结矩阵放入训练，这样对于大规模图训练是不可用的，而GraphSAGE是利用采样聚合的方式，训练聚合函数，因此可以用minbatch来训练大规模图。</p>
+<p>3.为什么叫GraphSAGE</p>
+<p>这个是我在一开始就想问的，一个图表示训练模型为什么取这个名字，后来看论文才知道，SAGE取自两个单词：(SAmple and aggreGatE），也是简单的表明该模型的两个特色。</p>
+<h2 id="实现步骤"><a href="#实现步骤" class="headerlink" title="实现步骤"></a>实现步骤</h2><p><strong>伪代码</strong></p>
+<p><img src="/images/GraphSAGE.png" alt="伪代码"></p>
+<p>参数解释：</p>
 <ul>
-<li>信息量和事件发生的概率有关，事件发生的概率越低，信息熵越大。</li>
-<li>信息熵非负，表明信息量不为0，因此信息熵是个常数。</li>
-<li>信息量可以叠加，两个事件独立的联合事件，其信息熵为两者之和。</li>
+<li>K：层数</li>
+<li>AGGREGATE：聚合函数，有3种</li>
+<li>concat：拼接矩阵</li>
 </ul>
-<h2 id="相对熵"><a href="#相对熵" class="headerlink" title="相对熵"></a>相对熵</h2><p><strong>定义</strong></p>
-<p>​    也称为KL散度，对于x有P(x)和P(y)两种分布,其公式为</p>
+<p>个人理解：输入初始特征矩阵（可以是one-hot/随机初始化），经过K层聚合矩阵，其实也是聚合了K步的领结信息，利用某种<strong>聚合</strong>函数，将每个节点的特征和其<strong>采样</strong>的领结节点特征进行融合。</p>
+<p><strong>损失函数</strong></p>
 <script type="math/tex; mode=display">
-\begin{align*}
- D_{kl}(p||q) &=\sum_{i=1}^{n}p(x_{i})log(\frac{p(x_{i})}{q(x_{i})})  \\ 
- &=\sum_{i=1}^{n}p(x_{i})log(p(x_{i})-\sum_{i=1}^{n}p(x_{i})log(q(x_{i}) \\
- &=-H(x)+H(p,q)
-\end{align*}</script><p>前者是信息熵，后者就是我们常见的交叉熵</p>
-<p><strong>相对熵表达了什么？</strong></p>
+J_{g}(z_{u})=-log(\sigma (z_{u}^{T}z_{v}))-Q\cdot E_{v_{n}\sim P{_{n}}^{(v)}}log(\sigma (-z_{u}^{T}z_{v_{n}}))</script><ul>
+<li>$z_{u}$为节点u通过GraphSAGE生成的embedding。</li>
+<li>节点v是节点u随机游走访达“邻居”。</li>
+<li>$v<em>{n}\sim P{</em>{n}}$表示负采样：节点$v_{n}$是从节点u的负采样分布 <img src="https://www.zhihu.com/equation?tex=P_n" alt="[公式]"> 采样的，Q为采样样本数。</li>
+</ul>
+<p>简单理解就是希望节点u与“邻居”v的embedding也相似（对应公式第一项），而与“没有交集”的节点 <img src="https://www.zhihu.com/equation?tex=v_n" alt="[公式]"> 不相似（对应公式第二项)。</p>
+<h2 id="聚合函数"><a href="#聚合函数" class="headerlink" title="聚合函数"></a>聚合函数</h2><h3 id="Mean-aggregator"><a href="#Mean-aggregator" class="headerlink" title="Mean aggregator"></a>Mean aggregator</h3><p><strong>平均聚合</strong></p>
+<script type="math/tex; mode=display">
+\begin{matrix}
+h_{N(v)}^{k}=mean(\{h_{u}^{k-1},u\in N(v)\})
+\\ 
+h_{v}^{k}=\sigma (W^{k}\cdot CONCAT(h_{v}^{k-1},h_{N_{(u)}}^{k}))
+\end{matrix}</script><p>就是伪代码写的那种，先对k-1采样的领结节点特征进行求平均，然后和K-1层的节点进行拼接，在利用参数Wk进行纬度转换。</p>
+<p><strong>归纳式聚合</strong></p>
+<script type="math/tex; mode=display">
+h_{v}^{k}=\sigma (W^{k}\cdot mean(\{h_{v}^{k-1}\}\cup \{h_{u}^{k-1},\forall u\in N(v) \}))</script><p>直接对k-1层，v节点+采样的领结节点特征进行求平均，利用参数$W^{k}$进行纬度转换。</p>
+<h3 id="LSTM"><a href="#LSTM" class="headerlink" title="LSTM"></a>LSTM</h3><p>对领结节点进行随机排序，因为采样的LSTM是固定的，然后作为序列放入LSTM最后输出一个embedding就是v。</p>
+<h3 id="Pooling"><a href="#Pooling" class="headerlink" title="Pooling"></a>Pooling</h3><script type="math/tex; mode=display">
+Aggregate_{k}^{pool}=max(\{\sigma (W_{pool}h_{u_{i}}^{k}+b),\forall u_{i}\in N(v)\})</script><p>把各个邻居节点单独经过一个MLP得到一个向量，最后把所有邻居的向量做一个max-pooling或者mean-pooling来获取。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><strong>优点：</strong></p>
 <ol>
-<li>相对熵和交叉熵呈正比，因为信息熵是常数。</li>
-<li>相对熵主要用于评价两者分布之间的差异，相对熵越大，分布差距越大。</li>
+<li>GraphSAGE基于采样+聚合的策略，可以很好的解决GCN将整个邻接矩阵放入训练导致内存溢出的问题，可以用于大规模图中。</li>
+<li>GCN不能去推测没有看到的节点，因为他的训练依赖邻接矩阵，而GraphSAGE训练的是一个聚合函数，所以他可以用已只节点去推测未知节点，前提是未知节点的领结节点存在于GraphSAGE中。</li>
 </ol>
-<h2 id="交叉熵"><a href="#交叉熵" class="headerlink" title="交叉熵"></a>交叉熵</h2><p><strong>为什么机器学习使用交叉熵</strong></p>
-<p>在机器学习中，我们会将p(x)作为真实分布，q(x)作为预测分布，从相对熵的公式我们看出了相对熵和交叉熵的结果是呈正比的，有由于相对熵计算较为复炸，因此经常会有交叉熵来代替相对熵作为衡量真是分布和预测分布的差距。当然像VAE中用的就是KL散度我猜测是因为预测分布用的是（0，1）分布，可以比较方便使用。</p>
-<p><strong>其和MSE的区别和联系</strong></p>
-<p><strong>MSE</strong>：用于回归任务</p>
-<p><strong>交叉熵</strong>：用于分类任务</p>
-<p>由于交叉熵通常会和激活函数使用，如果用的是MSE在梯度传递过程中，容易出现梯度消失，因此比较多的会选用交叉熵+sigmod联合使用。</p>
-<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><p><a href="https://zhuanlan.zhihu.com/p/70804197">知乎1</a></p>
-<p><a href="https://zhuanlan.zhihu.com/p/149186719">知乎2</a></p>
+<p><strong>不足</strong>：</p>
+<ol>
+<li>他既然是聚合函数，没有用到Attention，也就是说对于权重的分配没有采取更好的策略。因此才诞生了GAT。</li>
+</ol>
 ]]></content>
       <categories>
-        <category>机器学习</category>
+        <category>深度学习</category>
       </categories>
       <tags>
-        <tag>基础知识</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>数据标准化和中心化</title>
-    <url>/2021/08/19/%E6%95%B0%E6%8D%AE%E6%A0%87%E5%87%86%E5%8C%96%E5%92%8C%E4%B8%AD%E5%BF%83%E5%8C%96/</url>
-    <content><![CDATA[<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>标准化：也叫归一化，常用的有最小—最大标准化、Z-score标准化、Sigmod函数等，利用上述标准化操作，将原始数据化为<strong>无量纲</strong>的数值。这在回归和神经网络类模型是很必要的。</p>
-<p>中心化：也叫去均质化，让数据通过中心化处理，得到均值为0的数据【如果方差为1，那就是Z-score标准化】。同时中心化后的数据对向量来说也容易描述，因为是以原点为基准的。</p>
-<h2 id="公式"><a href="#公式" class="headerlink" title="公式"></a>公式</h2><p>最小—最大标准化：将数据变为0-1</p>
-<script type="math/tex; mode=display">
-\tilde{x}=\frac{x-min}{max-min}</script><p>Z-score标准化：</p>
-<script type="math/tex; mode=display">
-\tilde{x}=\frac{x-u}{\sigma }</script><p>sigmod函数：</p>
-<script type="math/tex; mode=display">
-f(x)=\frac{1}{1+e^{-x}}</script><p><strong>备注</strong>：</p>
-<ol>
-<li>当$\sigma=1$就是中心化公式，所以中心化可以说是一种特殊的标准化</li>
-<li>sigmod函数其实主要是在激活函数中对上一层神经层结果进行标准化，但也可以理解成对下一层神经层的输入做标准化。</li>
-</ol>
-<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ol>
-<li>提升精度：消除量纲，针对梯度下降相关的算法，不同量纲的数据会产生干扰，可能本来是A特征对结果的影响更大，但因为其量纲较小，导致其影响力还不如量纲大的特征，从来导致精度的下降。</li>
-<li>提神速度：同样，由于消除了量纲，在梯度下降过程中，将会容易收敛到最优解。</li>
-</ol>
-<p><strong>备注</strong>：但是对于非梯度下降优化器或者是树模型是可以不标准的，因为数据的量纲并不影响树模型的分裂，对于特征而言该在哪里分裂就还是在那里分裂。</p>
-]]></content>
-      <categories>
-        <category>基础知识</category>
-      </categories>
-      <tags>
-        <tag>数据预处理</tag>
+        <tag>GNNs</tag>
       </tags>
   </entry>
   <entry>
@@ -896,6 +817,85 @@ f(x)=\frac{1}{1+e^{-x}}</script><p><strong>备注</strong>：</p>
       </categories>
       <tags>
         <tag>异常检测</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>数据标准化和中心化</title>
+    <url>/2021/08/19/%E6%95%B0%E6%8D%AE%E6%A0%87%E5%87%86%E5%8C%96%E5%92%8C%E4%B8%AD%E5%BF%83%E5%8C%96/</url>
+    <content><![CDATA[<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>标准化：也叫归一化，常用的有最小—最大标准化、Z-score标准化、Sigmod函数等，利用上述标准化操作，将原始数据化为<strong>无量纲</strong>的数值。这在回归和神经网络类模型是很必要的。</p>
+<p>中心化：也叫去均质化，让数据通过中心化处理，得到均值为0的数据【如果方差为1，那就是Z-score标准化】。同时中心化后的数据对向量来说也容易描述，因为是以原点为基准的。</p>
+<h2 id="公式"><a href="#公式" class="headerlink" title="公式"></a>公式</h2><p>最小—最大标准化：将数据变为0-1</p>
+<script type="math/tex; mode=display">
+\tilde{x}=\frac{x-min}{max-min}</script><p>Z-score标准化：</p>
+<script type="math/tex; mode=display">
+\tilde{x}=\frac{x-u}{\sigma }</script><p>sigmod函数：</p>
+<script type="math/tex; mode=display">
+f(x)=\frac{1}{1+e^{-x}}</script><p><strong>备注</strong>：</p>
+<ol>
+<li>当$\sigma=1$就是中心化公式，所以中心化可以说是一种特殊的标准化</li>
+<li>sigmod函数其实主要是在激活函数中对上一层神经层结果进行标准化，但也可以理解成对下一层神经层的输入做标准化。</li>
+</ol>
+<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ol>
+<li>提升精度：消除量纲，针对梯度下降相关的算法，不同量纲的数据会产生干扰，可能本来是A特征对结果的影响更大，但因为其量纲较小，导致其影响力还不如量纲大的特征，从来导致精度的下降。</li>
+<li>提神速度：同样，由于消除了量纲，在梯度下降过程中，将会容易收敛到最优解。</li>
+</ol>
+<p><strong>备注</strong>：但是对于非梯度下降优化器或者是树模型是可以不标准的，因为数据的量纲并不影响树模型的分裂，对于特征而言该在哪里分裂就还是在那里分裂。</p>
+]]></content>
+      <categories>
+        <category>基础知识</category>
+      </categories>
+      <tags>
+        <tag>数据预处理</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>熵</title>
+    <url>/2021/05/31/%E7%86%B5/</url>
+    <content><![CDATA[<blockquote>
+<p>工作了一年多才深度理解熵的各种关系，因此梳理一下形成这篇博客</p>
+</blockquote>
+<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><ol>
+<li>什么是信息熵，相对熵，交叉熵</li>
+<li>KL散度到底是什么</li>
+<li>为什么在机器学习中分类任务经常用交叉熵作为损失函数来衡量一个算法的区别</li>
+<li>交叉熵和均方误差的区别和联系</li>
+</ol>
+<p>我个人认为带着问题去思考会更有组与理解事情的本质，更容易聚焦</p>
+<h2 id="信息熵"><a href="#信息熵" class="headerlink" title="信息熵"></a>信息熵</h2><p><strong>定义</strong></p>
+<p>公式：<img src="/images/shang.webp" alt="shang"></p>
+<p><strong>信息熵表达了什么？</strong></p>
+<ul>
+<li>信息量和事件发生的概率有关，事件发生的概率越低，信息熵越大。</li>
+<li>信息熵非负，表明信息量不为0，因此信息熵是个常数。</li>
+<li>信息量可以叠加，两个事件独立的联合事件，其信息熵为两者之和。</li>
+</ul>
+<h2 id="相对熵"><a href="#相对熵" class="headerlink" title="相对熵"></a>相对熵</h2><p><strong>定义</strong></p>
+<p>​    也称为KL散度，对于x有P(x)和P(y)两种分布,其公式为</p>
+<script type="math/tex; mode=display">
+\begin{align*}
+ D_{kl}(p||q) &=\sum_{i=1}^{n}p(x_{i})log(\frac{p(x_{i})}{q(x_{i})})  \\ 
+ &=\sum_{i=1}^{n}p(x_{i})log(p(x_{i})-\sum_{i=1}^{n}p(x_{i})log(q(x_{i}) \\
+ &=-H(x)+H(p,q)
+\end{align*}</script><p>前者是信息熵，后者就是我们常见的交叉熵</p>
+<p><strong>相对熵表达了什么？</strong></p>
+<ol>
+<li>相对熵和交叉熵呈正比，因为信息熵是常数。</li>
+<li>相对熵主要用于评价两者分布之间的差异，相对熵越大，分布差距越大。</li>
+</ol>
+<h2 id="交叉熵"><a href="#交叉熵" class="headerlink" title="交叉熵"></a>交叉熵</h2><p><strong>为什么机器学习使用交叉熵</strong></p>
+<p>在机器学习中，我们会将p(x)作为真实分布，q(x)作为预测分布，从相对熵的公式我们看出了相对熵和交叉熵的结果是呈正比的，有由于相对熵计算较为复炸，因此经常会有交叉熵来代替相对熵作为衡量真是分布和预测分布的差距。当然像VAE中用的就是KL散度我猜测是因为预测分布用的是（0，1）分布，可以比较方便使用。</p>
+<p><strong>其和MSE的区别和联系</strong></p>
+<p><strong>MSE</strong>：用于回归任务</p>
+<p><strong>交叉熵</strong>：用于分类任务</p>
+<p>由于交叉熵通常会和激活函数使用，如果用的是MSE在梯度传递过程中，容易出现梯度消失，因此比较多的会选用交叉熵+sigmod联合使用。</p>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><p><a href="https://zhuanlan.zhihu.com/p/70804197">知乎1</a></p>
+<p><a href="https://zhuanlan.zhihu.com/p/149186719">知乎2</a></p>
+]]></content>
+      <categories>
+        <category>机器学习</category>
+      </categories>
+      <tags>
+        <tag>基础知识</tag>
       </tags>
   </entry>
   <entry>
@@ -1172,8 +1172,8 @@ L = -log\frac{e^{sim(h_{i},{h_{i}}^{+})/\tau}}{\sum_{j=1}^{N}(e^{sim(h_{i},{h_{j
 <li>SimCSE在语句表达上很不错，而且他好像还比美团后出的Consert还要强一些</li>
 <li>至少这篇论文说明了在模型中做数据增强，比从源头做替换/裁剪等方式数据增强效果更好</li>
 <li>SimCSE有两个问题，在原作者近期的论文中【ESimCSE】提出来了，并且提出了解决方案：<ol>
-<li>由于正样本长度都是一样的，因此从长度这个特征来说，就可以区分很多样本，因此原作者增加了一些操作，使正负样本长度保持一致。</li>
-<li>他承担不了大的batch-size,一方面是内存不允许，一方面是效果也会下降，因此作者增加了一个Momentum Contrast的操作在提升性能。</li>
+<li>由于正样本长度都是一样的，因此从长度这个特征来说，就可以区分很多样本，为了避免这个问题。原作者利用一种相对安全的方式：word repetition，就是对随机对句子进行单词重复的操作，一方面改变了正样本长度相等的缺陷，另一方面保持两者特征相似。</li>
+<li>他承担不了大的batch-size,一方面是内存不允许，一方面是效果也会下降，因此作者仿造在cv中的Momentum Contrast的操作用于提升性能。</li>
 </ol>
 </li>
 <li>这篇论文的模型就是用的Sentence Bert，只是损失函数换了，原论文是CosineSimilarityLoss，而这篇论文改成了InfoNCE，利用Bert的dropout直接强有力的提升对比学习的效果。</li>
@@ -1184,6 +1184,7 @@ L = -log\frac{e^{sim(h_{i},{h_{i}}^{+})/\tau}}{\sum_{j=1}^{N}(e^{sim(h_{i},{h_{j
 <p><a href="https://arxiv.org/abs/2104.08821">paper_simcse</a></p>
 <p><a href="https://arxiv.org/abs/2105.11741">paper_consert</a></p>
 <p><a href="https://arxiv.org/pdf/2109.04380.pdf">paper_esimcse</a></p>
+<p><a href="https://arxiv.org/abs/1911.05722">paper Moco</a></p>
 ]]></content>
       <categories>
         <category>深度学习</category>
