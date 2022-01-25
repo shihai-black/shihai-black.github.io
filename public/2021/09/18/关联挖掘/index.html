@@ -1,0 +1,275 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>关联挖掘 | ShiHai'Blog</title><meta name="keywords" content="机器学习"><meta name="author" content="ShiHai-black"><meta name="copyright" content="ShiHai-black"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="对商品订单进行类目级别的关联挖掘，因为订单太少，无法用到商品这个级别，并且主要是因为做关联挖掘的目的是为了投放广告  指标定义项于项集 项，指我们分析数据中的一个对象，如啤酒；项集，就是若干项的项构成的集合，如集合{啤酒，面包}是一个2项集。 支持度（support） 某项集在数据集中出现的概率，支持度体现的是某个项集的频繁程度，只有项集达到一定程度，我们才会研究该项集的必要。 其计算公式为：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="关联挖掘">
+<meta property="og:url" content="https://shihai-black.github.io/2021/09/18/%E5%85%B3%E8%81%94%E6%8C%96%E6%8E%98/index.html">
+<meta property="og:site_name" content="ShiHai&#39;Blog">
+<meta property="og:description" content="对商品订单进行类目级别的关联挖掘，因为订单太少，无法用到商品这个级别，并且主要是因为做关联挖掘的目的是为了投放广告  指标定义项于项集 项，指我们分析数据中的一个对象，如啤酒；项集，就是若干项的项构成的集合，如集合{啤酒，面包}是一个2项集。 支持度（support） 某项集在数据集中出现的概率，支持度体现的是某个项集的频繁程度，只有项集达到一定程度，我们才会研究该项集的必要。 其计算公式为：">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg">
+<meta property="article:published_time" content="2021-09-18T08:46:37.000Z">
+<meta property="article:modified_time" content="2021-09-18T08:50:35.749Z">
+<meta property="article:author" content="ShiHai-black">
+<meta property="article:tag" content="机器学习">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://shihai-black.github.io/2021/09/18/%E5%85%B3%E8%81%94%E6%8C%96%E6%8E%98/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isanchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = { 
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2021-09-18 16:50:35'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    })(window)</script><meta name="generator" content="Hexo 5.4.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="author-avatar"><img class="avatar-img" src="/img/%E5%A4%B4%E5%83%8F.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">文章</div><div class="length-num">15</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/tags/"><div class="headline">标签</div><div class="length-num">11</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 链接</span></a></div><div class="menus_item"><a class="site-page" href="/messageboard/"><i class="fa-fw fa fa-paper-plane"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg')"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">ShiHai'Blog</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 链接</span></a></div><div class="menus_item"><a class="site-page" href="/messageboard/"><i class="fa-fw fa fa-paper-plane"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">关联挖掘</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2021-09-18T08:46:37.000Z" title="发表于 2021-09-18 16:46:37">2021-09-18</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2021-09-18T08:50:35.749Z" title="更新于 2021-09-18 16:50:35">2021-09-18</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="关联挖掘"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span><span class="post-meta-separator">|</span><span class="post-meta-commentcount"><i class="far fa-comments fa-fw post-meta-icon"></i><span class="post-meta-label">评论数:</span><a href="/2021/09/18/%E5%85%B3%E8%81%94%E6%8C%96%E6%8E%98/#post-comment" itemprop="discussionUrl"><span class="valine-comment-count" data-xid="/2021/09/18/%E5%85%B3%E8%81%94%E6%8C%96%E6%8E%98/" itemprop="commentCount"></span></a></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><blockquote>
+<p>对商品订单进行类目级别的关联挖掘，因为订单太少，无法用到商品这个级别，并且主要是因为做关联挖掘的目的是为了投放广告</p>
+</blockquote>
+<h2 id="指标定义"><a href="#指标定义" class="headerlink" title="指标定义"></a>指标定义</h2><p><strong>项于项集</strong></p>
+<p>项，指我们分析数据中的<strong>一个对象</strong>，如啤酒；项集，就是<strong>若干项</strong>的项构成的集合，如集合{啤酒，面包}是一个2项集。</p>
+<p><strong>支持度（support）</strong></p>
+<p>某项集在数据集中出现的概率，支持度体现的是某个项集的频繁程度，只有<strong>项集达到一定程度</strong>，我们才会研究该项集的必要。</p>
+<p>其计算公式为：</p>
+
+$$
+support(A\cup B)=\frac{{A\cup B}}{All}
+$$
+
+<p>举个例子：AB在订单中同时出现了100次，总共有1000个订单，那$A\cup B$项集的支持度就是0.1</p>
+<p><strong>置信度（confidence）</strong></p>
+<p>当用户购买了商品A后有多大概率会购买商品B，表示关联性的强弱。</p>
+<p>其计算公式为:<br>
+$$
+confidence(A\rightarrow B)=\frac{support(A\cup B)}{support(A)}
+$$
+<br>举个例子，AB同时出现的订单有100次，而A购买的订单次数有200次，那置信度就是0.5</p>
+<p><strong>提升度（lift）</strong></p>
+<p>商品A的出现，对商品B的出现概率提升的程度，一般是大于1说明A的出现有组与商品B的出现</p>
+<p>其计算公式为：</p>
+
+$$
+lift(A\rightarrow B) = \frac{confidence(A\rightarrow B)}{support(B)}
+$$
+
+<p>举个例子，已知总订单100，AB同时出现时20：</p>
+<ul>
+<li>如果B的订单是20，A的订单时40，那么提升度为5，说明B商品强依赖于A，A的出现有利于B的出现</li>
+<li>同样，如果B的订单是50，A的订单是50，那么提升度为0.8，说明B商品和A商品没有强依赖关系。</li>
+</ul>
+<h2 id="经典算法"><a href="#经典算法" class="headerlink" title="经典算法"></a>经典算法</h2><h3 id="Apriori"><a href="#Apriori" class="headerlink" title="Apriori"></a>Apriori</h3><p>具体步骤</p>
+<ol>
+<li>计算项集K=1的所有支持度</li>
+<li>选出大于最小支持度的数据</li>
+<li>如果项集为空，则对应 K-1 项集的结果为最终结果。否则重复1，2</li>
+</ol>
+<p>该算法时间负责度比较高，相当于，针对每个K都要计算一次数据集。因此用学者利用树来优化算法</p>
+<h3 id="FP-Growth"><a href="#FP-Growth" class="headerlink" title="FP-Growth"></a>FP-Growth</h3><p>具体步骤</p>
+<ol>
+<li>扫描数据，得到所有频繁1项集的的计数。然后删除支持度低于阈值的项，将1项集放入项头表，并按照支持度降序排列</li>
+<li>扫描数据，将读到的原始数据剔除非频繁1项集，并按照支持度降序排列。</li>
+<li>读入排序后的数据集，插入FP树，插入时按照排序后的顺序，插入FP树中，排序靠前的节点是祖先节点，而靠后的是子孙节点。如果有共用的祖先，则对应的公用祖先节点计数加1。插入后，如果有新节点出现，则项头表对应的节点会通过节点链表链接上新节点。直到所有的数据都插入到FP树后，FP树的建立完成。</li>
+<li>从项头表的底部项依次向上找到项头表项对应的条件模式基。从条件模式基递归挖掘得到项头表项项的频繁项集。</li>
+<li>如果不限制频繁项集的项数，则返回步骤4所有的频繁项集，否则只返回满足项数要求的频繁项集。</li>
+</ol>
+<p>该算法只需要扫面两次数据集就可以得出所有结果，因此相较于Apriori速度会有所提神，不过也得看具体可以提出多大的K</p>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><p>对于apriori主要有两个包可以用efficient_apriori,mlxtend.frequent_patterns。前者是比较方便，但是问题在于没有具体的数字，后面这个包就比较舒服了，可以直接输出对应的指标。不过主要是我现在用的数据集小，如果数据集很大，那可能FP-Growth更合适一些不过要看具体场景,他的包fptools。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> efficient_apriori <span class="keyword">import</span> apriori</span><br><span class="line"><span class="keyword">from</span> mlxtend.preprocessing <span class="keyword">import</span> TransactionEncoder</span><br><span class="line"><span class="keyword">from</span> mlxtend.frequent_patterns <span class="keyword">import</span> apriori <span class="keyword">as</span> apr</span><br><span class="line"><span class="keyword">from</span> mlxtend.frequent_patterns <span class="keyword">import</span> association_rules</span><br><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">import</span> fptools <span class="keyword">as</span> fp</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">data=[(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>),(<span class="string">&#x27;可乐&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>, <span class="string">&#x27;鸡蛋&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;可乐&#x27;</span>)]</span><br><span class="line"></span><br><span class="line"><span class="comment"># efficient_apriori包的使用</span></span><br><span class="line">itemsets, rules = apriori(data, min_support=<span class="number">0.5</span>,  min_confidence=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># mlxtend.frequent_patterns包的使用</span></span><br><span class="line">Encoder = TransactionEncoder()</span><br><span class="line">encoded_data = Encoder.fit_transform(data)</span><br><span class="line">df = pd.DataFrame(encoded_data, columns=Encoder.columns_)</span><br><span class="line">frequent_items = apr(df, min_support=<span class="number">0.5</span>, use_colnames=<span class="literal">True</span>, max_len=<span class="number">4</span>).sort_values(by=<span class="string">&#x27;support&#x27;</span>, ascending=<span class="literal">False</span>)</span><br><span class="line">df_re = association_rules(frequent_items, metric=<span class="string">&#x27;lift&#x27;</span>, min_threshold=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#fp</span></span><br><span class="line">data = [(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;可乐&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>, <span class="string">&#x27;鸡蛋&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;可乐&#x27;</span>)]</span><br><span class="line">fis = [iset <span class="keyword">for</span> iset <span class="keyword">in</span> fp.frequent_itemsets(data, <span class="number">2</span>)]</span><br><span class="line">mfis = [iset <span class="keyword">for</span> iset <span class="keyword">in</span> fp.maximal_frequent_itemsets(data, <span class="number">2</span>)]</span><br></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/198842818">知乎1</a></p>
+<p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/66944900">知乎2</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/zhengxingpeng/p/6679280.html">博客</a></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">ShiHai-black</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://shihai-black.github.io/2021/09/18/%E5%85%B3%E8%81%94%E6%8C%96%E6%8E%98/">https://shihai-black.github.io/2021/09/18/%E5%85%B3%E8%81%94%E6%8C%96%E6%8E%98/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://shihai-black.github.io" target="_blank">ShiHai'Blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a></div><div class="post_share"><div class="social-share" data-image="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2021/09/30/%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0-SimCSE/"><img class="prev-cover" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">对比学习_SimCSE</div></div></a></div><div class="next-post pull-right"><a href="/2021/09/16/Louvain%E7%AE%97%E6%B3%95/"><img class="next-cover" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">Louvain算法</div></div></a></div></nav><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="card-info-avatar is-center"><img class="avatar-img" src="/img/%E5%A4%B4%E5%83%8F.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/><div class="author-info__name">ShiHai-black</div><div class="author-info__description">爱打球爱烧饭的猫爸爸</div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">15</div></a></div><div class="card-info-data-item is-center"><a href="/tags/"><div class="headline">标签</div><div class="length-num">11</div></a></div><div class="card-info-data-item is-center"><a href="/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div></div><a class="button--animated" id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/shihai-black"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn card-announcement-animation"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8C%87%E6%A0%87%E5%AE%9A%E4%B9%89"><span class="toc-number">1.</span> <span class="toc-text">指标定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%8F%E5%85%B8%E7%AE%97%E6%B3%95"><span class="toc-number">2.</span> <span class="toc-text">经典算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Apriori"><span class="toc-number">2.1.</span> <span class="toc-text">Apriori</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#FP-Growth"><span class="toc-number">2.2.</span> <span class="toc-text">FP-Growth</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81"><span class="toc-number">3.</span> <span class="toc-text">代码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">4.</span> <span class="toc-text">参考</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2022/01/25/%E4%B8%87%E7%89%A9%E7%9A%86%E5%8F%AFembedding/" title="万物皆可embedding"><img src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="万物皆可embedding"/></a><div class="content"><a class="title" href="/2022/01/25/%E4%B8%87%E7%89%A9%E7%9A%86%E5%8F%AFembedding/" title="万物皆可embedding">万物皆可embedding</a><time datetime="2022-01-25T06:43:15.000Z" title="发表于 2022-01-25 14:43:15">2022-01-25</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/09/30/%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0-SimCSE/" title="对比学习_SimCSE"><img src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="对比学习_SimCSE"/></a><div class="content"><a class="title" href="/2021/09/30/%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0-SimCSE/" title="对比学习_SimCSE">对比学习_SimCSE</a><time datetime="2021-09-30T09:10:39.000Z" title="发表于 2021-09-30 17:10:39">2021-09-30</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/09/18/%E5%85%B3%E8%81%94%E6%8C%96%E6%8E%98/" title="关联挖掘"><img src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="关联挖掘"/></a><div class="content"><a class="title" href="/2021/09/18/%E5%85%B3%E8%81%94%E6%8C%96%E6%8E%98/" title="关联挖掘">关联挖掘</a><time datetime="2021-09-18T08:46:37.000Z" title="发表于 2021-09-18 16:46:37">2021-09-18</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/09/16/Louvain%E7%AE%97%E6%B3%95/" title="Louvain算法"><img src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Louvain算法"/></a><div class="content"><a class="title" href="/2021/09/16/Louvain%E7%AE%97%E6%B3%95/" title="Louvain算法">Louvain算法</a><time datetime="2021-09-16T13:49:43.000Z" title="发表于 2021-09-16 21:49:43">2021-09-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2021/08/19/GNN%E7%B3%BB%E5%88%97%E4%B9%8B-GCN/" title="GNN系列之_GCN"><img src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="GNN系列之_GCN"/></a><div class="content"><a class="title" href="/2021/08/19/GNN%E7%B3%BB%E5%88%97%E4%B9%8B-GCN/" title="GNN系列之_GCN">GNN系列之_GCN</a><time datetime="2021-08-19T03:05:12.000Z" title="发表于 2021-08-19 11:05:12">2021-08-19</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2022 By ShiHai-black</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div></div><hr/><div id="local-search-results"></div><span class="search-close-button"><i class="fas fa-times"></i></span></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/search/local-search.js"></script><div class="js-pjax"><script>if (!window.MathJax) {
+  window.MathJax = {
+    loader: {
+      source: {
+        '[tex]/amsCd': '[tex]/amscd'
+      }
+    },
+    tex: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"]],
+      tags: 'ams'
+    },
+    options: {
+      renderActions: {
+        findScript: [10, doc => {
+          for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+            const display = !!node.type.match(/; *mode=display/)
+            const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+            const text = document.createTextNode('')
+            node.parentNode.replaceChild(text, node)
+            math.start = {node: text, delim: '', n: 0}
+            math.end = {node: text, delim: '', n: 0}
+            doc.math.push(math)
+          }
+        }, ''],
+        addClass: [200,() => {
+          document.querySelectorAll('mjx-container:not([display=\'true\']').forEach( node => {
+            const target = node.parentNode
+            if (!target.classList.contains('has-jax')) {
+              target.classList.add('mathjax-overflow')
+            }
+          })
+        }, '', false]
+      }
+    }
+  }
+  
+  const script = document.createElement('script')
+  script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+  script.id = 'MathJax-script'
+  script.async = true
+  document.head.appendChild(script)
+} else {
+  MathJax.startup.document.state(0)
+  MathJax.texReset()
+  MathJax.typeset()
+}</script><script>function loadValine () {
+  function initValine () {
+    const valine = new Valine(Object.assign({
+      el: '#vcomment',
+      appId: '5d2G4qaJCSGGzlvVsvXc2sjI-gzGzoHsz',
+      appKey: 'wpw1ViJnypU3RxqomPOuitvc',
+      placeholder: 'Please leave your footprints',
+      avatar: 'monsterid',
+      meta: 'nick,mail,link'.split(','),
+      pageSize: '10',
+      lang: 'zh-CN',
+      recordIP: false,
+      serverURLs: '',
+      emojiCDN: '',
+      emojiMaps: "",
+      enableQQ: false,
+      path: window.location.pathname,
+      requiredFields: ["nick,mail"],
+      visitor: false
+    }, null))
+  }
+
+  if (typeof Valine === 'function') initValine() 
+  else getScript('https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js').then(initValine)
+}
+
+if ('Valine' === 'Valine' || !false) {
+  if (false) btf.loadComment(document.getElementById('vcomment'),loadValine)
+  else setTimeout(loadValine, 0)
+} else {
+  function loadOtherComment () {
+    loadValine()
+  }
+}</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

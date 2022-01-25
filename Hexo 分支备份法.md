@@ -96,3 +96,6 @@ hexo s -g #生成加预览
 https://www.jianshu.com/p/aebeaf050969
 
 https://www.jianshu.com/p/c058fbd7bb90
+
+## hexo显示需要密码
+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

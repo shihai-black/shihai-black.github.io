@@ -296,6 +296,116 @@ P_{ij}=\frac{K_i*K_j}{2m}=K_i*\frac{K_j}{2m}</script><p>$K<em>j/2m$表示节点j
       </tags>
   </entry>
   <entry>
+    <title>万物皆可embedding</title>
+    <url>/2022/01/25/%E4%B8%87%E7%89%A9%E7%9A%86%E5%8F%AFembedding/</url>
+    <content><![CDATA[<h1 id="万物皆可embedding"><a href="#万物皆可embedding" class="headerlink" title="万物皆可embedding"></a>万物皆可embedding</h1><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>​    本文的目的是想通过这次分享，让可爱学长们能够了解在算法人员口中的embedding到底是什么，它是如何作用在我们算法的日常工作中。</p>
+<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>引入embedding之前，需要先讲一下embedding的前身技术，<strong>one-hot编码</strong>。</p>
+<h2 id="one-hot"><a href="#one-hot" class="headerlink" title="one-hot"></a>one-hot</h2><p>​    在机器学习里，存在one-hot向量（英语：one-hot vector）的概念。在一任意维度的向量中，仅有一个维度的值是1，其余为0。譬如向量[0,0,1,0,0]，即为5维空间中的一组one-hot向量。将类别型数据转换成one-hot向量的过程则称one-hot编码（英语：one-hot encoding。在统计学中，one-hot我们一般叫做虚拟变量。</p>
+<p><img src="/images/embed1.jpg" alt="embed1"></p>
+<p><strong>优势</strong></p>
+<ol>
+<li>可以将类别型数据转化为向量形式，各类别在高维空间中距离相等</li>
+<li>进行损失函数（例如交叉熵损失）或准确率计算时，变得非常方便</li>
+</ol>
+<p><strong>劣势</strong></p>
+<ol>
+<li>当类别数量过于庞杂时，会导致维度灾难</li>
+<li>不能很好的刻画词与词之间的相似性</li>
+<li>强稀疏性</li>
+</ol>
+<p><strong>备注</strong></p>
+<ul>
+<li>sklearn包：sklearn.preprocessing.OneHotEncoder</li>
+<li>pandas包：pandas.get_dummies</li>
+</ul>
+<h2 id="embedding"><a href="#embedding" class="headerlink" title="embedding"></a>embedding</h2><p>​    为了克服上述缺点，embedding技术就横空出世，最开始应用于<strong>NLP的词表达</strong>中，其最早时在1986年Hinton提出的，其<strong>基本想法</strong>是：</p>
+<p>​    通过训练将某种语言中的每一个词 映射成一个固定长度的短向量（当然这里的“短”是相对于One-Hot的“长”而言的），所有这些向量构成一个词向量空间，而每一个向量则可视为 该空间中的一个点，在这个空间上引入“距离”，就可以根据词之间的距离来判断它们之间的语法、语义上的相似性。</p>
+<p>​    真正让embedding技术发扬光大的是谷歌Tomas Mikolov团队的Word2Vec工具。该工具效率很高并且在语义表示上具有很好的效果。        </p>
+<p>​    时至今日，embedding技术延伸至生活的方方面面，现在我们可以用embedding技术去表达一部电影，一个用户，一个商品等等。</p>
+<p>​    说了这么多，那到底什么是embedding技术，一句话概括：一种基于<strong>低维向量</strong>来表示物品的技术我们称之为embedding技术。</p>
+<h1 id="Word2vec"><a href="#Word2vec" class="headerlink" title="Word2vec"></a>Word2vec</h1><p>word2vec模型的目的并不是训练词embedding，词embedding只是模型的附带品！！！</p>
+<p><img src="/images/embed2.png" alt="embed2"></p>
+<p><strong>模型结构</strong></p>
+<ol>
+<li>两层浅层神经网络</li>
+<li>输入单词，输出预测单词的概率</li>
+</ol>
+<h2 id="两种训练模式"><a href="#两种训练模式" class="headerlink" title="两种训练模式"></a>两种训练模式</h2><p><img src="/images/embed3.png" alt="embed3"></p>
+<h3 id="CBOW"><a href="#CBOW" class="headerlink" title="CBOW"></a>CBOW</h3><p><img src="/images/embed4.png" alt="embed4"></p>
+<p>通过上下文来预测当前值。相当于一句话中扣掉一个词，让你猜这个词是什么。</p>
+<h3 id="Skip-gram"><a href="#Skip-gram" class="headerlink" title="Skip-gram"></a>Skip-gram</h3><p><img src="/images/embed5.png" alt="embed5"></p>
+<p>用当前词来预测上下文。相当于给你一个词，让你猜前面和后面可能出现什么词。</p>
+<h2 id="两种优化方式"><a href="#两种优化方式" class="headerlink" title="两种优化方式"></a>两种优化方式</h2><p>前文说了，Word2vec的输出是预测单词的概率，这是利用Softmax函数做归一化去处理的，那我们来看看softmax是什么。</p>
+<script type="math/tex; mode=display">
+S_{i}=\frac{e^{i}}{\Sigma_{j} e^{j}}</script><p>那我们看到Softmax需要经历指数计算，指数计算在计算机运算中效率并不高，并且还需要计算全部单词的概率，当单词量级很高的时候，效率就会非常低，因为针对训练提出了两种优化方式：层序softmax和负采样。</p>
+<h3 id="Hierarchical-Softmax"><a href="#Hierarchical-Softmax" class="headerlink" title="Hierarchical Softmax"></a>Hierarchical Softmax</h3><p>利用<a href="https://www.cnblogs.com/pinard/p/7160330.html">霍夫曼树</a>代替从隐藏层到输出softmax层的映射，霍夫曼树简单来说就是：权重【频率】越低的单词优先合并成根节点的原则生成一整颗二叉树，大家可以看下图</p>
+<p><img src="/images/embed6.png" alt="embed6"></p>
+<p>如果输入样本输出的真实值是W2，那么Hierarchical Softmax利用逻辑回归分类器一层一层做而分类，综合每一层的逻辑回归作为目标函数进行训练。（层序softmax就是一层一层做分类得来的）</p>
+<p><strong>优点</strong></p>
+<ol>
+<li>既然是二叉树，那计算量就从V变成了logV。</li>
+<li>针对高频词，路径越短，计算越快。</li>
+</ol>
+<p><strong>缺点</strong></p>
+<p>当中心词是偏僻词时，路径会很长，训练时间提高</p>
+<h3 id="Negative-Sampling"><a href="#Negative-Sampling" class="headerlink" title="Negative Sampling"></a>Negative Sampling</h3><p>Negative Sampling（负采样）的原理就比较简单，事先选择5-20个单词作为负样本，将softmax函数改为sigmod函数，直接由多分类作为二分类来使用。（至于负采样的个数，利用什么样的策略采样本文不予展开）</p>
+<p><strong>优点</strong></p>
+<ol>
+<li>不用构造霍夫曼树，只需要维护一个负样本数据集</li>
+<li>将softmax修改为sigmod函数，只需要改变第二层神经网络的少量参数，大大提升了效率</li>
+</ol>
+<h2 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h2><p><strong>优点</strong></p>
+<ol>
+<li>经过速度优化以后，训练词向量的速度很快</li>
+<li>通用性很强，可以用在各种 NLP 任务中</li>
+<li>由于考虑上下文，因此效果再18年以前一直都是Embedding技术的王牌</li>
+</ol>
+<p><strong>缺点</strong></p>
+<ol>
+<li>由于词和向量是一对一的关系，所以多义词的问题无法解决</li>
+<li>Word2vec 是一种静态的方式，虽然通用性强，但是无法针对特定任务做动态优化</li>
+</ol>
+<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><ol>
+<li>为什么要用CBOW和Skip-gram两种方式来训练，而不直接用传统DNN来训练？</li>
+<li>CBOW和Skip-gram分别有什么优劣势？</li>
+</ol>
+<h1 id="应用"><a href="#应用" class="headerlink" title="应用"></a>应用</h1><h2 id="Word-embedding及其衍生"><a href="#Word-embedding及其衍生" class="headerlink" title="Word embedding及其衍生"></a>Word embedding及其衍生</h2><p>用于表示单词于单词之间的相关性【基础任务】</p>
+<ul>
+<li>Word2vec【2013】：NLP中词向量训练的鼻祖</li>
+<li>Fasttext【2014】：Word2vec基础上引入了字符级别的词向量，对德语，俄语更友好</li>
+<li>ELMO【2018】：解决了一次多义的词向量模型</li>
+<li>Embedding layer【Bert时代】：基于Bert后时代的模型，词向量已经不作为单独训练的目的，而是直接作为输入的一层嵌入模型中，跟随任务目标的变化而变化</li>
+<li>Item2vec【2016】：微软将word2vec应用于推荐领域的一篇实用性很强的文章，主要用于训练item embedding，但更重要的是使其从NLP领域直接扩展到推荐、广告、搜索等任何可以生成sequence的领域。</li>
+<li>Airbnb Embedding【2018】:Airbnb将word2vec用于推荐的典型文章，主要用于训练user embedding，很多user look alike系统的user embedding都是这么训练来的。</li>
+</ul>
+<h2 id="Sentence-embedding"><a href="#Sentence-embedding" class="headerlink" title="Sentence embedding"></a>Sentence embedding</h2><p>用于表示句子于句子之间的相关性【标题召回】</p>
+<ul>
+<li>Doc2vec【2014】:在Word2vec的基础上引入一个句向量概念，随着模型一起训练</li>
+<li>Sentence_Bert【2019】：以Bert为基础，用有监督数据训练词向量</li>
+<li>SimCSE/ConSert/EsimCSE【2021】：对比学习方法，利用Sentence_Bert进行自监督训练</li>
+</ul>
+<h2 id="Graph-embedding"><a href="#Graph-embedding" class="headerlink" title="Graph embedding"></a>Graph embedding</h2><p>节点映射为向量表示的时候尽可能多地保留图的拓扑信息【社区关系】</p>
+<ul>
+<li>Deepwalk/Line/Node2Vec：基于Skip-gram的节点向量训练模型，区别在于他的输入需要用不同的遍历方式构造序列</li>
+<li>SDNE【2016】：基于自编码器的半监督Graph embedding训练模型，可以看作Line的一种延伸</li>
+<li>GCN/GraphSAGE/GAT/GIN【GCN时代】：GCN类模型，现阶段Graph embedding效果最好的模型</li>
+<li>EGES【2018】：很好用的item emebdding训练模型，其原理就是deepwalk+不同的sideinfo形成商品embedding用于推荐搜索</li>
+</ul>
+<h1 id="问题-1"><a href="#问题-1" class="headerlink" title="问题"></a>问题</h1><ol>
+<li>什么是Embedding？</li>
+<li>Embedding如何作用在我们算法工作？</li>
+</ol>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a href="https://zh.wikipedia.org/wiki/One-hot">one-hot</a></p>
+<p><a href="https://github.com/wzhe06/Reco-papers/tree/master/Embedding">paper list</a></p>
+]]></content>
+      <categories>
+        <category>深度学习</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>初识NLP</title>
     <url>/2021/04/11/%E5%88%9D%E8%AF%86NLP/</url>
     <content><![CDATA[<h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>此文档为了更好的理解自然语言处理（natural language processing），自然语言处理(NLP)就是开发能够理解人类语言的应用程序或服务。接下来会讨论一些NLP在国内外的发展状况和实际应用的一些例子，了解当前最前沿的NLP应用并掌握一定的NLP技术是接下来自己需要做的。</p>
@@ -447,6 +557,69 @@ P_{ij}=\frac{K_i*K_j}{2m}=K_i*\frac{K_j}{2m}</script><p>$K<em>j/2m$表示节点j
       </categories>
       <tags>
         <tag>基础知识</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>关联挖掘</title>
+    <url>/2021/09/18/%E5%85%B3%E8%81%94%E6%8C%96%E6%8E%98/</url>
+    <content><![CDATA[<blockquote>
+<p>对商品订单进行类目级别的关联挖掘，因为订单太少，无法用到商品这个级别，并且主要是因为做关联挖掘的目的是为了投放广告</p>
+</blockquote>
+<h2 id="指标定义"><a href="#指标定义" class="headerlink" title="指标定义"></a>指标定义</h2><p><strong>项于项集</strong></p>
+<p>项，指我们分析数据中的<strong>一个对象</strong>，如啤酒；项集，就是<strong>若干项</strong>的项构成的集合，如集合{啤酒，面包}是一个2项集。</p>
+<p><strong>支持度（support）</strong></p>
+<p>某项集在数据集中出现的概率，支持度体现的是某个项集的频繁程度，只有<strong>项集达到一定程度</strong>，我们才会研究该项集的必要。</p>
+<p>其计算公式为：</p>
+
+$$
+support(A\cup B)=\frac{{A\cup B}}{All}
+$$
+
+<p>举个例子：AB在订单中同时出现了100次，总共有1000个订单，那$A\cup B$项集的支持度就是0.1</p>
+<p><strong>置信度（confidence）</strong></p>
+<p>当用户购买了商品A后有多大概率会购买商品B，表示关联性的强弱。</p>
+<p>其计算公式为:<br>
+$$
+confidence(A\rightarrow B)=\frac{support(A\cup B)}{support(A)}
+$$
+<br>举个例子，AB同时出现的订单有100次，而A购买的订单次数有200次，那置信度就是0.5</p>
+<p><strong>提升度（lift）</strong></p>
+<p>商品A的出现，对商品B的出现概率提升的程度，一般是大于1说明A的出现有组与商品B的出现</p>
+<p>其计算公式为：</p>
+
+$$
+lift(A\rightarrow B) = \frac{confidence(A\rightarrow B)}{support(B)}
+$$
+
+<p>举个例子，已知总订单100，AB同时出现时20：</p>
+<ul>
+<li>如果B的订单是20，A的订单时40，那么提升度为5，说明B商品强依赖于A，A的出现有利于B的出现</li>
+<li>同样，如果B的订单是50，A的订单是50，那么提升度为0.8，说明B商品和A商品没有强依赖关系。</li>
+</ul>
+<h2 id="经典算法"><a href="#经典算法" class="headerlink" title="经典算法"></a>经典算法</h2><h3 id="Apriori"><a href="#Apriori" class="headerlink" title="Apriori"></a>Apriori</h3><p>具体步骤</p>
+<ol>
+<li>计算项集K=1的所有支持度</li>
+<li>选出大于最小支持度的数据</li>
+<li>如果项集为空，则对应 K-1 项集的结果为最终结果。否则重复1，2</li>
+</ol>
+<p>该算法时间负责度比较高，相当于，针对每个K都要计算一次数据集。因此用学者利用树来优化算法</p>
+<h3 id="FP-Growth"><a href="#FP-Growth" class="headerlink" title="FP-Growth"></a>FP-Growth</h3><p>具体步骤</p>
+<ol>
+<li>扫描数据，得到所有频繁1项集的的计数。然后删除支持度低于阈值的项，将1项集放入项头表，并按照支持度降序排列</li>
+<li>扫描数据，将读到的原始数据剔除非频繁1项集，并按照支持度降序排列。</li>
+<li>读入排序后的数据集，插入FP树，插入时按照排序后的顺序，插入FP树中，排序靠前的节点是祖先节点，而靠后的是子孙节点。如果有共用的祖先，则对应的公用祖先节点计数加1。插入后，如果有新节点出现，则项头表对应的节点会通过节点链表链接上新节点。直到所有的数据都插入到FP树后，FP树的建立完成。</li>
+<li>从项头表的底部项依次向上找到项头表项对应的条件模式基。从条件模式基递归挖掘得到项头表项项的频繁项集。</li>
+<li>如果不限制频繁项集的项数，则返回步骤4所有的频繁项集，否则只返回满足项数要求的频繁项集。</li>
+</ol>
+<p>该算法只需要扫面两次数据集就可以得出所有结果，因此相较于Apriori速度会有所提神，不过也得看具体可以提出多大的K</p>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><p>对于apriori主要有两个包可以用efficient_apriori,mlxtend.frequent_patterns。前者是比较方便，但是问题在于没有具体的数字，后面这个包就比较舒服了，可以直接输出对应的指标。不过主要是我现在用的数据集小，如果数据集很大，那可能FP-Growth更合适一些不过要看具体场景,他的包fptools。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> efficient_apriori <span class="keyword">import</span> apriori</span><br><span class="line"><span class="keyword">from</span> mlxtend.preprocessing <span class="keyword">import</span> TransactionEncoder</span><br><span class="line"><span class="keyword">from</span> mlxtend.frequent_patterns <span class="keyword">import</span> apriori <span class="keyword">as</span> apr</span><br><span class="line"><span class="keyword">from</span> mlxtend.frequent_patterns <span class="keyword">import</span> association_rules</span><br><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">import</span> fptools <span class="keyword">as</span> fp</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">data=[(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>),(<span class="string">&#x27;可乐&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>, <span class="string">&#x27;鸡蛋&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;可乐&#x27;</span>)]</span><br><span class="line"></span><br><span class="line"><span class="comment"># efficient_apriori包的使用</span></span><br><span class="line">itemsets, rules = apriori(data, min_support=<span class="number">0.5</span>,  min_confidence=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># mlxtend.frequent_patterns包的使用</span></span><br><span class="line">Encoder = TransactionEncoder()</span><br><span class="line">encoded_data = Encoder.fit_transform(data)</span><br><span class="line">df = pd.DataFrame(encoded_data, columns=Encoder.columns_)</span><br><span class="line">frequent_items = apr(df, min_support=<span class="number">0.5</span>, use_colnames=<span class="literal">True</span>, max_len=<span class="number">4</span>).sort_values(by=<span class="string">&#x27;support&#x27;</span>, ascending=<span class="literal">False</span>)</span><br><span class="line">df_re = association_rules(frequent_items, metric=<span class="string">&#x27;lift&#x27;</span>, min_threshold=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#fp</span></span><br><span class="line">data = [(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;可乐&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>, <span class="string">&#x27;鸡蛋&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;可乐&#x27;</span>)]</span><br><span class="line">fis = [iset <span class="keyword">for</span> iset <span class="keyword">in</span> fp.frequent_itemsets(data, <span class="number">2</span>)]</span><br><span class="line">mfis = [iset <span class="keyword">for</span> iset <span class="keyword">in</span> fp.maximal_frequent_itemsets(data, <span class="number">2</span>)]</span><br></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://zhuanlan.zhihu.com/p/198842818">知乎1</a></p>
+<p><a href="https://zhuanlan.zhihu.com/p/66944900">知乎2</a></p>
+<p><a href="https://www.cnblogs.com/zhengxingpeng/p/6679280.html">博客</a></p>
+]]></content>
+      <tags>
+        <tag>机器学习</tag>
       </tags>
   </entry>
   <entry>
@@ -757,35 +930,6 @@ P_{ij}=\frac{K_i*K_j}{2m}=K_i*\frac{K_j}{2m}</script><p>$K<em>j/2m$表示节点j
       </tags>
   </entry>
   <entry>
-    <title>数据标准化和中心化</title>
-    <url>/2021/08/19/%E6%95%B0%E6%8D%AE%E6%A0%87%E5%87%86%E5%8C%96%E5%92%8C%E4%B8%AD%E5%BF%83%E5%8C%96/</url>
-    <content><![CDATA[<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>标准化：也叫归一化，常用的有最小—最大标准化、Z-score标准化、Sigmod函数等，利用上述标准化操作，将原始数据化为<strong>无量纲</strong>的数值。这在回归和神经网络类模型是很必要的。</p>
-<p>中心化：也叫去均质化，让数据通过中心化处理，得到均值为0的数据【如果方差为1，那就是Z-score标准化】。同时中心化后的数据对向量来说也容易描述，因为是以原点为基准的。</p>
-<h2 id="公式"><a href="#公式" class="headerlink" title="公式"></a>公式</h2><p>最小—最大标准化：将数据变为0-1</p>
-<script type="math/tex; mode=display">
-\tilde{x}=\frac{x-min}{max-min}</script><p>Z-score标准化：</p>
-<script type="math/tex; mode=display">
-\tilde{x}=\frac{x-u}{\sigma }</script><p>sigmod函数：</p>
-<script type="math/tex; mode=display">
-f(x)=\frac{1}{1+e^{-x}}</script><p><strong>备注</strong>：</p>
-<ol>
-<li>当$\sigma=1$就是中心化公式，所以中心化可以说是一种特殊的标准化</li>
-<li>sigmod函数其实主要是在激活函数中对上一层神经层结果进行标准化，但也可以理解成对下一层神经层的输入做标准化。</li>
-</ol>
-<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ol>
-<li>提升精度：消除量纲，针对梯度下降相关的算法，不同量纲的数据会产生干扰，可能本来是A特征对结果的影响更大，但因为其量纲较小，导致其影响力还不如量纲大的特征，从来导致精度的下降。</li>
-<li>提神速度：同样，由于消除了量纲，在梯度下降过程中，将会容易收敛到最优解。</li>
-</ol>
-<p><strong>备注</strong>：但是对于非梯度下降优化器或者是树模型是可以不标准的，因为数据的量纲并不影响树模型的分裂，对于特征而言该在哪里分裂就还是在那里分裂。</p>
-]]></content>
-      <categories>
-        <category>基础知识</category>
-      </categories>
-      <tags>
-        <tag>数据预处理</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>熵</title>
     <url>/2021/05/31/%E7%86%B5/</url>
     <content><![CDATA[<blockquote>
@@ -836,8 +980,37 @@ f(x)=\frac{1}{1+e^{-x}}</script><p><strong>备注</strong>：</p>
       </tags>
   </entry>
   <entry>
+    <title>数据标准化和中心化</title>
+    <url>/2021/08/19/%E6%95%B0%E6%8D%AE%E6%A0%87%E5%87%86%E5%8C%96%E5%92%8C%E4%B8%AD%E5%BF%83%E5%8C%96/</url>
+    <content><![CDATA[<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>标准化：也叫归一化，常用的有最小—最大标准化、Z-score标准化、Sigmod函数等，利用上述标准化操作，将原始数据化为<strong>无量纲</strong>的数值。这在回归和神经网络类模型是很必要的。</p>
+<p>中心化：也叫去均质化，让数据通过中心化处理，得到均值为0的数据【如果方差为1，那就是Z-score标准化】。同时中心化后的数据对向量来说也容易描述，因为是以原点为基准的。</p>
+<h2 id="公式"><a href="#公式" class="headerlink" title="公式"></a>公式</h2><p>最小—最大标准化：将数据变为0-1</p>
+<script type="math/tex; mode=display">
+\tilde{x}=\frac{x-min}{max-min}</script><p>Z-score标准化：</p>
+<script type="math/tex; mode=display">
+\tilde{x}=\frac{x-u}{\sigma }</script><p>sigmod函数：</p>
+<script type="math/tex; mode=display">
+f(x)=\frac{1}{1+e^{-x}}</script><p><strong>备注</strong>：</p>
+<ol>
+<li>当$\sigma=1$就是中心化公式，所以中心化可以说是一种特殊的标准化</li>
+<li>sigmod函数其实主要是在激活函数中对上一层神经层结果进行标准化，但也可以理解成对下一层神经层的输入做标准化。</li>
+</ol>
+<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ol>
+<li>提升精度：消除量纲，针对梯度下降相关的算法，不同量纲的数据会产生干扰，可能本来是A特征对结果的影响更大，但因为其量纲较小，导致其影响力还不如量纲大的特征，从来导致精度的下降。</li>
+<li>提神速度：同样，由于消除了量纲，在梯度下降过程中，将会容易收敛到最优解。</li>
+</ol>
+<p><strong>备注</strong>：但是对于非梯度下降优化器或者是树模型是可以不标准的，因为数据的量纲并不影响树模型的分裂，对于特征而言该在哪里分裂就还是在那里分裂。</p>
+]]></content>
+      <categories>
+        <category>基础知识</category>
+      </categories>
+      <tags>
+        <tag>数据预处理</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Transomer学习</title>
-    <url>/2021/04/11/Transomer%D1%A7%CF%B0/</url>
+    <url>/2021/04/11/%E5%88%9D%E8%AF%86Transomer/</url>
     <content><![CDATA[<h1 id="Transfomer拆分"><a href="#Transfomer拆分" class="headerlink" title="Transfomer拆分"></a>Transfomer拆分</h1><p>为了更好的学习当前NLP主流模型，如Bert，GPT2及Bert一系列的衍生物，Transfomer是这一系列的基础。因此本文的主要目的是记录个人基于一些博客和原论文对Transfomer模型进行拆分的结果。</p>
 <p><strong>目的</strong>：减少计算量并提高并行效率，同时不减弱最终的实验结果。</p>
 <p><strong>创新点</strong>：</p>
@@ -998,6 +1171,136 @@ f(x)=\frac{1}{1+e^{-x}}</script><p><strong>备注</strong>：</p>
       </categories>
       <tags>
         <tag>transfomer</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>对比学习_SimCSE</title>
+    <url>/2021/09/30/%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0-SimCSE/</url>
+    <content><![CDATA[<h1 id="对比学习之SimCSE"><a href="#对比学习之SimCSE" class="headerlink" title="对比学习之SimCSE"></a>对比学习之SimCSE</h1><blockquote>
+<p>前短时间接到一个title i2i召回数据的任务，最开始只是想用简单的Doc2vec输出每个title的emb然后用faiss做召回，但是效果很差。后来尝试了用Bert直接输出结果，效果也很差。后面看论文发现Bert的emb存在模型坍塌问题【详细可以参考美团的ConSERT任务】。最后利用SimCSE比较合理的解决了需求</p>
+</blockquote>
+<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><ol>
+<li>什么是自监督学习，什么是对比学习？</li>
+<li>SimCSE生成监督数据的方法是什么？</li>
+<li>为什么生成的句向量这么有用？</li>
+<li>他的优劣势是什么？</li>
+</ol>
+<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><h3 id="自监督学习"><a href="#自监督学习" class="headerlink" title="自监督学习"></a>自监督学习</h3><p>首先，我们知道现在训练模型的方式主要是两种：有监督和无监督，并且我个人认为无监督的使用场景是远远大于有监督的。无监督有一个比较特别的分支是自监督，他的特点就是不需要人工标注的类别标签信息，直接利用数据本身作为监督信息，来学习样本数据的特征表达。</p>
+<p>自监督主要分为两类：</p>
+<ul>
+<li>Generative Methods：其中的典型代表就是自编码器，其利用数据本身压缩再重构去比较生成的数据与原始数据的差距。</li>
+<li>Contrastive Methods：这类方法则是通过将数据分别与正例样本和负例样本在特征空间进行对比，来学习样本的特征表示。</li>
+</ul>
+<p><strong>备注</strong>：我个人任务word2vec也可以属于自监督范畴，不过不属于上面两类，他是利用文本词与词之间关系去学习每个单词的embedding</p>
+<h3 id="对比学习"><a href="#对比学习" class="headerlink" title="对比学习"></a>对比学习</h3><p>上面说了，对比学习属于自监督学习的一个大类，他主要的难点就是如何生成相似的正样本。其最开始是在cv中使用的，后面NLPer也不甘示弱的进行研究，才有了今天NLP在对比学习领域的百花齐放，具体的进展可以看<a href="https://zhuanlan.zhihu.com/p/367290573">张俊林博客</a>。</p>
+<p>SimCSE全称(Simple Contrastive Learning of Sentence Embeddings)，是一种在没有监督训练数据的情况下训练句子向量的对比学习框架。并且从无监督和有监督两种方法给出了结果。</p>
+<ul>
+<li>无监督SimCSE：仅使用dropout进行数据增强操作。具体来说，将同一个样本输入预训练编码器两次(BERT)，由于每次的dropout是不同的，那么就会生成两个经过dropout后的句向量表示。这里的dropout主要是指传统的feature dropout，在标准的Transformer实现中，每个sub-layer后都默认配置了dropout。除此之外，Transformer也在multi-head attention和feed-forward network的激活函数层添加了dropout。利用dropout将这两个样本作为“正样本对”，于此同时，同一个batch里面不同样本做”负样本对”</li>
+<li>有监督SimCSE：基于natural language inference (NLI) 数据集进行训练，具体来说，论文将entailment样本作为“正样本对”，并将contradiction样本作为hard“负样本对”，并且从实验证明该方法是有效的。</li>
+</ul>
+<h2 id="指标详解"><a href="#指标详解" class="headerlink" title="指标详解"></a>指标详解</h2><p>在《<strong>Understanding Contrastive Representation Learning through Alignment and Uniformity on the Hypersphere</strong>》一文中，作者指出了现有的对比学习都遵循以下两大原则即：相似样本应该保持靠近，并且不同的样本应该分散嵌入在高维球体。于此同时SimCSE的作者也提到了这两点，他也认为这两点是衡量表示质量很重要的指标。</p>
+<h3 id="alignment"><a href="#alignment" class="headerlink" title="alignment"></a>alignment</h3><p>用于衡量两个样本的相似程度，其计算公式如下：</p>
+<script type="math/tex; mode=display">
+L=E\left \| f(x)-f(y)\right \|_{2 }^{\alpha}</script><p>同时作者给出了在pytorch中的代码</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">lalign</span>(<span class="params">x, y, alpha=<span class="number">2</span></span>):</span></span><br><span class="line">  <span class="keyword">return</span> (x - y).norm(dim=<span class="number">1</span>).<span class="built_in">pow</span>(alpha).mean()</span><br></pre></td></tr></table></figure>
+<h3 id="uniformity"><a href="#uniformity" class="headerlink" title="uniformity"></a>uniformity</h3><p>衡量规整后的特征在unit 超球体上的分布的均匀性，其计算公式如下：</p>
+<script type="math/tex; mode=display">
+L=log(E[e^{-t\left \| f(x)-f(y)\right \|^{2}}])</script><p>同时作者给出了在pytorch中的代码</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">lunif</span>(<span class="params">x, t=<span class="number">2</span></span>):</span></span><br><span class="line">  sq_pdist = torch.pdist(x, p=<span class="number">2</span>).<span class="built_in">pow</span>(<span class="number">2</span>)</span><br><span class="line">  <span class="keyword">return</span> sq_pdist.mul(-t).exp().mean().log()</span><br></pre></td></tr></table></figure>
+<p>两者结合，作者是介绍可以直接作为损失进行优化的：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">loss = lalign(x, y) + lam * (lunif(x) + lunif(y)) / <span class="number">2</span></span><br></pre></td></tr></table></figure>
+<h2 id="损失函数"><a href="#损失函数" class="headerlink" title="损失函数"></a>损失函数</h2><h3 id="unsup"><a href="#unsup" class="headerlink" title="unsup"></a>unsup</h3><script type="math/tex; mode=display">
+L=-log\frac{e^{sim(h_{i},{h_{i}}^{+})/\tau }}{\sum_{j=1}^{N}e^{sim(h_{i},{h_{j}}^{+})/\tau}}</script><ul>
+<li>$h_{i}$表示查询向量，+表示对比向量，j表示大小为N的batch下其他向量</li>
+<li>$\tau$表示温度参数，默认是0.07，<a href="https://zhuanlan.zhihu.com/p/357071960">详解温度参数</a></li>
+<li>sim()表示余弦相似度，当然用内积也是一样的，因为l2标准化后的内积等价于余弦相似度</li>
+</ul>
+<h3 id="Sup"><a href="#Sup" class="headerlink" title="Sup"></a>Sup</h3><script type="math/tex; mode=display">
+L = -log\frac{e^{sim(h_{i},{h_{i}}^{+})/\tau}}{\sum_{j=1}^{N}(e^{sim(h_{i},{h_{j}}^{+})/\tau}+e^{sim(h_{i},{h_{j}}^{-})/\tau})}</script><ul>
+<li>其他和无监督方法没有区别，只是将负向量也纳入分母</li>
+</ul>
+<p><strong>备注</strong>：其实他的目标就是为了让分子尽可能的小，分母尽可能的大，那分子其实就代表alignment指标，分母就是代表uniformity指标，其实简单看和交叉墒损失函数很像，并且在Sentence transfomer包中的实现也是这样子的。</p>
+<h2 id="代码详解"><a href="#代码详解" class="headerlink" title="代码详解"></a>代码详解</h2><h3 id="SimCSE包"><a href="#SimCSE包" class="headerlink" title="SimCSE包"></a>SimCSE包</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> simcse <span class="keyword">import</span> SimCSE</span><br><span class="line">model = SimCSE(<span class="string">&quot;princeton-nlp/sup-simcse-bert-base-uncased&quot;</span>)</span><br><span class="line">sentences = [<span class="string">&#x27;A woman is reading.&#x27;</span>, <span class="string">&#x27;A man is playing a guitar.&#x27;</span>]</span><br><span class="line">model.build_index(sentences)</span><br><span class="line">results = model.search(<span class="string">&quot;He plays guitar.&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p>作者直接将训练好的模型放在huggingface上，并且下游利用Faiss进行向量搜索，详情可以直接看github代码，如果想自己训练也很简单，利用Sentence_transfomer包有现成的demo</p>
+<h3 id="Sentence-transfomer包"><a href="#Sentence-transfomer包" class="headerlink" title="Sentence_transfomer包"></a>Sentence_transfomer包</h3><p><strong>unsup</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> torch.utils.data <span class="keyword">import</span> DataLoader</span><br><span class="line"><span class="keyword">import</span> math</span><br><span class="line"><span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> models, losses</span><br><span class="line"><span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> LoggingHandler, SentenceTransformer, util, InputExample</span><br><span class="line"><span class="keyword">from</span> sentence_transformers.evaluation <span class="keyword">import</span> EmbeddingSimilarityEvaluator</span><br><span class="line"><span class="keyword">import</span> logging</span><br><span class="line"><span class="keyword">from</span> torch <span class="keyword">import</span> nn</span><br><span class="line"><span class="keyword">from</span> datetime <span class="keyword">import</span> datetime</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> gzip</span><br><span class="line"><span class="keyword">import</span> csv</span><br><span class="line"></span><br><span class="line">os.environ[<span class="string">&#x27;CUDA_VISIBLE_DEVICES&#x27;</span>] = <span class="string">&#x27;0,1&#x27;</span></span><br><span class="line">model_name = <span class="string">&#x27;distilbert-base-uncased&#x27;</span></span><br><span class="line">train_batch_size = <span class="number">128</span></span><br><span class="line">num_epochs = <span class="number">1</span></span><br><span class="line">max_seq_length = <span class="number">32</span></span><br><span class="line">model_save_path = <span class="string">&#x27;output/training_stsb_simcse-&#123;&#125;-&#123;&#125;-&#123;&#125;&#x27;</span>.<span class="built_in">format</span>(model_name, train_batch_size,</span><br><span class="line">                                                                datetime.now().strftime(<span class="string">&quot;%Y-%m-%d_%H-%M-%S&quot;</span>))</span><br><span class="line">sts_dataset_path = <span class="string">&#x27;data/stsbenchmark.tsv.gz&#x27;</span></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> os.path.exists(sts_dataset_path):</span><br><span class="line">    util.http_get(<span class="string">&#x27;https://sbert.net/datasets/stsbenchmark.tsv.gz&#x27;</span>, sts_dataset_path)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Here we define our SentenceTransformer model</span></span><br><span class="line">word_embedding_model = models.Transformer(model_name, max_seq_length=max_seq_length,</span><br><span class="line">                                          cache_dir=<span class="string">&#x27;../distilbert-base-uncased&#x27;</span>)</span><br><span class="line">pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())</span><br><span class="line">dense = models.Dense(pooling_model.pooling_output_dimension,<span class="number">512</span>,activation_function=nn.ReLU())  <span class="comment"># 降维操作</span></span><br><span class="line">model = SentenceTransformer(modules=[word_embedding_model, pooling_model,dense],device=<span class="string">&quot;cuda:1&quot;</span>)</span><br><span class="line">wikipedia_dataset_path = <span class="string">&#x27;data/wiki1m_for_simcse.txt&#x27;</span></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> os.path.exists(wikipedia_dataset_path):</span><br><span class="line">    util.http_get(</span><br><span class="line">        <span class="string">&#x27;https://huggingface.co/datasets/princeton-nlp/datasets-for-simcse/resolve/main/wiki1m_for_simcse.txt&#x27;</span>,</span><br><span class="line">        wikipedia_dataset_path)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;read wiki data&#x27;</span>)</span><br><span class="line">train_samples = []</span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(wikipedia_dataset_path, <span class="string">&#x27;r&#x27;</span>, encoding=<span class="string">&#x27;utf8&#x27;</span>) <span class="keyword">as</span> fIn:</span><br><span class="line">    <span class="keyword">for</span> line <span class="keyword">in</span> fIn.readlines()[:<span class="number">10000</span>]:</span><br><span class="line">        line = line.strip()</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(line) &gt;= <span class="number">10</span>:</span><br><span class="line">            train_samples.append(InputExample(texts=[line, line]))</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">len</span>(train_samples))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Read STSB dev dataset&#x27;</span>)</span><br><span class="line">dev_samples = []</span><br><span class="line">test_samples = []</span><br><span class="line"><span class="keyword">with</span> gzip.<span class="built_in">open</span>(sts_dataset_path, <span class="string">&#x27;rt&#x27;</span>, encoding=<span class="string">&#x27;utf8&#x27;</span>) <span class="keyword">as</span> fIn:</span><br><span class="line">    reader = csv.DictReader(fIn, delimiter=<span class="string">&#x27;\t&#x27;</span>, quoting=csv.QUOTE_NONE)</span><br><span class="line">    <span class="keyword">for</span> row <span class="keyword">in</span> reader:</span><br><span class="line">        score = <span class="built_in">float</span>(row[<span class="string">&#x27;score&#x27;</span>]) / <span class="number">5.0</span>  <span class="comment"># Normalize score to range 0 ... 1</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> row[<span class="string">&#x27;split&#x27;</span>] == <span class="string">&#x27;dev&#x27;</span>:</span><br><span class="line">            dev_samples.append(InputExample(texts=[row[<span class="string">&#x27;sentence1&#x27;</span>], row[<span class="string">&#x27;sentence2&#x27;</span>]], label=score))</span><br><span class="line">        <span class="keyword">elif</span> row[<span class="string">&#x27;split&#x27;</span>] == <span class="string">&#x27;test&#x27;</span>:</span><br><span class="line">            test_samples.append(InputExample(texts=[row[<span class="string">&#x27;sentence1&#x27;</span>], row[<span class="string">&#x27;sentence2&#x27;</span>]], label=score))</span><br><span class="line"></span><br><span class="line">dev_evaluator = EmbeddingSimilarityEvaluator.from_input_examples(dev_samples, batch_size=train_batch_size,</span><br><span class="line">                                                                 name=<span class="string">&#x27;sts-dev&#x27;</span>)</span><br><span class="line">test_evaluator = EmbeddingSimilarityEvaluator.from_input_examples(test_samples, batch_size=train_batch_size,</span><br><span class="line">                                                                  name=<span class="string">&#x27;sts-test&#x27;</span>)</span><br><span class="line"></span><br><span class="line">train_dataloader = DataLoader(train_samples, shuffle=<span class="literal">True</span>, batch_size=train_batch_size, drop_last=<span class="literal">True</span>)</span><br><span class="line">train_loss = losses.MultipleNegativesRankingLoss(model)</span><br><span class="line">warmup_steps = math.ceil(<span class="built_in">len</span>(train_dataloader) * num_epochs * <span class="number">0.1</span>)  <span class="comment"># 10% of train data for warm-up</span></span><br><span class="line">evaluation_steps = <span class="built_in">int</span>(<span class="built_in">len</span>(train_dataloader) * <span class="number">0.1</span>) <span class="comment">#Evaluate every 10% of the data</span></span><br><span class="line"></span><br><span class="line">dev_evaluator(model)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Start train model&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># train the model</span></span><br><span class="line">model.fit(train_objectives=[(train_dataloader,train_loss)],</span><br><span class="line">          evaluator=dev_evaluator,</span><br><span class="line">          epochs=num_epochs,</span><br><span class="line">          evaluation_steps=evaluation_steps,</span><br><span class="line">          warmup_steps=warmup_steps,</span><br><span class="line">          output_path=model_save_path,</span><br><span class="line">          optimizer_params=&#123;<span class="string">&#x27;lr&#x27;</span>:<span class="number">5e-5</span>&#125;,</span><br><span class="line">          use_amp=<span class="literal">False</span></span><br><span class="line">          )</span><br><span class="line"></span><br><span class="line">model = SentenceTransformer(model_save_path)</span><br><span class="line">test_evaluator(model, output_path=model_save_path)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><strong>sup</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> torch.utils.data <span class="keyword">import</span> DataLoader</span><br><span class="line"><span class="keyword">import</span> math</span><br><span class="line"><span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> models, losses</span><br><span class="line"><span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> LoggingHandler, SentenceTransformer, util, InputExample</span><br><span class="line"><span class="keyword">from</span> sentence_transformers.evaluation <span class="keyword">import</span> EmbeddingSimilarityEvaluator</span><br><span class="line"><span class="keyword">import</span> logging</span><br><span class="line"><span class="keyword">from</span> datetime <span class="keyword">import</span> datetime</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> gzip</span><br><span class="line"><span class="keyword">import</span> csv</span><br><span class="line"></span><br><span class="line"><span class="comment"># argument</span></span><br><span class="line">model_name = <span class="string">&#x27;distilbert-base-uncased&#x27;</span>  <span class="comment"># 可以自行替换</span></span><br><span class="line">train_batch_size = <span class="number">32</span></span><br><span class="line">num_epochs = <span class="number">1</span></span><br><span class="line">max_seq_length = <span class="number">64</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Here we define our SentenceTransformer model</span></span><br><span class="line">word_embedding_model = models.Transformer(<span class="string">&#x27;bert-base-uncased&#x27;</span>, max_seq_length=max_seq_length,</span><br><span class="line">                                          cache_dir=<span class="string">&#x27;../distilbert-base-uncased&#x27;</span>)</span><br><span class="line">pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())</span><br><span class="line">model = SentenceTransformer(modules=[word_embedding_model, pooling_model])</span><br><span class="line"></span><br><span class="line"><span class="comment"># Use label sentences from NLI dataset train to train out model</span></span><br><span class="line"></span><br><span class="line">nli_dataset_path = <span class="string">&#x27;data/AllNLI.tsv.gz&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> os.path.exists(nli_dataset_path):</span><br><span class="line">    util.http_get(<span class="string">&#x27;https://sbert.net/datasets/AllNLI.tsv.gz&#x27;</span>, nli_dataset_path)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Read NLI dataset&#x27;</span>)</span><br><span class="line">model_save_path = <span class="string">&#x27;output/simcse-&#123;&#125;-&#123;&#125;-&#123;&#125;&#x27;</span>.<span class="built_in">format</span>(model_name, train_batch_size,</span><br><span class="line">                                                  datetime.now().strftime(<span class="string">&quot;%Y-%m-%d_%H-%M-%S&quot;</span>))</span><br><span class="line">train_samples = []</span><br><span class="line"><span class="keyword">with</span> gzip.<span class="built_in">open</span>(nli_dataset_path, <span class="string">&#x27;rt&#x27;</span>, encoding=<span class="string">&#x27;utf8&#x27;</span>) <span class="keyword">as</span> fIn:</span><br><span class="line">    reader = csv.DictReader(fIn, delimiter=<span class="string">&#x27;\t&#x27;</span>, quoting=csv.QUOTE_NONE)</span><br><span class="line">    count = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> row <span class="keyword">in</span> reader:</span><br><span class="line">        count += <span class="number">1</span></span><br><span class="line">        label = row[<span class="string">&#x27;label&#x27;</span>]</span><br><span class="line">        <span class="keyword">if</span> label == <span class="string">&#x27;contradiction&#x27;</span>:</span><br><span class="line">            premise = row[<span class="string">&#x27;sentence1&#x27;</span>]</span><br><span class="line">            negative = row[<span class="string">&#x27;sentence2&#x27;</span>]</span><br><span class="line">        <span class="keyword">elif</span> label == <span class="string">&#x27;entailment&#x27;</span>:</span><br><span class="line">            premise = row[<span class="string">&#x27;sentence1&#x27;</span>]</span><br><span class="line">            positive = row[<span class="string">&#x27;sentence2&#x27;</span>]</span><br><span class="line">        <span class="keyword">if</span> count % <span class="number">3</span> == <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">if</span> row[<span class="string">&#x27;split&#x27;</span>] == <span class="string">&#x27;train&#x27;</span>:</span><br><span class="line">                train_samples.append(InputExample(texts=[premise, positive, negative]))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&#x27;train sample length:<span class="subst">&#123;<span class="built_in">len</span>(train_samples)&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Check if dataset exsist. If not, download and extract  it</span></span><br><span class="line">sts_dataset_path = <span class="string">&#x27;data/stsbenchmark.tsv.gz&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> os.path.exists(sts_dataset_path):</span><br><span class="line">    util.http_get(<span class="string">&#x27;https://sbert.net/datasets/stsbenchmark.tsv.gz&#x27;</span>, sts_dataset_path)</span><br><span class="line"></span><br><span class="line">dev_samples = []</span><br><span class="line">test_samples = []</span><br><span class="line"><span class="keyword">with</span> gzip.<span class="built_in">open</span>(sts_dataset_path, <span class="string">&#x27;rt&#x27;</span>, encoding=<span class="string">&#x27;utf8&#x27;</span>) <span class="keyword">as</span> fIn:</span><br><span class="line">    reader = csv.DictReader(fIn, delimiter=<span class="string">&#x27;\t&#x27;</span>, quoting=csv.QUOTE_NONE)</span><br><span class="line">    <span class="keyword">for</span> row <span class="keyword">in</span> reader:</span><br><span class="line">        score = <span class="built_in">float</span>(row[<span class="string">&#x27;score&#x27;</span>]) / <span class="number">5.0</span>  <span class="comment"># Normalize score to range 0 ... 1</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> row[<span class="string">&#x27;split&#x27;</span>] == <span class="string">&#x27;dev&#x27;</span>:</span><br><span class="line">            dev_samples.append(InputExample(texts=[row[<span class="string">&#x27;sentence1&#x27;</span>], row[<span class="string">&#x27;sentence2&#x27;</span>]], label=score))</span><br><span class="line">        <span class="keyword">elif</span> row[<span class="string">&#x27;split&#x27;</span>] == <span class="string">&#x27;test&#x27;</span>:</span><br><span class="line">            test_samples.append(InputExample(texts=[row[<span class="string">&#x27;sentence1&#x27;</span>], row[<span class="string">&#x27;sentence2&#x27;</span>]], label=score))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">train_dataloader = DataLoader(train_samples, shuffle=<span class="literal">True</span>, batch_size=train_batch_size, drop_last=<span class="literal">True</span>)</span><br><span class="line">train_loss = losses.MultipleNegativesRankingLoss(model)</span><br><span class="line">dev_evaluator = EmbeddingSimilarityEvaluator.from_input_examples(dev_samples, batch_size=train_batch_size,</span><br><span class="line">                                                                 name=<span class="string">&#x27;nli-dev&#x27;</span>)</span><br><span class="line">test_evaluator = EmbeddingSimilarityEvaluator.from_input_examples(test_samples, batch_size=train_batch_size,</span><br><span class="line">                                                                  name=<span class="string">&#x27;nli-test&#x27;</span>)</span><br><span class="line">warmup_steps = math.ceil(<span class="built_in">len</span>(train_dataloader) * num_epochs * <span class="number">0.1</span>)  <span class="comment"># 10% of train data for warm-up</span></span><br><span class="line">evaluation_steps = <span class="built_in">int</span>(<span class="built_in">len</span>(train_dataloader) * <span class="number">0.1</span>)  <span class="comment"># Evaluate every 10% of the data</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Start training&#x27;</span>)</span><br><span class="line">model.fit(train_objectives=[(train_dataloader, train_loss)],</span><br><span class="line">          evaluator=dev_evaluator,</span><br><span class="line">          epochs=num_epochs,</span><br><span class="line">          evaluation_steps=evaluation_steps,</span><br><span class="line">          warmup_steps=warmup_steps,</span><br><span class="line">          output_path=model_save_path,</span><br><span class="line">          optimizer_params=&#123;<span class="string">&#x27;lr&#x27;</span>: <span class="number">5e-5</span>&#125;,</span><br><span class="line">          use_amp=<span class="literal">True</span>  <span class="comment"># Set to True, if your GPU supports FP16 cores</span></span><br><span class="line">          )</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Start test&#x27;</span>)</span><br><span class="line">model = SentenceTransformer(model_save_path)</span><br><span class="line">test_evaluator(model, output_path=model_save_path)</span><br></pre></td></tr></table></figure>
+<p>sup在demo中没有，只是训练数据的构造需要自己去改写一下。如果是简单的复现，用上面几个包就可以了，避免重复造轮子，但如果想对组件进行相应的替换，那就得自己写，我以后有时间也想尝试复现一下。</p>
+<h2 id="实际对比效果"><a href="#实际对比效果" class="headerlink" title="实际对比效果"></a>实际对比效果</h2><p><strong>query</strong>:Sexy Elegant Base Tanks &amp; Camis Female Smooth Sling Dress</p>
+<p><strong>result</strong>：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Doc2vec</th>
+<th>SimCSE</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Glossy Stainless Steel Simple Laser Open Bracelet</td>
+<td>Sexy Tanks &amp; Camis Female Viscose Sling Dress</td>
+</tr>
+<tr>
+<td>Elegant Small Smile Face Cute Letter Earrings</td>
+<td>Waisted Sexy Fitting Base Tanks &amp; Camis Sling Dress</td>
+</tr>
+<tr>
+<td>Elegant Simple Cross Shell Beads Earrings</td>
+<td>Sexy Base Tanks &amp; Camis Summer Female Sling Dress</td>
+</tr>
+<tr>
+<td>Sexy Takato Ultra-thin Lace Lace Sexy Stockings</td>
+<td>Waisted Split Elegant Base Tanks &amp; Camis Female New Style Sling Dress</td>
+</tr>
+<tr>
+<td>Magnet Pillow Core Will Gift Magnet Gift Pillow</td>
+<td>Waisted Base Tanks &amp; Camis Vintage Female Sling Dress</td>
+</tr>
+<tr>
+<td>Fitting Suit Collar Short Sleeve Spring Summer High Waist Female Knit Dress</td>
+<td>Elegant V-neck Satin Fitting Thin Sling Dress Female Tanks &amp; Camis External Wear Dress</td>
+</tr>
+<tr>
+<td>Elegant Heart Simple Small Piercing Jewelry</td>
+<td>Sexy Off-the-shoulder Casual Pirinted Sling Dress</td>
+</tr>
+<tr>
+<td>Sexy Dress Women’s One Shoulder Slit Long Skirt</td>
+<td>Thin Long Split Sexy Fitting Elegant Base Tanks &amp; Camis Female Black Sling Dress</td>
+</tr>
+<tr>
+<td>Leather Spring Summer Leather New Arrived First Layer Vintage Manual Simple Single Shoes</td>
+<td>Mid-length Sexy Tanks &amp; Camis Ultrashort Female Smooth Dress</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>我只能说，对比学习在语句表达上确实和docvec不是一个量级的，太强了。。。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ol>
+<li>SimCSE在语句表达上很不错，而且他好像还比美团后出的Consert还要强一些</li>
+<li>至少这篇论文说明了在模型中做数据增强，比从源头做替换/裁剪等方式数据增强效果更好</li>
+<li>SimCSE有两个问题，在原作者近期的论文中【ESimCSE】提出来了，并且提出了解决方案：<ol>
+<li>由于正样本长度都是一样的，因此从长度这个特征来说，就可以区分很多样本，为了避免这个问题。原作者利用一种相对安全的方式：word repetition，就是对随机对句子进行单词重复的操作，一方面改变了正样本长度相等的缺陷，另一方面保持两者特征相似。</li>
+<li>他承担不了大的batch-size,一方面是内存不允许，一方面是效果也会下降，因此作者仿造在cv中的Momentum Contrast的操作用于提升性能。【为了缩小train和predict的差距，ESimCSE关闭了MC encoder中的dropout】</li>
+</ol>
+</li>
+<li>这篇论文的模型就是用的Sentence Bert，只是损失函数换了，原论文是CosineSimilarityLoss，而这篇论文改成了InfoNCE，利用Bert的dropout直接强有力的提升对比学习的效果。</li>
+</ol>
+<h2 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h2><p><a href="https://arxiv.org/pdf/2005.10242.pdf">Alignment &amp; Uniformity</a></p>
+<p><a href="https://github.com/princeton-nlp/SimCSE">github_simcse</a></p>
+<p><a href="https://github.com/UKPLab/sentence-transformers/">github_sen_tran</a></p>
+<p><a href="https://arxiv.org/abs/2104.08821">paper_simcse</a></p>
+<p><a href="https://arxiv.org/abs/2105.11741">paper_consert</a></p>
+<p><a href="https://arxiv.org/pdf/2109.04380.pdf">paper_esimcse</a></p>
+<p><a href="https://arxiv.org/abs/1911.05722">paper Moco</a></p>
+]]></content>
+      <categories>
+        <category>深度学习</category>
+      </categories>
+      <tags>
+        <tag>对比学习</tag>
       </tags>
   </entry>
 </search>
