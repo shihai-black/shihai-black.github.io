@@ -240,125 +240,6 @@ Aggregate_{k}^{pool}=max(\{\sigma (W_{pool}h_{u_{i}}^{k}+b),\forall u_{i}\in N(v
       </tags>
   </entry>
   <entry>
-    <title>Louvain算法</title>
-    <url>/2021/09/16/Louvain%E7%AE%97%E6%B3%95/</url>
-    <content><![CDATA[<blockquote>
-<p>利用商品的点击和购买，对商品进行聚类分析，因此选择了Louvain这个高效的聚类算法，再此主要是为了记录一下，方便日后回顾</p>
-</blockquote>
-<p>问题</p>
-<ul>
-<li>什么是模块度，其代表什么含义，公式推导</li>
-<li>Louvain算法的精髓是什么，以前是怎么做社团发现的</li>
-<li>社团发现和广义聚类的区别</li>
-<li>为什么Louvain算法会存在resolution问题，后面是怎么解决的。</li>
-</ul>
-<h2 id="模块度"><a href="#模块度" class="headerlink" title="模块度"></a>模块度</h2><p>Newman<a href="https://arxiv.org/pdf/cond-mat/0308217.pdf">1</a>，2003年首次提出了第一版模块度，后在<a href="https://www.pnas.org/content/pnas/103/23/8577.full.pdf">2</a>，2006年提出了第二版模块度，经过多次修正后形成现在我们认知中的模块度。</p>
-<h3 id="解释"><a href="#解释" class="headerlink" title="解释"></a>解释</h3><p>模块度有可以从两个角度解释，一种是较为宏观的表示簇内聚集度和簇外离散度的综合指标，另一种从数学角度认为是在给定组内的边的比例减去边是随机分布的期望分数，其具体的值属于【-0.5，1】。论文中认为0.3-0.8是较好模块度</p>
-<h3 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h3><p><strong>第一版</strong></p>
-<p>假设网络被划分为 $k$ 个社区，那么定义一个$k×k$的对称矩阵$e$，它的元素 $e<em>{ij}$表示社区 $i$ 和社区 $j$ 之间的边的数量。矩阵的迹$Tre=\sum e</em>{ii}$，也就表示了在相同社区内节点之间的边集合。显然，社区划分的好，也就是社区内部节点之间联系密集，那么该值就越高，这与我们通常对社区的认识是一致的。</p>
-<p>但是！如果不划分社区，直接将数据作为一个团，那他的Tre就是1，这是不合理的，因此又定义了一个$a<em>{i}=\sum e</em>{ij}$，表示所有连接到社区ii的边数量。最后形成第一版的模块度函数</p>
-<script type="math/tex; mode=display">
-Q=\sum (e_{ii}-ai^{2})=Tre-\left \| e^{2}\right \|</script><p><strong>第二版</strong></p>
-<p>为什么Newman要对模块度重新定义呢，因为第一版没有考虑节点度的概念，节点的度在一定程度上能够表示该节点被连接的概率，并且第二版矩阵形式可以应用在spectral optimization algorithms，具体参考<a href="https://en.wikipedia.org/wiki/Modularity_(networks">wiki</a>#Matrix_formulation)。</p>
-<script type="math/tex; mode=display">
-Q=\frac{\sum (A_{ij}-P_{ij})\delta_{ij}}{2m}</script><ul>
-<li>2m:所有节点的度数之和，为了计算的模块度不受m的规模影响</li>
-<li>$A<em>{ij}/\delta</em>{ij}$:节点的领结矩阵【不考虑有权那就是1,0】</li>
-<li>$P_{ij}$:任意两个节点i和j连接的概率</li>
-</ul>
-<p>我们将$K_i$和$K_j$表示节点i和j的度，那么</p>
-<script type="math/tex; mode=display">
-P_{ij}=\frac{K_i*K_j}{2m}=K_i*\frac{K_j}{2m}</script><p>$K<em>j/2m$表示节点j被连接的概率，因此$P</em>{ij}$就表示节点i和j连接的概率。并且第一版和第二版本质上互通的，两者可以直接推导成一个公式。</p>
-<h2 id="算法步骤"><a href="#算法步骤" class="headerlink" title="算法步骤"></a>算法步骤</h2><p>讲完了模块度的概念，那我们知道了模块度是用于衡量一个社团结构好坏的指标，而Louvain算法就是基于该指标，利用迭代不断优化模块度，并且其简单高效。</p>
-<p><strong>具体步骤</strong></p>
-<ol>
-<li>将图中的每个节点看成一个独立的社区，因此社区的数目与节点个数相同</li>
-<li>对于每个节点，尝试将该节点分配到其相邻节点所在的社区，观察其$\bigtriangledown Q$，并记录其$\bigtriangledown Q$最大相邻节点的社区，如果$\bigtriangledown Q&gt;0$，将该节点融入该社区</li>
-<li>重复第二步直至所有节点所在的社团模块度不在变化</li>
-<li>将所有社区压缩至一点节点，社区内节点之间的边的权重转化为新节点的环的权重，社区间的边权重转化为新节点间的边权重。</li>
-<li>重复迭代直至收敛</li>
-</ol>
-<p>那为什么说Louvain算法收敛速度很快呢，是因为他是根据相邻节点进行计算的，不是从全局来进行计算的，并且越上层的时候收敛越快，并且可以按层获取对应的社团。</p>
-<h2 id="算法不足和改进"><a href="#算法不足和改进" class="headerlink" title="算法不足和改进"></a>算法不足和改进</h2><h3 id="不足"><a href="#不足" class="headerlink" title="不足"></a>不足</h3><p>以模块度为目标函数的优化算法会存在一个分辨率限制的问题，即：无法发现社团数量小于$(N/2)^{1/2}$的社团，这对于一些小社团是不公平的。</p>
-<h3 id="改进"><a href="#改进" class="headerlink" title="改进"></a>改进</h3><p>主要是增加分辨率的调整，具体可以参考<a href="https://arxiv.org/abs/0812.1770">3</a>，这也是在python-louvain这个包中的resolution参数的来源</p>
-<h2 id="具体代码"><a href="#具体代码" class="headerlink" title="具体代码"></a>具体代码</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> networkx <span class="keyword">as</span> nx</span><br><span class="line"><span class="keyword">import</span> community</span><br><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">FastLouvain</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, pair_path, resolution, logger=<span class="literal">None</span></span>):</span></span><br><span class="line">        self.pair_path = pair_path</span><br><span class="line">        self.resolution = resolution</span><br><span class="line">        self.logger = logger</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">generate_graph</span>(<span class="params">self</span>):</span></span><br><span class="line">        G = nx.read_edgelist(self.pair_path, create_using=nx.Graph(), nodetype=<span class="built_in">str</span>, data=[(<span class="string">&#x27;weight&#x27;</span>, <span class="built_in">int</span>)])</span><br><span class="line">        self.logger.info(<span class="string">&#x27;node size :&#123;&#125;&#x27;</span>.<span class="built_in">format</span>(<span class="built_in">len</span>(G)))</span><br><span class="line">        self.G = G</span><br><span class="line">        <span class="keyword">return</span> G</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">best_community</span>(<span class="params">self</span>):</span></span><br><span class="line">        self.logger.info(<span class="string">&#x27;Start louvain training ……&#x27;</span>)</span><br><span class="line">        partition = community.best_partition(self.G, resolution=self.resolution)</span><br><span class="line">        cluster_label = <span class="built_in">set</span>([x <span class="keyword">for</span> x <span class="keyword">in</span> partition.values()])</span><br><span class="line">        self.logger.info(<span class="string">f&#x27;The number of cluster_label is <span class="subst">&#123;<span class="built_in">len</span>(cluster_label)&#125;</span>&#x27;</span>)</span><br><span class="line">        self.logger.info(<span class="string">&#x27;Start calculate modularity_q&#x27;</span>)</span><br><span class="line">        modularity_Q = community.modularity(partition, self.G)</span><br><span class="line">        self.logger.info(<span class="string">f&#x27;modularity_Q <span class="subst">&#123;modularity_Q&#125;</span>&#x27;</span>)</span><br><span class="line">        <span class="keyword">return</span> partition</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">run</span>(<span class="params">self</span>):</span></span><br><span class="line">        G = self.generate_graph()</span><br><span class="line">        partition = self.best_community()</span><br><span class="line">        <span class="keyword">return</span> G,partition</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    pair_path = <span class="string">&#x27;../input/click_list/0908/normal_pair_click_seq_7.csv&#x27;</span></span><br><span class="line">    resolution = <span class="number">0.5</span></span><br><span class="line">    fast_louvain = FastLouvain(pair_path,resolution)</span><br><span class="line">    G,partition = fast_louvain.run()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
-<li><a href="https://qinystat.gitee.io/2020/01/22/Modularity/#1-1%E5%8E%9F%E5%A7%8B%E5%AE%9A%E4%B9%89-Q1">博客1</a></li>
-<li><a href="https://greatpowerlaw.wordpress.com/2013/02/24/community-detection-modularity/">博客2</a></li>
-<li><a href="https://blog.csdn.net/wangyibo0201/article/details/52048248">博客3</a></li>
-</ul>
-]]></content>
-      <categories>
-        <category>机器学习</category>
-      </categories>
-      <tags>
-        <tag>community detective</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>关联挖掘</title>
-    <url>/2021/09/18/%E5%85%B3%E8%81%94%E6%8C%96%E6%8E%98/</url>
-    <content><![CDATA[<blockquote>
-<p>对商品订单进行类目级别的关联挖掘，因为订单太少，无法用到商品这个级别，并且主要是因为做关联挖掘的目的是为了投放广告</p>
-</blockquote>
-<h2 id="指标定义"><a href="#指标定义" class="headerlink" title="指标定义"></a>指标定义</h2><p><strong>项于项集</strong></p>
-<p>项，指我们分析数据中的<strong>一个对象</strong>，如啤酒；项集，就是<strong>若干项</strong>的项构成的集合，如集合{啤酒，面包}是一个2项集。</p>
-<p><strong>支持度（support）</strong></p>
-<p>某项集在数据集中出现的概率，支持度体现的是某个项集的频繁程度，只有<strong>项集达到一定程度</strong>，我们才会研究该项集的必要。</p>
-<p>其计算公式为：</p>
-
-$$
-support(A\cup B)=\frac{{A\cup B}}{All}
-$$
-
-<p>举个例子：AB在订单中同时出现了100次，总共有1000个订单，那$A\cup B$项集的支持度就是0.1</p>
-<p><strong>置信度（confidence）</strong></p>
-<p>当用户购买了商品A后有多大概率会购买商品B，表示关联性的强弱。</p>
-<p>其计算公式为:<br>
-$$
-confidence(A\rightarrow B)=\frac{support(A\cup B)}{support(A)}
-$$
-<br>举个例子，AB同时出现的订单有100次，而A购买的订单次数有200次，那置信度就是0.5</p>
-<p><strong>提升度（lift）</strong></p>
-<p>商品A的出现，对商品B的出现概率提升的程度，一般是大于1说明A的出现有组与商品B的出现</p>
-<p>其计算公式为：</p>
-
-$$
-lift(A\rightarrow B) = \frac{confidence(A\rightarrow B)}{support(B)}
-$$
-
-<p>举个例子，已知总订单100，AB同时出现时20：</p>
-<ul>
-<li>如果B的订单是20，A的订单时40，那么提升度为5，说明B商品强依赖于A，A的出现有利于B的出现</li>
-<li>同样，如果B的订单是50，A的订单是50，那么提升度为0.8，说明B商品和A商品没有强依赖关系。</li>
-</ul>
-<h2 id="经典算法"><a href="#经典算法" class="headerlink" title="经典算法"></a>经典算法</h2><h3 id="Apriori"><a href="#Apriori" class="headerlink" title="Apriori"></a>Apriori</h3><p>具体步骤</p>
-<ol>
-<li>计算项集K=1的所有支持度</li>
-<li>选出大于最小支持度的数据</li>
-<li>如果项集为空，则对应 K-1 项集的结果为最终结果。否则重复1，2</li>
-</ol>
-<p>该算法时间负责度比较高，相当于，针对每个K都要计算一次数据集。因此用学者利用树来优化算法</p>
-<h3 id="FP-Growth"><a href="#FP-Growth" class="headerlink" title="FP-Growth"></a>FP-Growth</h3><p>具体步骤</p>
-<ol>
-<li>扫描数据，得到所有频繁1项集的的计数。然后删除支持度低于阈值的项，将1项集放入项头表，并按照支持度降序排列</li>
-<li>扫描数据，将读到的原始数据剔除非频繁1项集，并按照支持度降序排列。</li>
-<li>读入排序后的数据集，插入FP树，插入时按照排序后的顺序，插入FP树中，排序靠前的节点是祖先节点，而靠后的是子孙节点。如果有共用的祖先，则对应的公用祖先节点计数加1。插入后，如果有新节点出现，则项头表对应的节点会通过节点链表链接上新节点。直到所有的数据都插入到FP树后，FP树的建立完成。</li>
-<li>从项头表的底部项依次向上找到项头表项对应的条件模式基。从条件模式基递归挖掘得到项头表项项的频繁项集。</li>
-<li>如果不限制频繁项集的项数，则返回步骤4所有的频繁项集，否则只返回满足项数要求的频繁项集。</li>
-</ol>
-<p>该算法只需要扫面两次数据集就可以得出所有结果，因此相较于Apriori速度会有所提神，不过也得看具体可以提出多大的K</p>
-<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><p>对于apriori主要有两个包可以用efficient_apriori,mlxtend.frequent_patterns。前者是比较方便，但是问题在于没有具体的数字，后面这个包就比较舒服了，可以直接输出对应的指标。不过主要是我现在用的数据集小，如果数据集很大，那可能FP-Growth更合适一些不过要看具体场景,他的包fptools。</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> efficient_apriori <span class="keyword">import</span> apriori</span><br><span class="line"><span class="keyword">from</span> mlxtend.preprocessing <span class="keyword">import</span> TransactionEncoder</span><br><span class="line"><span class="keyword">from</span> mlxtend.frequent_patterns <span class="keyword">import</span> apriori <span class="keyword">as</span> apr</span><br><span class="line"><span class="keyword">from</span> mlxtend.frequent_patterns <span class="keyword">import</span> association_rules</span><br><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">import</span> fptools <span class="keyword">as</span> fp</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">data=[(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>),(<span class="string">&#x27;可乐&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>, <span class="string">&#x27;鸡蛋&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;可乐&#x27;</span>)]</span><br><span class="line"></span><br><span class="line"><span class="comment"># efficient_apriori包的使用</span></span><br><span class="line">itemsets, rules = apriori(data, min_support=<span class="number">0.5</span>,  min_confidence=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># mlxtend.frequent_patterns包的使用</span></span><br><span class="line">Encoder = TransactionEncoder()</span><br><span class="line">encoded_data = Encoder.fit_transform(data)</span><br><span class="line">df = pd.DataFrame(encoded_data, columns=Encoder.columns_)</span><br><span class="line">frequent_items = apr(df, min_support=<span class="number">0.5</span>, use_colnames=<span class="literal">True</span>, max_len=<span class="number">4</span>).sort_values(by=<span class="string">&#x27;support&#x27;</span>, ascending=<span class="literal">False</span>)</span><br><span class="line">df_re = association_rules(frequent_items, metric=<span class="string">&#x27;lift&#x27;</span>, min_threshold=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#fp</span></span><br><span class="line">data = [(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;可乐&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>, <span class="string">&#x27;鸡蛋&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;可乐&#x27;</span>)]</span><br><span class="line">fis = [iset <span class="keyword">for</span> iset <span class="keyword">in</span> fp.frequent_itemsets(data, <span class="number">2</span>)]</span><br><span class="line">mfis = [iset <span class="keyword">for</span> iset <span class="keyword">in</span> fp.maximal_frequent_itemsets(data, <span class="number">2</span>)]</span><br></pre></td></tr></table></figure>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://zhuanlan.zhihu.com/p/198842818">知乎1</a></p>
-<p><a href="https://zhuanlan.zhihu.com/p/66944900">知乎2</a></p>
-<p><a href="https://www.cnblogs.com/zhengxingpeng/p/6679280.html">博客</a></p>
-]]></content>
-      <tags>
-        <tag>机器学习</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>初识NLP</title>
     <url>/2021/04/11/%E5%88%9D%E8%AF%86NLP/</url>
     <content><![CDATA[<h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>此文档为了更好的理解自然语言处理（natural language processing），自然语言处理(NLP)就是开发能够理解人类语言的应用程序或服务。接下来会讨论一些NLP在国内外的发展状况和实际应用的一些例子，了解当前最前沿的NLP应用并掌握一定的NLP技术是接下来自己需要做的。</p>
@@ -513,6 +394,62 @@ $$
       </tags>
   </entry>
   <entry>
+    <title>Louvain算法</title>
+    <url>/2021/09/16/Louvain%E7%AE%97%E6%B3%95/</url>
+    <content><![CDATA[<blockquote>
+<p>利用商品的点击和购买，对商品进行聚类分析，因此选择了Louvain这个高效的聚类算法，再此主要是为了记录一下，方便日后回顾</p>
+</blockquote>
+<p>问题</p>
+<ul>
+<li>什么是模块度，其代表什么含义，公式推导</li>
+<li>Louvain算法的精髓是什么，以前是怎么做社团发现的</li>
+<li>社团发现和广义聚类的区别</li>
+<li>为什么Louvain算法会存在resolution问题，后面是怎么解决的。</li>
+</ul>
+<h2 id="模块度"><a href="#模块度" class="headerlink" title="模块度"></a>模块度</h2><p>Newman<a href="https://arxiv.org/pdf/cond-mat/0308217.pdf">1</a>，2003年首次提出了第一版模块度，后在<a href="https://www.pnas.org/content/pnas/103/23/8577.full.pdf">2</a>，2006年提出了第二版模块度，经过多次修正后形成现在我们认知中的模块度。</p>
+<h3 id="解释"><a href="#解释" class="headerlink" title="解释"></a>解释</h3><p>模块度有可以从两个角度解释，一种是较为宏观的表示簇内聚集度和簇外离散度的综合指标，另一种从数学角度认为是在给定组内的边的比例减去边是随机分布的期望分数，其具体的值属于【-0.5，1】。论文中认为0.3-0.8是较好模块度</p>
+<h3 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h3><p><strong>第一版</strong></p>
+<p>假设网络被划分为 $k$ 个社区，那么定义一个$k×k$的对称矩阵$e$，它的元素 $e<em>{ij}$表示社区 $i$ 和社区 $j$ 之间的边的数量。矩阵的迹$Tre=\sum e</em>{ii}$，也就表示了在相同社区内节点之间的边集合。显然，社区划分的好，也就是社区内部节点之间联系密集，那么该值就越高，这与我们通常对社区的认识是一致的。</p>
+<p>但是！如果不划分社区，直接将数据作为一个团，那他的Tre就是1，这是不合理的，因此又定义了一个$a<em>{i}=\sum e</em>{ij}$，表示所有连接到社区ii的边数量。最后形成第一版的模块度函数</p>
+<script type="math/tex; mode=display">
+Q=\sum (e_{ii}-ai^{2})=Tre-\left \| e^{2}\right \|</script><p><strong>第二版</strong></p>
+<p>为什么Newman要对模块度重新定义呢，因为第一版没有考虑节点度的概念，节点的度在一定程度上能够表示该节点被连接的概率，并且第二版矩阵形式可以应用在spectral optimization algorithms，具体参考<a href="https://en.wikipedia.org/wiki/Modularity_(networks">wiki</a>#Matrix_formulation)。</p>
+<script type="math/tex; mode=display">
+Q=\frac{\sum (A_{ij}-P_{ij})\delta_{ij}}{2m}</script><ul>
+<li>2m:所有节点的度数之和，为了计算的模块度不受m的规模影响</li>
+<li>$A<em>{ij}/\delta</em>{ij}$:节点的领结矩阵【不考虑有权那就是1,0】</li>
+<li>$P_{ij}$:任意两个节点i和j连接的概率</li>
+</ul>
+<p>我们将$K_i$和$K_j$表示节点i和j的度，那么</p>
+<script type="math/tex; mode=display">
+P_{ij}=\frac{K_i*K_j}{2m}=K_i*\frac{K_j}{2m}</script><p>$K<em>j/2m$表示节点j被连接的概率，因此$P</em>{ij}$就表示节点i和j连接的概率。并且第一版和第二版本质上互通的，两者可以直接推导成一个公式。</p>
+<h2 id="算法步骤"><a href="#算法步骤" class="headerlink" title="算法步骤"></a>算法步骤</h2><p>讲完了模块度的概念，那我们知道了模块度是用于衡量一个社团结构好坏的指标，而Louvain算法就是基于该指标，利用迭代不断优化模块度，并且其简单高效。</p>
+<p><strong>具体步骤</strong></p>
+<ol>
+<li>将图中的每个节点看成一个独立的社区，因此社区的数目与节点个数相同</li>
+<li>对于每个节点，尝试将该节点分配到其相邻节点所在的社区，观察其$\bigtriangledown Q$，并记录其$\bigtriangledown Q$最大相邻节点的社区，如果$\bigtriangledown Q&gt;0$，将该节点融入该社区</li>
+<li>重复第二步直至所有节点所在的社团模块度不在变化</li>
+<li>将所有社区压缩至一点节点，社区内节点之间的边的权重转化为新节点的环的权重，社区间的边权重转化为新节点间的边权重。</li>
+<li>重复迭代直至收敛</li>
+</ol>
+<p>那为什么说Louvain算法收敛速度很快呢，是因为他是根据相邻节点进行计算的，不是从全局来进行计算的，并且越上层的时候收敛越快，并且可以按层获取对应的社团。</p>
+<h2 id="算法不足和改进"><a href="#算法不足和改进" class="headerlink" title="算法不足和改进"></a>算法不足和改进</h2><h3 id="不足"><a href="#不足" class="headerlink" title="不足"></a>不足</h3><p>以模块度为目标函数的优化算法会存在一个分辨率限制的问题，即：无法发现社团数量小于$(N/2)^{1/2}$的社团，这对于一些小社团是不公平的。</p>
+<h3 id="改进"><a href="#改进" class="headerlink" title="改进"></a>改进</h3><p>主要是增加分辨率的调整，具体可以参考<a href="https://arxiv.org/abs/0812.1770">3</a>，这也是在python-louvain这个包中的resolution参数的来源</p>
+<h2 id="具体代码"><a href="#具体代码" class="headerlink" title="具体代码"></a>具体代码</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> networkx <span class="keyword">as</span> nx</span><br><span class="line"><span class="keyword">import</span> community</span><br><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">FastLouvain</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, pair_path, resolution, logger=<span class="literal">None</span></span>):</span></span><br><span class="line">        self.pair_path = pair_path</span><br><span class="line">        self.resolution = resolution</span><br><span class="line">        self.logger = logger</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">generate_graph</span>(<span class="params">self</span>):</span></span><br><span class="line">        G = nx.read_edgelist(self.pair_path, create_using=nx.Graph(), nodetype=<span class="built_in">str</span>, data=[(<span class="string">&#x27;weight&#x27;</span>, <span class="built_in">int</span>)])</span><br><span class="line">        self.logger.info(<span class="string">&#x27;node size :&#123;&#125;&#x27;</span>.<span class="built_in">format</span>(<span class="built_in">len</span>(G)))</span><br><span class="line">        self.G = G</span><br><span class="line">        <span class="keyword">return</span> G</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">best_community</span>(<span class="params">self</span>):</span></span><br><span class="line">        self.logger.info(<span class="string">&#x27;Start louvain training ……&#x27;</span>)</span><br><span class="line">        partition = community.best_partition(self.G, resolution=self.resolution)</span><br><span class="line">        cluster_label = <span class="built_in">set</span>([x <span class="keyword">for</span> x <span class="keyword">in</span> partition.values()])</span><br><span class="line">        self.logger.info(<span class="string">f&#x27;The number of cluster_label is <span class="subst">&#123;<span class="built_in">len</span>(cluster_label)&#125;</span>&#x27;</span>)</span><br><span class="line">        self.logger.info(<span class="string">&#x27;Start calculate modularity_q&#x27;</span>)</span><br><span class="line">        modularity_Q = community.modularity(partition, self.G)</span><br><span class="line">        self.logger.info(<span class="string">f&#x27;modularity_Q <span class="subst">&#123;modularity_Q&#125;</span>&#x27;</span>)</span><br><span class="line">        <span class="keyword">return</span> partition</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">run</span>(<span class="params">self</span>):</span></span><br><span class="line">        G = self.generate_graph()</span><br><span class="line">        partition = self.best_community()</span><br><span class="line">        <span class="keyword">return</span> G,partition</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    pair_path = <span class="string">&#x27;../input/click_list/0908/normal_pair_click_seq_7.csv&#x27;</span></span><br><span class="line">    resolution = <span class="number">0.5</span></span><br><span class="line">    fast_louvain = FastLouvain(pair_path,resolution)</span><br><span class="line">    G,partition = fast_louvain.run()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://qinystat.gitee.io/2020/01/22/Modularity/#1-1%E5%8E%9F%E5%A7%8B%E5%AE%9A%E4%B9%89-Q1">博客1</a></li>
+<li><a href="https://greatpowerlaw.wordpress.com/2013/02/24/community-detection-modularity/">博客2</a></li>
+<li><a href="https://blog.csdn.net/wangyibo0201/article/details/52048248">博客3</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>机器学习</category>
+      </categories>
+      <tags>
+        <tag>community detective</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>多进程、多线程</title>
     <url>/2021/04/11/%E5%A4%9A%E8%BF%9B%E7%A8%8B%E3%80%81%E5%A4%9A%E7%BA%BF%E7%A8%8B%EF%BC%88python%EF%BC%89/</url>
     <content><![CDATA[<blockquote>
@@ -569,6 +506,116 @@ $$
       </categories>
       <tags>
         <tag>工程开发</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>万物皆可embedding</title>
+    <url>/2022/01/25/%E4%B8%87%E7%89%A9%E7%9A%86%E5%8F%AFembedding/</url>
+    <content><![CDATA[<h1 id="万物皆可embedding"><a href="#万物皆可embedding" class="headerlink" title="万物皆可embedding"></a>万物皆可embedding</h1><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>​    本文的目的是想通过这次分享，让可爱学长们能够了解在算法人员口中的embedding到底是什么，它是如何作用在我们算法的日常工作中。</p>
+<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>引入embedding之前，需要先讲一下embedding的前身技术，<strong>one-hot编码</strong>。</p>
+<h2 id="one-hot"><a href="#one-hot" class="headerlink" title="one-hot"></a>one-hot</h2><p>​    在机器学习里，存在one-hot向量（英语：one-hot vector）的概念。在一任意维度的向量中，仅有一个维度的值是1，其余为0。譬如向量[0,0,1,0,0]，即为5维空间中的一组one-hot向量。将类别型数据转换成one-hot向量的过程则称one-hot编码（英语：one-hot encoding。在统计学中，one-hot我们一般叫做虚拟变量。</p>
+<p><img src="/images/embed1.jpg" alt="embed1"></p>
+<p><strong>优势</strong></p>
+<ol>
+<li>可以将类别型数据转化为向量形式，各类别在高维空间中距离相等</li>
+<li>进行损失函数（例如交叉熵损失）或准确率计算时，变得非常方便</li>
+</ol>
+<p><strong>劣势</strong></p>
+<ol>
+<li>当类别数量过于庞杂时，会导致维度灾难</li>
+<li>不能很好的刻画词与词之间的相似性</li>
+<li>强稀疏性</li>
+</ol>
+<p><strong>备注</strong></p>
+<ul>
+<li>sklearn包：sklearn.preprocessing.OneHotEncoder</li>
+<li>pandas包：pandas.get_dummies</li>
+</ul>
+<h2 id="embedding"><a href="#embedding" class="headerlink" title="embedding"></a>embedding</h2><p>​    为了克服上述缺点，embedding技术就横空出世，最开始应用于<strong>NLP的词表达</strong>中，其最早时在1986年Hinton提出的，其<strong>基本想法</strong>是：</p>
+<p>​    通过训练将某种语言中的每一个词 映射成一个固定长度的短向量（当然这里的“短”是相对于One-Hot的“长”而言的），所有这些向量构成一个词向量空间，而每一个向量则可视为 该空间中的一个点，在这个空间上引入“距离”，就可以根据词之间的距离来判断它们之间的语法、语义上的相似性。</p>
+<p>​    真正让embedding技术发扬光大的是谷歌Tomas Mikolov团队的Word2Vec工具。该工具效率很高并且在语义表示上具有很好的效果。        </p>
+<p>​    时至今日，embedding技术延伸至生活的方方面面，现在我们可以用embedding技术去表达一部电影，一个用户，一个商品等等。</p>
+<p>​    说了这么多，那到底什么是embedding技术，一句话概括：一种基于<strong>低维向量</strong>来表示物品的技术我们称之为embedding技术。</p>
+<h1 id="Word2vec"><a href="#Word2vec" class="headerlink" title="Word2vec"></a>Word2vec</h1><p>word2vec模型的目的并不是训练词embedding，词embedding只是模型的附带品！！！</p>
+<p><img src="/images/embed2.png" alt="embed2"></p>
+<p><strong>模型结构</strong></p>
+<ol>
+<li>两层浅层神经网络</li>
+<li>输入单词，输出预测单词的概率</li>
+</ol>
+<h2 id="两种训练模式"><a href="#两种训练模式" class="headerlink" title="两种训练模式"></a>两种训练模式</h2><p><img src="/images/embed3.png" alt="embed3"></p>
+<h3 id="CBOW"><a href="#CBOW" class="headerlink" title="CBOW"></a>CBOW</h3><p><img src="/images/embed4.png" alt="embed4"></p>
+<p>通过上下文来预测当前值。相当于一句话中扣掉一个词，让你猜这个词是什么。</p>
+<h3 id="Skip-gram"><a href="#Skip-gram" class="headerlink" title="Skip-gram"></a>Skip-gram</h3><p><img src="images/embed5.png" alt="embed5"></p>
+<p>用当前词来预测上下文。相当于给你一个词，让你猜前面和后面可能出现什么词。</p>
+<h2 id="两种优化方式"><a href="#两种优化方式" class="headerlink" title="两种优化方式"></a>两种优化方式</h2><p>前文说了，Word2vec的输出是预测单词的概率，这是利用Softmax函数做归一化去处理的，那我们来看看softmax是什么。</p>
+<script type="math/tex; mode=display">
+S_{i}=\frac{e^{i}}{\Sigma_{j} e^{j}}</script><p>那我们看到Softmax需要经历指数计算，指数计算在计算机运算中效率并不高，并且还需要计算全部单词的概率，当单词量级很高的时候，效率就会非常低，因为针对训练提出了两种优化方式：层序softmax和负采样。</p>
+<h3 id="Hierarchical-Softmax"><a href="#Hierarchical-Softmax" class="headerlink" title="Hierarchical Softmax"></a>Hierarchical Softmax</h3><p>利用<a href="https://www.cnblogs.com/pinard/p/7160330.html">霍夫曼树</a>代替从隐藏层到输出softmax层的映射，霍夫曼树简单来说就是：权重【频率】越低的单词优先合并成根节点的原则生成一整颗二叉树，大家可以看下图</p>
+<p><img src="images/embed6.png" alt="embed6"></p>
+<p>如果输入样本输出的真实值是W2，那么Hierarchical Softmax利用逻辑回归分类器一层一层做而分类，综合每一层的逻辑回归作为目标函数进行训练。（层序softmax就是一层一层做分类得来的）</p>
+<p><strong>优点</strong></p>
+<ol>
+<li>既然是二叉树，那计算量就从V变成了logV。</li>
+<li>针对高频词，路径越短，计算越快。</li>
+</ol>
+<p><strong>缺点</strong></p>
+<p>当中心词是偏僻词时，路径会很长，训练时间提高</p>
+<h3 id="Negative-Sampling"><a href="#Negative-Sampling" class="headerlink" title="Negative Sampling"></a>Negative Sampling</h3><p>Negative Sampling（负采样）的原理就比较简单，事先选择5-20个单词作为负样本，将softmax函数改为sigmod函数，直接由多分类作为二分类来使用。（至于负采样的个数，利用什么样的策略采样本文不予展开）</p>
+<p><strong>优点</strong></p>
+<ol>
+<li>不用构造霍夫曼树，只需要维护一个负样本数据集</li>
+<li>将softmax修改为sigmod函数，只需要改变第二层神经网络的少量参数，大大提升了效率</li>
+</ol>
+<h2 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h2><p><strong>优点</strong></p>
+<ol>
+<li>经过速度优化以后，训练词向量的速度很快</li>
+<li>通用性很强，可以用在各种 NLP 任务中</li>
+<li>由于考虑上下文，因此效果再18年以前一直都是Embedding技术的王牌</li>
+</ol>
+<p><strong>缺点</strong></p>
+<ol>
+<li>由于词和向量是一对一的关系，所以多义词的问题无法解决</li>
+<li>Word2vec 是一种静态的方式，虽然通用性强，但是无法针对特定任务做动态优化</li>
+</ol>
+<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><ol>
+<li>为什么要用CBOW和Skip-gram两种方式来训练，而不直接用传统DNN来训练？</li>
+<li>CBOW和Skip-gram分别有什么优劣势？</li>
+</ol>
+<h1 id="应用"><a href="#应用" class="headerlink" title="应用"></a>应用</h1><h2 id="Word-embedding及其衍生"><a href="#Word-embedding及其衍生" class="headerlink" title="Word embedding及其衍生"></a>Word embedding及其衍生</h2><p>用于表示单词于单词之间的相关性【基础任务】</p>
+<ul>
+<li>Word2vec【2013】：NLP中词向量训练的鼻祖</li>
+<li>Fasttext【2014】：Word2vec基础上引入了字符级别的词向量，对德语，俄语更友好</li>
+<li>ELMO【2018】：解决了一次多义的词向量模型</li>
+<li>Embedding layer【Bert时代】：基于Bert后时代的模型，词向量已经不作为单独训练的目的，而是直接作为输入的一层嵌入模型中，跟随任务目标的变化而变化</li>
+<li>Item2vec【2016】：微软将word2vec应用于推荐领域的一篇实用性很强的文章，主要用于训练item embedding，但更重要的是使其从NLP领域直接扩展到推荐、广告、搜索等任何可以生成sequence的领域。</li>
+<li>Airbnb Embedding【2018】:Airbnb将word2vec用于推荐的典型文章，主要用于训练user embedding，很多user look alike系统的user embedding都是这么训练来的。</li>
+</ul>
+<h2 id="Sentence-embedding"><a href="#Sentence-embedding" class="headerlink" title="Sentence embedding"></a>Sentence embedding</h2><p>用于表示句子于句子之间的相关性【标题召回】</p>
+<ul>
+<li>Doc2vec【2014】:在Word2vec的基础上引入一个句向量概念，随着模型一起训练</li>
+<li>Sentence_Bert【2019】：以Bert为基础，用有监督数据训练词向量</li>
+<li>SimCSE/ConSert/EsimCSE【2021】：对比学习方法，利用Sentence_Bert进行自监督训练</li>
+</ul>
+<h2 id="Graph-embedding"><a href="#Graph-embedding" class="headerlink" title="Graph embedding"></a>Graph embedding</h2><p>节点映射为向量表示的时候尽可能多地保留图的拓扑信息【社区关系】</p>
+<ul>
+<li>Deepwalk/Line/Node2Vec：基于Skip-gram的节点向量训练模型，区别在于他的输入需要用不同的遍历方式构造序列</li>
+<li>SDNE【2016】：基于自编码器的半监督Graph embedding训练模型，可以看作Line的一种延伸</li>
+<li>GCN/GraphSAGE/GAT/GIN【GCN时代】：GCN类模型，现阶段Graph embedding效果最好的模型</li>
+<li>EGES【2018】：很好用的item emebdding训练模型，其原理就是deepwalk+不同的sideinfo形成商品embedding用于推荐搜索</li>
+</ul>
+<h1 id="问题-1"><a href="#问题-1" class="headerlink" title="问题"></a>问题</h1><ol>
+<li>什么是Embedding？</li>
+<li>Embedding如何作用在我们算法工作？</li>
+</ol>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a href="https://zh.wikipedia.org/wiki/One-hot">one-hot</a></p>
+<p><a href="https://github.com/wzhe06/Reco-papers/tree/master/Embedding">paper list</a></p>
+]]></content>
+      <categories>
+        <category>深度学习</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
       </tags>
   </entry>
   <entry>
@@ -896,6 +943,69 @@ f(x)=\frac{1}{1+e^{-x}}</script><p><strong>备注</strong>：</p>
       </categories>
       <tags>
         <tag>基础知识</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>关联挖掘</title>
+    <url>/2021/09/18/%E5%85%B3%E8%81%94%E6%8C%96%E6%8E%98/</url>
+    <content><![CDATA[<blockquote>
+<p>对商品订单进行类目级别的关联挖掘，因为订单太少，无法用到商品这个级别，并且主要是因为做关联挖掘的目的是为了投放广告</p>
+</blockquote>
+<h2 id="指标定义"><a href="#指标定义" class="headerlink" title="指标定义"></a>指标定义</h2><p><strong>项于项集</strong></p>
+<p>项，指我们分析数据中的<strong>一个对象</strong>，如啤酒；项集，就是<strong>若干项</strong>的项构成的集合，如集合{啤酒，面包}是一个2项集。</p>
+<p><strong>支持度（support）</strong></p>
+<p>某项集在数据集中出现的概率，支持度体现的是某个项集的频繁程度，只有<strong>项集达到一定程度</strong>，我们才会研究该项集的必要。</p>
+<p>其计算公式为：</p>
+
+$$
+support(A\cup B)=\frac{{A\cup B}}{All}
+$$
+
+<p>举个例子：AB在订单中同时出现了100次，总共有1000个订单，那$A\cup B$项集的支持度就是0.1</p>
+<p><strong>置信度（confidence）</strong></p>
+<p>当用户购买了商品A后有多大概率会购买商品B，表示关联性的强弱。</p>
+<p>其计算公式为:<br>
+$$
+confidence(A\rightarrow B)=\frac{support(A\cup B)}{support(A)}
+$$
+<br>举个例子，AB同时出现的订单有100次，而A购买的订单次数有200次，那置信度就是0.5</p>
+<p><strong>提升度（lift）</strong></p>
+<p>商品A的出现，对商品B的出现概率提升的程度，一般是大于1说明A的出现有组与商品B的出现</p>
+<p>其计算公式为：</p>
+
+$$
+lift(A\rightarrow B) = \frac{confidence(A\rightarrow B)}{support(B)}
+$$
+
+<p>举个例子，已知总订单100，AB同时出现时20：</p>
+<ul>
+<li>如果B的订单是20，A的订单时40，那么提升度为5，说明B商品强依赖于A，A的出现有利于B的出现</li>
+<li>同样，如果B的订单是50，A的订单是50，那么提升度为0.8，说明B商品和A商品没有强依赖关系。</li>
+</ul>
+<h2 id="经典算法"><a href="#经典算法" class="headerlink" title="经典算法"></a>经典算法</h2><h3 id="Apriori"><a href="#Apriori" class="headerlink" title="Apriori"></a>Apriori</h3><p>具体步骤</p>
+<ol>
+<li>计算项集K=1的所有支持度</li>
+<li>选出大于最小支持度的数据</li>
+<li>如果项集为空，则对应 K-1 项集的结果为最终结果。否则重复1，2</li>
+</ol>
+<p>该算法时间负责度比较高，相当于，针对每个K都要计算一次数据集。因此用学者利用树来优化算法</p>
+<h3 id="FP-Growth"><a href="#FP-Growth" class="headerlink" title="FP-Growth"></a>FP-Growth</h3><p>具体步骤</p>
+<ol>
+<li>扫描数据，得到所有频繁1项集的的计数。然后删除支持度低于阈值的项，将1项集放入项头表，并按照支持度降序排列</li>
+<li>扫描数据，将读到的原始数据剔除非频繁1项集，并按照支持度降序排列。</li>
+<li>读入排序后的数据集，插入FP树，插入时按照排序后的顺序，插入FP树中，排序靠前的节点是祖先节点，而靠后的是子孙节点。如果有共用的祖先，则对应的公用祖先节点计数加1。插入后，如果有新节点出现，则项头表对应的节点会通过节点链表链接上新节点。直到所有的数据都插入到FP树后，FP树的建立完成。</li>
+<li>从项头表的底部项依次向上找到项头表项对应的条件模式基。从条件模式基递归挖掘得到项头表项项的频繁项集。</li>
+<li>如果不限制频繁项集的项数，则返回步骤4所有的频繁项集，否则只返回满足项数要求的频繁项集。</li>
+</ol>
+<p>该算法只需要扫面两次数据集就可以得出所有结果，因此相较于Apriori速度会有所提神，不过也得看具体可以提出多大的K</p>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><p>对于apriori主要有两个包可以用efficient_apriori,mlxtend.frequent_patterns。前者是比较方便，但是问题在于没有具体的数字，后面这个包就比较舒服了，可以直接输出对应的指标。不过主要是我现在用的数据集小，如果数据集很大，那可能FP-Growth更合适一些不过要看具体场景,他的包fptools。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> efficient_apriori <span class="keyword">import</span> apriori</span><br><span class="line"><span class="keyword">from</span> mlxtend.preprocessing <span class="keyword">import</span> TransactionEncoder</span><br><span class="line"><span class="keyword">from</span> mlxtend.frequent_patterns <span class="keyword">import</span> apriori <span class="keyword">as</span> apr</span><br><span class="line"><span class="keyword">from</span> mlxtend.frequent_patterns <span class="keyword">import</span> association_rules</span><br><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">import</span> fptools <span class="keyword">as</span> fp</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">data=[(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>),(<span class="string">&#x27;可乐&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>, <span class="string">&#x27;鸡蛋&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;可乐&#x27;</span>)]</span><br><span class="line"></span><br><span class="line"><span class="comment"># efficient_apriori包的使用</span></span><br><span class="line">itemsets, rules = apriori(data, min_support=<span class="number">0.5</span>,  min_confidence=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># mlxtend.frequent_patterns包的使用</span></span><br><span class="line">Encoder = TransactionEncoder()</span><br><span class="line">encoded_data = Encoder.fit_transform(data)</span><br><span class="line">df = pd.DataFrame(encoded_data, columns=Encoder.columns_)</span><br><span class="line">frequent_items = apr(df, min_support=<span class="number">0.5</span>, use_colnames=<span class="literal">True</span>, max_len=<span class="number">4</span>).sort_values(by=<span class="string">&#x27;support&#x27;</span>, ascending=<span class="literal">False</span>)</span><br><span class="line">df_re = association_rules(frequent_items, metric=<span class="string">&#x27;lift&#x27;</span>, min_threshold=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#fp</span></span><br><span class="line">data = [(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;可乐&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>, <span class="string">&#x27;鸡蛋&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;可乐&#x27;</span>)]</span><br><span class="line">fis = [iset <span class="keyword">for</span> iset <span class="keyword">in</span> fp.frequent_itemsets(data, <span class="number">2</span>)]</span><br><span class="line">mfis = [iset <span class="keyword">for</span> iset <span class="keyword">in</span> fp.maximal_frequent_itemsets(data, <span class="number">2</span>)]</span><br></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://zhuanlan.zhihu.com/p/198842818">知乎1</a></p>
+<p><a href="https://zhuanlan.zhihu.com/p/66944900">知乎2</a></p>
+<p><a href="https://www.cnblogs.com/zhengxingpeng/p/6679280.html">博客</a></p>
+]]></content>
+      <tags>
+        <tag>机器学习</tag>
       </tags>
   </entry>
   <entry>
