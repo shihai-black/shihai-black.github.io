@@ -296,6 +296,63 @@ P_{ij}=\frac{K_i*K_j}{2m}=K_i*\frac{K_j}{2m}</script><p>$K<em>j/2m$表示节点j
       </tags>
   </entry>
   <entry>
+    <title>PaddleOCR踩坑日记</title>
+    <url>/2022/08/22/PaddleOCR%E8%B8%A9%E5%9D%91%E6%97%A5%E8%AE%B0/</url>
+    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>由于项目需要，调研了一下paddleocr在文字识别的效果，在离线服务器部署完成，但是迁移线上时出现了极为麻烦的环境配置问题，所以特意写下这篇文章，以防日后出现相同的情况。</p>
+<h2 id="具体安装步骤"><a href="#具体安装步骤" class="headerlink" title="具体安装步骤"></a>具体安装步骤</h2><ul>
+<li>检查系统版本[我是16.04版本]</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">lsb_release -a</span><br><span class="line"></span><br><span class="line">No LSB modules are available.</span><br><span class="line">Distributor ID:	Ubuntu</span><br><span class="line">Description:	Ubuntu 16.04.7 LTS</span><br><span class="line">Release:	16.04</span><br><span class="line">Codename:	xenial</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>根据系统版本安装对应的cuda版本【我是11.2版本，主要是Paddle-gpu适配的是10.2/11.2/11.6】</p>
+<ul>
+<li>不用单独安装nvidia驱动，安装cudatoolkit时会自动匹配上，如果有Nvidia驱动直接nvidia-uninstall卸载即可</li>
+<li>查看paddleocr允许的cuda版本</li>
+</ul>
+</li>
+<li><p>根据对应的cuda版本安装pytorch【版本比使用低一些不要紧】</p>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">pip3 install torch torchvision torchaudio --extra-index-url https:&#x2F;&#x2F;download.pytorch.org&#x2F;whl&#x2F;cu111</span><br></pre></td></tr></table></figure>
+<ul>
+<li>根据对应的cuda安装paddleocr【我装的是2.2.2】<ul>
+<li><strong>要求！！！CUDA 11.2，cuDNN 8.1.1（多卡环境下 NCCL&gt;=2.7）</strong></li>
+</ul>
+</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">python -m pip install paddlepaddle-gpu==2.2.2.post112 -f https://www.paddlepaddle.org.cn/whl/linux/mkl/avx/stable.html</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>根据cuda，paddleocr安装cudnn8.1.1</p>
+<ul>
+<li><p>首先下载压缩包</p>
+</li>
+<li><p>```sh<br>tar -xvf cudnn-11.2-linux-x64-v8.1.1.33.tgz<br>cd cuda<br>cp lib64/<em> /usr/local/cuda-11.2/lib64/<br>cp include/</em> /usr/local/cuda-11.2/include/<br>chmod a+r /usr/local/cuda-11.2/lib64/<em> /usr/local/cuda-11.2/include/</em></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">- 把下面这段话加到～&#x2F;.bashrc文件内，然后source ～&#x2F;.bashrc</span><br><span class="line"></span><br><span class="line">  &#96;&#96;&#96;sh</span><br><span class="line">  # add nvcc compiler to path</span><br><span class="line">  export PATH&#x3D;$PATH:&#x2F;usr&#x2F;local&#x2F;cuda-11.2&#x2F;bin</span><br><span class="line">  # add cuBLAS, cuSPARSE, cuRAND, cuSOLVER, cuFFT to path</span><br><span class="line">  export LD_LIBRARY_PATH&#x3D;$LD_LIBRARY_PATH:&#x2F;usr&#x2F;local&#x2F;cuda-11.2&#x2F;lib64:&#x2F;usr&#x2F;lib&#x2F;x86_64-linux-gnu</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p>安装paddleocr</p>
+<ul>
+<li><pre><code class="lang-sh">paddleocr --image_dir &quot;https://marketing-publication.s3.us-west-2.amazonaws.com/tmp/ocr_bill/images/bill/1.png&quot; --use_angle_cls true --lang en --use_gpu True
+</code></pre>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="链接"><a href="#链接" class="headerlink" title="链接"></a>链接</h2><ul>
+<li><a href="https://zhuanlan.zhihu.com/p/520536351">cuda安装教程</a></li>
+<li><a href="https://developer.nvidia.com/cuda-11.2.0-download-archive">cuda网站</a></li>
+<li><a href="https://pytorch.org/">pytorch下载地址</a></li>
+<li><a href="https://www.paddlepaddle.org.cn/install/old?docurl=/documentation/docs/zh/install/pip/linux-pip.html">paddle安装地址</a></li>
+<li><a href="https://developer.nvidia.com/rdp/cudnn-archive">cudnn地址</a></li>
+<li><a href="https://blog.csdn.net/qq_44961869/article/details/115954258">cudnn教程</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>踩坑日记</category>
+      </categories>
+  </entry>
+  <entry>
     <title>万物皆可embedding</title>
     <url>/2022/01/25/%E4%B8%87%E7%89%A9%E7%9A%86%E5%8F%AFembedding/</url>
     <content><![CDATA[<h1 id="万物皆可embedding"><a href="#万物皆可embedding" class="headerlink" title="万物皆可embedding"></a>万物皆可embedding</h1><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>​    本文的目的是想通过这次分享，让可爱学长们能够了解在算法人员口中的embedding到底是什么，它是如何作用在我们算法的日常工作中。</p>
@@ -403,6 +460,69 @@ S_{i}=\frac{e^{i}}{\Sigma_{j} e^{j}}</script><p>那我们看到Softmax需要经�
       </categories>
       <tags>
         <tag>NLP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>关联挖掘</title>
+    <url>/2021/09/18/%E5%85%B3%E8%81%94%E6%8C%96%E6%8E%98/</url>
+    <content><![CDATA[<blockquote>
+<p>对商品订单进行类目级别的关联挖掘，因为订单太少，无法用到商品这个级别，并且主要是因为做关联挖掘的目的是为了投放广告</p>
+</blockquote>
+<h2 id="指标定义"><a href="#指标定义" class="headerlink" title="指标定义"></a>指标定义</h2><p><strong>项于项集</strong></p>
+<p>项，指我们分析数据中的<strong>一个对象</strong>，如啤酒；项集，就是<strong>若干项</strong>的项构成的集合，如集合{啤酒，面包}是一个2项集。</p>
+<p><strong>支持度（support）</strong></p>
+<p>某项集在数据集中出现的概率，支持度体现的是某个项集的频繁程度，只有<strong>项集达到一定程度</strong>，我们才会研究该项集的必要。</p>
+<p>其计算公式为：</p>
+
+$$
+support(A\cup B)=\frac{{A\cup B}}{All}
+$$
+
+<p>举个例子：AB在订单中同时出现了100次，总共有1000个订单，那$A\cup B$项集的支持度就是0.1</p>
+<p><strong>置信度（confidence）</strong></p>
+<p>当用户购买了商品A后有多大概率会购买商品B，表示关联性的强弱。</p>
+<p>其计算公式为:<br>
+$$
+confidence(A\rightarrow B)=\frac{support(A\cup B)}{support(A)}
+$$
+<br>举个例子，AB同时出现的订单有100次，而A购买的订单次数有200次，那置信度就是0.5</p>
+<p><strong>提升度（lift）</strong></p>
+<p>商品A的出现，对商品B的出现概率提升的程度，一般是大于1说明A的出现有组与商品B的出现</p>
+<p>其计算公式为：</p>
+
+$$
+lift(A\rightarrow B) = \frac{confidence(A\rightarrow B)}{support(B)}
+$$
+
+<p>举个例子，已知总订单100，AB同时出现时20：</p>
+<ul>
+<li>如果B的订单是20，A的订单时40，那么提升度为5，说明B商品强依赖于A，A的出现有利于B的出现</li>
+<li>同样，如果B的订单是50，A的订单是50，那么提升度为0.8，说明B商品和A商品没有强依赖关系。</li>
+</ul>
+<h2 id="经典算法"><a href="#经典算法" class="headerlink" title="经典算法"></a>经典算法</h2><h3 id="Apriori"><a href="#Apriori" class="headerlink" title="Apriori"></a>Apriori</h3><p>具体步骤</p>
+<ol>
+<li>计算项集K=1的所有支持度</li>
+<li>选出大于最小支持度的数据</li>
+<li>如果项集为空，则对应 K-1 项集的结果为最终结果。否则重复1，2</li>
+</ol>
+<p>该算法时间负责度比较高，相当于，针对每个K都要计算一次数据集。因此用学者利用树来优化算法</p>
+<h3 id="FP-Growth"><a href="#FP-Growth" class="headerlink" title="FP-Growth"></a>FP-Growth</h3><p>具体步骤</p>
+<ol>
+<li>扫描数据，得到所有频繁1项集的的计数。然后删除支持度低于阈值的项，将1项集放入项头表，并按照支持度降序排列</li>
+<li>扫描数据，将读到的原始数据剔除非频繁1项集，并按照支持度降序排列。</li>
+<li>读入排序后的数据集，插入FP树，插入时按照排序后的顺序，插入FP树中，排序靠前的节点是祖先节点，而靠后的是子孙节点。如果有共用的祖先，则对应的公用祖先节点计数加1。插入后，如果有新节点出现，则项头表对应的节点会通过节点链表链接上新节点。直到所有的数据都插入到FP树后，FP树的建立完成。</li>
+<li>从项头表的底部项依次向上找到项头表项对应的条件模式基。从条件模式基递归挖掘得到项头表项项的频繁项集。</li>
+<li>如果不限制频繁项集的项数，则返回步骤4所有的频繁项集，否则只返回满足项数要求的频繁项集。</li>
+</ol>
+<p>该算法只需要扫面两次数据集就可以得出所有结果，因此相较于Apriori速度会有所提神，不过也得看具体可以提出多大的K</p>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><p>对于apriori主要有两个包可以用efficient_apriori,mlxtend.frequent_patterns。前者是比较方便，但是问题在于没有具体的数字，后面这个包就比较舒服了，可以直接输出对应的指标。不过主要是我现在用的数据集小，如果数据集很大，那可能FP-Growth更合适一些不过要看具体场景,他的包fptools。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> efficient_apriori <span class="keyword">import</span> apriori</span><br><span class="line"><span class="keyword">from</span> mlxtend.preprocessing <span class="keyword">import</span> TransactionEncoder</span><br><span class="line"><span class="keyword">from</span> mlxtend.frequent_patterns <span class="keyword">import</span> apriori <span class="keyword">as</span> apr</span><br><span class="line"><span class="keyword">from</span> mlxtend.frequent_patterns <span class="keyword">import</span> association_rules</span><br><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">import</span> fptools <span class="keyword">as</span> fp</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">data=[(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>),(<span class="string">&#x27;可乐&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>, <span class="string">&#x27;鸡蛋&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;可乐&#x27;</span>)]</span><br><span class="line"></span><br><span class="line"><span class="comment"># efficient_apriori包的使用</span></span><br><span class="line">itemsets, rules = apriori(data, min_support=<span class="number">0.5</span>,  min_confidence=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># mlxtend.frequent_patterns包的使用</span></span><br><span class="line">Encoder = TransactionEncoder()</span><br><span class="line">encoded_data = Encoder.fit_transform(data)</span><br><span class="line">df = pd.DataFrame(encoded_data, columns=Encoder.columns_)</span><br><span class="line">frequent_items = apr(df, min_support=<span class="number">0.5</span>, use_colnames=<span class="literal">True</span>, max_len=<span class="number">4</span>).sort_values(by=<span class="string">&#x27;support&#x27;</span>, ascending=<span class="literal">False</span>)</span><br><span class="line">df_re = association_rules(frequent_items, metric=<span class="string">&#x27;lift&#x27;</span>, min_threshold=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#fp</span></span><br><span class="line">data = [(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;可乐&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>, <span class="string">&#x27;鸡蛋&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;可乐&#x27;</span>)]</span><br><span class="line">fis = [iset <span class="keyword">for</span> iset <span class="keyword">in</span> fp.frequent_itemsets(data, <span class="number">2</span>)]</span><br><span class="line">mfis = [iset <span class="keyword">for</span> iset <span class="keyword">in</span> fp.maximal_frequent_itemsets(data, <span class="number">2</span>)]</span><br></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://zhuanlan.zhihu.com/p/198842818">知乎1</a></p>
+<p><a href="https://zhuanlan.zhihu.com/p/66944900">知乎2</a></p>
+<p><a href="https://www.cnblogs.com/zhengxingpeng/p/6679280.html">博客</a></p>
+]]></content>
+      <tags>
+        <tag>机器学习</tag>
       </tags>
   </entry>
   <entry>
@@ -557,69 +677,6 @@ S_{i}=\frac{e^{i}}{\Sigma_{j} e^{j}}</script><p>那我们看到Softmax需要经�
       </categories>
       <tags>
         <tag>基础知识</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>关联挖掘</title>
-    <url>/2021/09/18/%E5%85%B3%E8%81%94%E6%8C%96%E6%8E%98/</url>
-    <content><![CDATA[<blockquote>
-<p>对商品订单进行类目级别的关联挖掘，因为订单太少，无法用到商品这个级别，并且主要是因为做关联挖掘的目的是为了投放广告</p>
-</blockquote>
-<h2 id="指标定义"><a href="#指标定义" class="headerlink" title="指标定义"></a>指标定义</h2><p><strong>项于项集</strong></p>
-<p>项，指我们分析数据中的<strong>一个对象</strong>，如啤酒；项集，就是<strong>若干项</strong>的项构成的集合，如集合{啤酒，面包}是一个2项集。</p>
-<p><strong>支持度（support）</strong></p>
-<p>某项集在数据集中出现的概率，支持度体现的是某个项集的频繁程度，只有<strong>项集达到一定程度</strong>，我们才会研究该项集的必要。</p>
-<p>其计算公式为：</p>
-
-$$
-support(A\cup B)=\frac{{A\cup B}}{All}
-$$
-
-<p>举个例子：AB在订单中同时出现了100次，总共有1000个订单，那$A\cup B$项集的支持度就是0.1</p>
-<p><strong>置信度（confidence）</strong></p>
-<p>当用户购买了商品A后有多大概率会购买商品B，表示关联性的强弱。</p>
-<p>其计算公式为:<br>
-$$
-confidence(A\rightarrow B)=\frac{support(A\cup B)}{support(A)}
-$$
-<br>举个例子，AB同时出现的订单有100次，而A购买的订单次数有200次，那置信度就是0.5</p>
-<p><strong>提升度（lift）</strong></p>
-<p>商品A的出现，对商品B的出现概率提升的程度，一般是大于1说明A的出现有组与商品B的出现</p>
-<p>其计算公式为：</p>
-
-$$
-lift(A\rightarrow B) = \frac{confidence(A\rightarrow B)}{support(B)}
-$$
-
-<p>举个例子，已知总订单100，AB同时出现时20：</p>
-<ul>
-<li>如果B的订单是20，A的订单时40，那么提升度为5，说明B商品强依赖于A，A的出现有利于B的出现</li>
-<li>同样，如果B的订单是50，A的订单是50，那么提升度为0.8，说明B商品和A商品没有强依赖关系。</li>
-</ul>
-<h2 id="经典算法"><a href="#经典算法" class="headerlink" title="经典算法"></a>经典算法</h2><h3 id="Apriori"><a href="#Apriori" class="headerlink" title="Apriori"></a>Apriori</h3><p>具体步骤</p>
-<ol>
-<li>计算项集K=1的所有支持度</li>
-<li>选出大于最小支持度的数据</li>
-<li>如果项集为空，则对应 K-1 项集的结果为最终结果。否则重复1，2</li>
-</ol>
-<p>该算法时间负责度比较高，相当于，针对每个K都要计算一次数据集。因此用学者利用树来优化算法</p>
-<h3 id="FP-Growth"><a href="#FP-Growth" class="headerlink" title="FP-Growth"></a>FP-Growth</h3><p>具体步骤</p>
-<ol>
-<li>扫描数据，得到所有频繁1项集的的计数。然后删除支持度低于阈值的项，将1项集放入项头表，并按照支持度降序排列</li>
-<li>扫描数据，将读到的原始数据剔除非频繁1项集，并按照支持度降序排列。</li>
-<li>读入排序后的数据集，插入FP树，插入时按照排序后的顺序，插入FP树中，排序靠前的节点是祖先节点，而靠后的是子孙节点。如果有共用的祖先，则对应的公用祖先节点计数加1。插入后，如果有新节点出现，则项头表对应的节点会通过节点链表链接上新节点。直到所有的数据都插入到FP树后，FP树的建立完成。</li>
-<li>从项头表的底部项依次向上找到项头表项对应的条件模式基。从条件模式基递归挖掘得到项头表项项的频繁项集。</li>
-<li>如果不限制频繁项集的项数，则返回步骤4所有的频繁项集，否则只返回满足项数要求的频繁项集。</li>
-</ol>
-<p>该算法只需要扫面两次数据集就可以得出所有结果，因此相较于Apriori速度会有所提神，不过也得看具体可以提出多大的K</p>
-<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><p>对于apriori主要有两个包可以用efficient_apriori,mlxtend.frequent_patterns。前者是比较方便，但是问题在于没有具体的数字，后面这个包就比较舒服了，可以直接输出对应的指标。不过主要是我现在用的数据集小，如果数据集很大，那可能FP-Growth更合适一些不过要看具体场景,他的包fptools。</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> efficient_apriori <span class="keyword">import</span> apriori</span><br><span class="line"><span class="keyword">from</span> mlxtend.preprocessing <span class="keyword">import</span> TransactionEncoder</span><br><span class="line"><span class="keyword">from</span> mlxtend.frequent_patterns <span class="keyword">import</span> apriori <span class="keyword">as</span> apr</span><br><span class="line"><span class="keyword">from</span> mlxtend.frequent_patterns <span class="keyword">import</span> association_rules</span><br><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">import</span> fptools <span class="keyword">as</span> fp</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">data=[(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>),(<span class="string">&#x27;可乐&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>, <span class="string">&#x27;鸡蛋&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;可乐&#x27;</span>)]</span><br><span class="line"></span><br><span class="line"><span class="comment"># efficient_apriori包的使用</span></span><br><span class="line">itemsets, rules = apriori(data, min_support=<span class="number">0.5</span>,  min_confidence=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># mlxtend.frequent_patterns包的使用</span></span><br><span class="line">Encoder = TransactionEncoder()</span><br><span class="line">encoded_data = Encoder.fit_transform(data)</span><br><span class="line">df = pd.DataFrame(encoded_data, columns=Encoder.columns_)</span><br><span class="line">frequent_items = apr(df, min_support=<span class="number">0.5</span>, use_colnames=<span class="literal">True</span>, max_len=<span class="number">4</span>).sort_values(by=<span class="string">&#x27;support&#x27;</span>, ascending=<span class="literal">False</span>)</span><br><span class="line">df_re = association_rules(frequent_items, metric=<span class="string">&#x27;lift&#x27;</span>, min_threshold=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#fp</span></span><br><span class="line">data = [(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;可乐&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>, <span class="string">&#x27;鸡蛋&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;可乐&#x27;</span>)]</span><br><span class="line">fis = [iset <span class="keyword">for</span> iset <span class="keyword">in</span> fp.frequent_itemsets(data, <span class="number">2</span>)]</span><br><span class="line">mfis = [iset <span class="keyword">for</span> iset <span class="keyword">in</span> fp.maximal_frequent_itemsets(data, <span class="number">2</span>)]</span><br></pre></td></tr></table></figure>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://zhuanlan.zhihu.com/p/198842818">知乎1</a></p>
-<p><a href="https://zhuanlan.zhihu.com/p/66944900">知乎2</a></p>
-<p><a href="https://www.cnblogs.com/zhengxingpeng/p/6679280.html">博客</a></p>
-]]></content>
-      <tags>
-        <tag>机器学习</tag>
       </tags>
   </entry>
   <entry>
@@ -930,6 +987,35 @@ $$
       </tags>
   </entry>
   <entry>
+    <title>数据标准化和中心化</title>
+    <url>/2021/08/19/%E6%95%B0%E6%8D%AE%E6%A0%87%E5%87%86%E5%8C%96%E5%92%8C%E4%B8%AD%E5%BF%83%E5%8C%96/</url>
+    <content><![CDATA[<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>标准化：也叫归一化，常用的有最小—最大标准化、Z-score标准化、Sigmod函数等，利用上述标准化操作，将原始数据化为<strong>无量纲</strong>的数值。这在回归和神经网络类模型是很必要的。</p>
+<p>中心化：也叫去均质化，让数据通过中心化处理，得到均值为0的数据【如果方差为1，那就是Z-score标准化】。同时中心化后的数据对向量来说也容易描述，因为是以原点为基准的。</p>
+<h2 id="公式"><a href="#公式" class="headerlink" title="公式"></a>公式</h2><p>最小—最大标准化：将数据变为0-1</p>
+<script type="math/tex; mode=display">
+\tilde{x}=\frac{x-min}{max-min}</script><p>Z-score标准化：</p>
+<script type="math/tex; mode=display">
+\tilde{x}=\frac{x-u}{\sigma }</script><p>sigmod函数：</p>
+<script type="math/tex; mode=display">
+f(x)=\frac{1}{1+e^{-x}}</script><p><strong>备注</strong>：</p>
+<ol>
+<li>当$\sigma=1$就是中心化公式，所以中心化可以说是一种特殊的标准化</li>
+<li>sigmod函数其实主要是在激活函数中对上一层神经层结果进行标准化，但也可以理解成对下一层神经层的输入做标准化。</li>
+</ol>
+<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ol>
+<li>提升精度：消除量纲，针对梯度下降相关的算法，不同量纲的数据会产生干扰，可能本来是A特征对结果的影响更大，但因为其量纲较小，导致其影响力还不如量纲大的特征，从来导致精度的下降。</li>
+<li>提神速度：同样，由于消除了量纲，在梯度下降过程中，将会容易收敛到最优解。</li>
+</ol>
+<p><strong>备注</strong>：但是对于非梯度下降优化器或者是树模型是可以不标准的，因为数据的量纲并不影响树模型的分裂，对于特征而言该在哪里分裂就还是在那里分裂。</p>
+]]></content>
+      <categories>
+        <category>基础知识</category>
+      </categories>
+      <tags>
+        <tag>数据预处理</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>熵</title>
     <url>/2021/05/31/%E7%86%B5/</url>
     <content><![CDATA[<blockquote>
@@ -977,35 +1063,6 @@ $$
       </categories>
       <tags>
         <tag>基础知识</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>数据标准化和中心化</title>
-    <url>/2021/08/19/%E6%95%B0%E6%8D%AE%E6%A0%87%E5%87%86%E5%8C%96%E5%92%8C%E4%B8%AD%E5%BF%83%E5%8C%96/</url>
-    <content><![CDATA[<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>标准化：也叫归一化，常用的有最小—最大标准化、Z-score标准化、Sigmod函数等，利用上述标准化操作，将原始数据化为<strong>无量纲</strong>的数值。这在回归和神经网络类模型是很必要的。</p>
-<p>中心化：也叫去均质化，让数据通过中心化处理，得到均值为0的数据【如果方差为1，那就是Z-score标准化】。同时中心化后的数据对向量来说也容易描述，因为是以原点为基准的。</p>
-<h2 id="公式"><a href="#公式" class="headerlink" title="公式"></a>公式</h2><p>最小—最大标准化：将数据变为0-1</p>
-<script type="math/tex; mode=display">
-\tilde{x}=\frac{x-min}{max-min}</script><p>Z-score标准化：</p>
-<script type="math/tex; mode=display">
-\tilde{x}=\frac{x-u}{\sigma }</script><p>sigmod函数：</p>
-<script type="math/tex; mode=display">
-f(x)=\frac{1}{1+e^{-x}}</script><p><strong>备注</strong>：</p>
-<ol>
-<li>当$\sigma=1$就是中心化公式，所以中心化可以说是一种特殊的标准化</li>
-<li>sigmod函数其实主要是在激活函数中对上一层神经层结果进行标准化，但也可以理解成对下一层神经层的输入做标准化。</li>
-</ol>
-<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ol>
-<li>提升精度：消除量纲，针对梯度下降相关的算法，不同量纲的数据会产生干扰，可能本来是A特征对结果的影响更大，但因为其量纲较小，导致其影响力还不如量纲大的特征，从来导致精度的下降。</li>
-<li>提神速度：同样，由于消除了量纲，在梯度下降过程中，将会容易收敛到最优解。</li>
-</ol>
-<p><strong>备注</strong>：但是对于非梯度下降优化器或者是树模型是可以不标准的，因为数据的量纲并不影响树模型的分裂，对于特征而言该在哪里分裂就还是在那里分裂。</p>
-]]></content>
-      <categories>
-        <category>基础知识</category>
-      </categories>
-      <tags>
-        <tag>数据预处理</tag>
       </tags>
   </entry>
   <entry>
