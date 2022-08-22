@@ -55,7 +55,7 @@ git add --all
 git commit -m "init"
 #添加远程仓库
 git remote set-url origin https://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@github.com/shihai-black/shihai-black.github.io.git
-git remote git@github.com:shihai-black/shihai-black.github.io.git
+# git remote git@github.com:shihai-black/shihai-black.github.io.git[废弃]
 #push到hexo分支
 git push origin hexo
 
