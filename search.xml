@@ -1,6 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>GNN系列之_GCN</title>
+    <url>/2021/08/19/GNN%E7%B3%BB%E5%88%97%E4%B9%8B-GCN/</url>
+    <content><![CDATA[<blockquote>
+<p>GCN那段数学推断实在看不懂，不过作为一个worker我觉得一不一样数学原理都要搞的很透彻，毕竟我们只是模块的堆积和简单优化，推导还是交给顶尖大神吧</p>
+</blockquote>
+<h2 id="回顾CNN的"><a href="#回顾CNN的" class="headerlink" title="回顾CNN的"></a>回顾CNN的</h2><p>图片具有<strong>局部平移不变性</strong>：图片是一个规则的二维矩阵，无论卷积核平移到图片中的哪个位置都可以保证其运算结果的一致性，因此CNN可以利用卷积核进行特征提取。</p>
+<p><strong>CNN的三大特点</strong></p>
+<ol>
+<li>参数共享：如果不共享，其实就是全连接，参数数据差距很大</li>
+<li>局部连接性：卷积计算每次只在与卷积核大小对应的区域进行</li>
+<li>层次化表达：不断叠加卷积层，每一个卷积层都是在前一层的基础上进行的，这样的意义在于，网络越往后，其提取到的特征越高级</li>
+</ol>
+<h2 id="什么是GCN"><a href="#什么是GCN" class="headerlink" title="什么是GCN"></a>什么是GCN</h2><p>由于图片和文本等结构化数据具有上述提到的局部平移不变性，但很明显图的结构是不存在这种性质的，因为图结构的相邻节点数量是不确定的，因此用CNN的方式无法做卷积核。那graph中的CNN是什么呢？</p>
+<p>目前的一大思路就是借助谱图理论（Spectral Graph Theory）来实现在拓扑图上的卷积操作，大致步骤为将空域中的拓扑图结构通过傅立叶变换映射到频域中并进行卷积，然后利用逆变换返回空域，从而完成了图卷积操作。</p>
+<h2 id="Graph-Convolution"><a href="#Graph-Convolution" class="headerlink" title="Graph Convolution"></a><strong>Graph Convolution</strong></h2><p>17年Thomas N. Kipf的GCN模型的公式</p>
+<script type="math/tex; mode=display">
+H^{(l+1)}=\sigma (\tilde{D}^{-1/2}\tilde{A}\tilde{D}^{-1/2}H^{l}W^{l})</script><p>$\tilde{A}$：A+I 自连接的领结矩阵</p>
+<p>$\tilde{D}$：度矩阵</p>
+<p>W：参数【同层共享】，其作用就是将前一层的数据进行纬度变换</p>
+<p>$\tilde{D}^{-1/2}\tilde{A}\tilde{D}^{-1/2}$:对领结矩阵做标准化，和$\tilde{D}^{-1}\tilde{A}$的区别就是前者用的是拉普拉斯变换，想较于加权求和取平均的方式而言，前者不但考虑当前节点的 i 的度，还考虑其他节点 j 的度。</p>
+<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>他不像CNN可能层数越多越能提取高纬信息，他一般就两层左右。其实我理解就是利用领结矩阵的信息，只是用的神经网络的模式，和SDNE的思想应该挺像的。所以他不训练的效果主要还是取决于领结矩阵信息的表达。并不是说他就直接比node2vec，SDNE等以前训练embedding的方式号。</p>
+<p><strong>优点</strong></p>
+<ol>
+<li>即使不用训练，直接随机参数也可以获得不错的效果</li>
+<li>GCN 可以在只标注少量样本的情况下学得出色的效果</li>
+</ol>
+<p><strong>缺点</strong>：</p>
+<ol>
+<li>要将整个图信息放入网络中，太占用内存和GPU</li>
+<li>无法用于新节点和新的图，属于直推式学习</li>
+<li>图数据很稀疏，训练和测试节点都是一样的</li>
+</ol>
+]]></content>
+      <categories>
+        <category>深度学习</category>
+      </categories>
+      <tags>
+        <tag>GNNs</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>GNN系列之_GraphSAGE</title>
     <url>/2021/08/17/GNN%E7%B3%BB%E5%88%97%E4%B9%8B-GraphSAGE/</url>
     <content><![CDATA[<h1 id="GraphSAGE"><a href="#GraphSAGE" class="headerlink" title="GraphSAGE"></a>GraphSAGE</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>17年<strong>Hamilton</strong>在GCN发布不久以后就发布了这篇文章，原文是《Inductive Representation Learning on Large Graphs》，从题目很明显可以看出，该论文强调两个事情：1.inductive；2.Large Graphs。</p>
@@ -48,47 +89,6 @@ Aggregate_{k}^{pool}=max(\{\sigma (W_{pool}h_{u_{i}}^{k}+b),\forall u_{i}\in N(v
 <p><strong>不足</strong>：</p>
 <ol>
 <li>他既然是聚合函数，没有用到Attention，也就是说对于权重的分配没有采取更好的策略。因此才诞生了GAT。</li>
-</ol>
-]]></content>
-      <categories>
-        <category>深度学习</category>
-      </categories>
-      <tags>
-        <tag>GNNs</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>GNN系列之_GCN</title>
-    <url>/2021/08/19/GNN%E7%B3%BB%E5%88%97%E4%B9%8B-GCN/</url>
-    <content><![CDATA[<blockquote>
-<p>GCN那段数学推断实在看不懂，不过作为一个worker我觉得一不一样数学原理都要搞的很透彻，毕竟我们只是模块的堆积和简单优化，推导还是交给顶尖大神吧</p>
-</blockquote>
-<h2 id="回顾CNN的"><a href="#回顾CNN的" class="headerlink" title="回顾CNN的"></a>回顾CNN的</h2><p>图片具有<strong>局部平移不变性</strong>：图片是一个规则的二维矩阵，无论卷积核平移到图片中的哪个位置都可以保证其运算结果的一致性，因此CNN可以利用卷积核进行特征提取。</p>
-<p><strong>CNN的三大特点</strong></p>
-<ol>
-<li>参数共享：如果不共享，其实就是全连接，参数数据差距很大</li>
-<li>局部连接性：卷积计算每次只在与卷积核大小对应的区域进行</li>
-<li>层次化表达：不断叠加卷积层，每一个卷积层都是在前一层的基础上进行的，这样的意义在于，网络越往后，其提取到的特征越高级</li>
-</ol>
-<h2 id="什么是GCN"><a href="#什么是GCN" class="headerlink" title="什么是GCN"></a>什么是GCN</h2><p>由于图片和文本等结构化数据具有上述提到的局部平移不变性，但很明显图的结构是不存在这种性质的，因为图结构的相邻节点数量是不确定的，因此用CNN的方式无法做卷积核。那graph中的CNN是什么呢？</p>
-<p>目前的一大思路就是借助谱图理论（Spectral Graph Theory）来实现在拓扑图上的卷积操作，大致步骤为将空域中的拓扑图结构通过傅立叶变换映射到频域中并进行卷积，然后利用逆变换返回空域，从而完成了图卷积操作。</p>
-<h2 id="Graph-Convolution"><a href="#Graph-Convolution" class="headerlink" title="Graph Convolution"></a><strong>Graph Convolution</strong></h2><p>17年Thomas N. Kipf的GCN模型的公式</p>
-<script type="math/tex; mode=display">
-H^{(l+1)}=\sigma (\tilde{D}^{-1/2}\tilde{A}\tilde{D}^{-1/2}H^{l}W^{l})</script><p>$\tilde{A}$：A+I 自连接的领结矩阵</p>
-<p>$\tilde{D}$：度矩阵</p>
-<p>W：参数【同层共享】，其作用就是将前一层的数据进行纬度变换</p>
-<p>$\tilde{D}^{-1/2}\tilde{A}\tilde{D}^{-1/2}$:对领结矩阵做标准化，和$\tilde{D}^{-1}\tilde{A}$的区别就是前者用的是拉普拉斯变换，想较于加权求和取平均的方式而言，前者不但考虑当前节点的 i 的度，还考虑其他节点 j 的度。</p>
-<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>他不像CNN可能层数越多越能提取高纬信息，他一般就两层左右。其实我理解就是利用领结矩阵的信息，只是用的神经网络的模式，和SDNE的思想应该挺像的。所以他不训练的效果主要还是取决于领结矩阵信息的表达。并不是说他就直接比node2vec，SDNE等以前训练embedding的方式号。</p>
-<p><strong>优点</strong></p>
-<ol>
-<li>即使不用训练，直接随机参数也可以获得不错的效果</li>
-<li>GCN 可以在只标注少量样本的情况下学得出色的效果</li>
-</ol>
-<p><strong>缺点</strong>：</p>
-<ol>
-<li>要将整个图信息放入网络中，太占用内存和GPU</li>
-<li>无法用于新节点和新的图，属于直推式学习</li>
-<li>图数据很稀疏，训练和测试节点都是一样的</li>
 </ol>
 ]]></content>
       <categories>
@@ -234,6 +234,33 @@ P_{ij}=\frac{K_i*K_j}{2m}=K_i*\frac{K_j}{2m}</script><p>$K<em>j/2m$表示节点j
       </tags>
   </entry>
   <entry>
+    <title>NLP预处理：词干提取和词性还原</title>
+    <url>/2021/06/04/NLP%E9%A2%84%E5%A4%84%E7%90%86%EF%BC%9A%E8%AF%8D%E5%B9%B2%E6%8F%90%E5%8F%96%E5%92%8C%E8%AF%8D%E6%80%A7%E8%BF%98%E5%8E%9F/</url>
+    <content><![CDATA[<blockquote>
+<p>最近在做的项目里面需要做一个关键词多属性提取，然后由于以前接触的都是中文的项目，所以就会拿中文分词的一些操作来用，但在英文的项目，其实就有词干提取和词性还原两种非常好用的方法</p>
+</blockquote>
+<p>自然语言处理中一个很重要的操作就是所谓的stemming 和 lemmatization，二者非常类似。它们是词形规范化的两类重要方式，都能够达到有效归并词形的目的，二者既有联系也有区别。</p>
+<h2 id="词干提取"><a href="#词干提取" class="headerlink" title="词干提取"></a>词干提取</h2><p>NLTK中提供了三种最常用的词干提取器接口，即 Porter stemmer, Lancaster Stemmer 和 Snowball Stemmer。而且词干提取主要是基于规则的算法。</p>
+<p><strong>Porter</strong></p>
+<p>1980年最原始的词干提取法</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem.porter <span class="keyword">import</span> PorterStemmer</span><br><span class="line">text=<span class="string">&#x27;chineses&#x27;</span></span><br><span class="line">porter_stemmer = PorterStemmer()</span><br><span class="line">stem_text = porter_stemmer.stem(text)</span><br><span class="line"><span class="built_in">print</span>(stem_text)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: <span class="string">&#x27;chines&#x27;</span></span><br></pre></td></tr></table></figure>
+<p><strong>Snowball</strong></p>
+<p>也称为Porter2.0，本人说提取的比1好，这个不清楚，但确实相比较1.0会快一些，感觉上效率有提升1/3.</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem.snowball <span class="keyword">import</span> EnglishStemmer</span><br><span class="line">text=<span class="string">&#x27;chineses&#x27;</span></span><br><span class="line">porter_stemmer = PorterStemmer()</span><br><span class="line">stem_text = porter_stemmer.stem(text)</span><br><span class="line"><span class="built_in">print</span>(stem_text)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: ‘chines’</span><br></pre></td></tr></table></figure>
+<p><strong>Lancaster</strong></p>
+<p>据说比较激进，没什么人用过</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem <span class="keyword">import</span> LancasterStemmer</span><br><span class="line">text=<span class="string">&#x27;chineses&#x27;</span></span><br><span class="line">lancas_stemmer = LancasterStemmer()</span><br><span class="line">stem_text = lancas_stemmer.stem(text)</span><br><span class="line"><span class="built_in">print</span>(stem_text)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: ‘chines’</span><br></pre></td></tr></table></figure>
+<h2 id="词性还原"><a href="#词性还原" class="headerlink" title="词性还原"></a>词性还原</h2><p>基于字典的映射，而且在NLTK中要求标明词性，否则会出问题。一般需要先走词性标注，再走词性还原，因此整体链路相较于词干提取较长。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem <span class="keyword">import</span> WordNetLemmatizer  </span><br><span class="line">lemmatizer = WordNetLemmatizer()  </span><br><span class="line">word = lemmatizer.lemmatize(<span class="string">&#x27;leaves&#x27;</span>,pos=<span class="string">&#x27;n&#x27;</span>) </span><br><span class="line"><span class="built_in">print</span>(word)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: <span class="string">&#x27;leaf&#x27;</span></span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>特征工程</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Graph_embedding之deepwalk</title>
     <url>/2021/06/04/Graph-embedding%E4%B9%8Bdeepwalk/</url>
     <content><![CDATA[<h3 id="历史"><a href="#历史" class="headerlink" title="历史"></a>历史</h3><p>deepwalk的作者Bryan参照word2vec的思想，将文本应用到图的结构中，形成了这篇文章，内容也不复杂，也算是为后世的Graph embedding开了一个头。</p>
@@ -269,31 +296,61 @@ P_{ij}=\frac{K_i*K_j}{2m}=K_i*\frac{K_j}{2m}</script><p>$K<em>j/2m$表示节点j
       </tags>
   </entry>
   <entry>
-    <title>NLP预处理：词干提取和词性还原</title>
-    <url>/2021/06/04/NLP%E9%A2%84%E5%A4%84%E7%90%86%EF%BC%9A%E8%AF%8D%E5%B9%B2%E6%8F%90%E5%8F%96%E5%92%8C%E8%AF%8D%E6%80%A7%E8%BF%98%E5%8E%9F/</url>
-    <content><![CDATA[<blockquote>
-<p>最近在做的项目里面需要做一个关键词多属性提取，然后由于以前接触的都是中文的项目，所以就会拿中文分词的一些操作来用，但在英文的项目，其实就有词干提取和词性还原两种非常好用的方法</p>
-</blockquote>
-<p>自然语言处理中一个很重要的操作就是所谓的stemming 和 lemmatization，二者非常类似。它们是词形规范化的两类重要方式，都能够达到有效归并词形的目的，二者既有联系也有区别。</p>
-<h2 id="词干提取"><a href="#词干提取" class="headerlink" title="词干提取"></a>词干提取</h2><p>NLTK中提供了三种最常用的词干提取器接口，即 Porter stemmer, Lancaster Stemmer 和 Snowball Stemmer。而且词干提取主要是基于规则的算法。</p>
-<p><strong>Porter</strong></p>
-<p>1980年最原始的词干提取法</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem.porter <span class="keyword">import</span> PorterStemmer</span><br><span class="line">text=<span class="string">&#x27;chineses&#x27;</span></span><br><span class="line">porter_stemmer = PorterStemmer()</span><br><span class="line">stem_text = porter_stemmer.stem(text)</span><br><span class="line"><span class="built_in">print</span>(stem_text)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: <span class="string">&#x27;chines&#x27;</span></span><br></pre></td></tr></table></figure>
-<p><strong>Snowball</strong></p>
-<p>也称为Porter2.0，本人说提取的比1好，这个不清楚，但确实相比较1.0会快一些，感觉上效率有提升1/3.</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem.snowball <span class="keyword">import</span> EnglishStemmer</span><br><span class="line">text=<span class="string">&#x27;chineses&#x27;</span></span><br><span class="line">porter_stemmer = PorterStemmer()</span><br><span class="line">stem_text = porter_stemmer.stem(text)</span><br><span class="line"><span class="built_in">print</span>(stem_text)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: ‘chines’</span><br></pre></td></tr></table></figure>
-<p><strong>Lancaster</strong></p>
-<p>据说比较激进，没什么人用过</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem <span class="keyword">import</span> LancasterStemmer</span><br><span class="line">text=<span class="string">&#x27;chineses&#x27;</span></span><br><span class="line">lancas_stemmer = LancasterStemmer()</span><br><span class="line">stem_text = lancas_stemmer.stem(text)</span><br><span class="line"><span class="built_in">print</span>(stem_text)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: ‘chines’</span><br></pre></td></tr></table></figure>
-<h2 id="词性还原"><a href="#词性还原" class="headerlink" title="词性还原"></a>词性还原</h2><p>基于字典的映射，而且在NLTK中要求标明词性，否则会出问题。一般需要先走词性标注，再走词性还原，因此整体链路相较于词干提取较长。</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem <span class="keyword">import</span> WordNetLemmatizer  </span><br><span class="line">lemmatizer = WordNetLemmatizer()  </span><br><span class="line">word = lemmatizer.lemmatize(<span class="string">&#x27;leaves&#x27;</span>,pos=<span class="string">&#x27;n&#x27;</span>) </span><br><span class="line"><span class="built_in">print</span>(word)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: <span class="string">&#x27;leaf&#x27;</span></span><br></pre></td></tr></table></figure>
+    <title>PaddleOCR踩坑日记</title>
+    <url>/2022/08/22/PaddleOCR%E8%B8%A9%E5%9D%91%E6%97%A5%E8%AE%B0/</url>
+    <content><![CDATA[<h1 id="PaddleOCR踩坑日记"><a href="#PaddleOCR踩坑日记" class="headerlink" title="PaddleOCR踩坑日记"></a>PaddleOCR踩坑日记</h1><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>由于项目需要，调研了一下paddleocr在文字识别的效果，在离线服务器部署完成，但是迁移线上时出现了极为麻烦的环境配置问题，所以特意写下这篇文章，以防日后出现相同的情况。</p>
+<h2 id="具体安装步骤"><a href="#具体安装步骤" class="headerlink" title="具体安装步骤"></a>具体安装步骤</h2><ul>
+<li>检查系统版本[我是16.04版本]</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">lsb_release -a</span><br><span class="line"></span><br><span class="line">No LSB modules are available.</span><br><span class="line">Distributor ID:	Ubuntu</span><br><span class="line">Description:	Ubuntu 16.04.7 LTS</span><br><span class="line">Release:	16.04</span><br><span class="line">Codename:	xenial</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>根据系统版本安装对应的cuda版本【我是11.2版本，主要是Paddle-gpu适配的是10.2/11.2/11.6】</p>
+<ul>
+<li>不用单独安装nvidia驱动，安装cudatoolkit时会自动匹配上，如果有Nvidia驱动直接nvidia-uninstall卸载即可</li>
+<li>查看paddleocr允许的cuda版本</li>
+</ul>
+</li>
+<li><p>根据对应的cuda版本安装pytorch【版本比使用低一些不要紧】</p>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">pip3 install torch torchvision torchaudio --extra-index-url https:&#x2F;&#x2F;download.pytorch.org&#x2F;whl&#x2F;cu111</span><br></pre></td></tr></table></figure>
+<ul>
+<li>根据对应的cuda安装paddleocr【我装的是2.2.2】<ul>
+<li><strong>要求！！！CUDA 11.2，cuDNN 8.1.1（多卡环境下 NCCL&gt;=2.7）</strong></li>
+</ul>
+</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">python -m pip install paddlepaddle-gpu==2.2.2.post112 -f https://www.paddlepaddle.org.cn/whl/linux/mkl/avx/stable.html</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>根据cuda，paddleocr安装cudnn8.1.1</p>
+<ul>
+<li><p>首先下载压缩包</p>
+</li>
+<li><p>```sh<br>tar -xvf cudnn-11.2-linux-x64-v8.1.1.33.tgz<br>cd cuda<br>cp lib64/<em> /usr/local/cuda-11.2/lib64/<br>cp include/</em> /usr/local/cuda-11.2/include/<br>chmod a+r /usr/local/cuda-11.2/lib64/<em> /usr/local/cuda-11.2/include/</em></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">- 把下面这段话加到～&#x2F;.bashrc文件内，然后source ～&#x2F;.bashrc</span><br><span class="line"></span><br><span class="line">  &#96;&#96;&#96;sh</span><br><span class="line">  # add nvcc compiler to path</span><br><span class="line">  export PATH&#x3D;$PATH:&#x2F;usr&#x2F;local&#x2F;cuda-11.2&#x2F;bin</span><br><span class="line">  # add cuBLAS, cuSPARSE, cuRAND, cuSOLVER, cuFFT to path</span><br><span class="line">  export LD_LIBRARY_PATH&#x3D;$LD_LIBRARY_PATH:&#x2F;usr&#x2F;local&#x2F;cuda-11.2&#x2F;lib64:&#x2F;usr&#x2F;lib&#x2F;x86_64-linux-gnu</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p>安装paddleocr</p>
+<ul>
+<li><pre><code class="lang-sh">paddleocr --image_dir &quot;https://marketing-publication.s3.us-west-2.amazonaws.com/tmp/ocr_bill/images/bill/1.png&quot; --use_angle_cls true --lang en --use_gpu True
+</code></pre>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="链接"><a href="#链接" class="headerlink" title="链接"></a>链接</h2><ul>
+<li><a href="https://zhuanlan.zhihu.com/p/520536351">cuda安装教程</a></li>
+<li><a href="https://developer.nvidia.com/cuda-11.2.0-download-archive">cuda网站</a></li>
+<li><a href="https://pytorch.org/">pytorch下载地址</a></li>
+<li><a href="https://www.paddlepaddle.org.cn/install/old?docurl=/documentation/docs/zh/install/pip/linux-pip.html">paddle安装地址</a></li>
+<li><a href="https://developer.nvidia.com/rdp/cudnn-archive">cudnn地址</a></li>
+<li><a href="https://blog.csdn.net/qq_44961869/article/details/115954258">cudnn教程</a></li>
+</ul>
 ]]></content>
       <categories>
-        <category>特征工程</category>
+        <category>踩坑日记</category>
       </categories>
-      <tags>
-        <tag>NLP</tag>
-      </tags>
   </entry>
   <entry>
     <title>万物皆可embedding</title>
@@ -404,63 +461,6 @@ S_{i}=\frac{e^{i}}{\Sigma_{j} e^{j}}</script><p>那我们看到Softmax需要经�
       <tags>
         <tag>NLP</tag>
       </tags>
-  </entry>
-  <entry>
-    <title>PaddleOCR踩坑日记</title>
-    <url>/2022/08/22/PaddleOCR%E8%B8%A9%E5%9D%91%E6%97%A5%E8%AE%B0/</url>
-    <content><![CDATA[<h1 id="PaddleOCR踩坑日记"><a href="#PaddleOCR踩坑日记" class="headerlink" title="PaddleOCR踩坑日记"></a>PaddleOCR踩坑日记</h1><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>由于项目需要，调研了一下paddleocr在文字识别的效果，在离线服务器部署完成，但是迁移线上时出现了极为麻烦的环境配置问题，所以特意写下这篇文章，以防日后出现相同的情况。</p>
-<h2 id="具体安装步骤"><a href="#具体安装步骤" class="headerlink" title="具体安装步骤"></a>具体安装步骤</h2><ul>
-<li>检查系统版本[我是16.04版本]</li>
-</ul>
-<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">lsb_release -a</span><br><span class="line"></span><br><span class="line">No LSB modules are available.</span><br><span class="line">Distributor ID:	Ubuntu</span><br><span class="line">Description:	Ubuntu 16.04.7 LTS</span><br><span class="line">Release:	16.04</span><br><span class="line">Codename:	xenial</span><br></pre></td></tr></table></figure>
-<ul>
-<li><p>根据系统版本安装对应的cuda版本【我是11.2版本，主要是Paddle-gpu适配的是10.2/11.2/11.6】</p>
-<ul>
-<li>不用单独安装nvidia驱动，安装cudatoolkit时会自动匹配上，如果有Nvidia驱动直接nvidia-uninstall卸载即可</li>
-<li>查看paddleocr允许的cuda版本</li>
-</ul>
-</li>
-<li><p>根据对应的cuda版本安装pytorch【版本比使用低一些不要紧】</p>
-</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">pip3 install torch torchvision torchaudio --extra-index-url https:&#x2F;&#x2F;download.pytorch.org&#x2F;whl&#x2F;cu111</span><br></pre></td></tr></table></figure>
-<ul>
-<li>根据对应的cuda安装paddleocr【我装的是2.2.2】<ul>
-<li><strong>要求！！！CUDA 11.2，cuDNN 8.1.1（多卡环境下 NCCL&gt;=2.7）</strong></li>
-</ul>
-</li>
-</ul>
-<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">python -m pip install paddlepaddle-gpu==2.2.2.post112 -f https://www.paddlepaddle.org.cn/whl/linux/mkl/avx/stable.html</span><br></pre></td></tr></table></figure>
-<ul>
-<li><p>根据cuda，paddleocr安装cudnn8.1.1</p>
-<ul>
-<li><p>首先下载压缩包</p>
-</li>
-<li><p>```sh<br>tar -xvf cudnn-11.2-linux-x64-v8.1.1.33.tgz<br>cd cuda<br>cp lib64/<em> /usr/local/cuda-11.2/lib64/<br>cp include/</em> /usr/local/cuda-11.2/include/<br>chmod a+r /usr/local/cuda-11.2/lib64/<em> /usr/local/cuda-11.2/include/</em></p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">- 把下面这段话加到～&#x2F;.bashrc文件内，然后source ～&#x2F;.bashrc</span><br><span class="line"></span><br><span class="line">  &#96;&#96;&#96;sh</span><br><span class="line">  # add nvcc compiler to path</span><br><span class="line">  export PATH&#x3D;$PATH:&#x2F;usr&#x2F;local&#x2F;cuda-11.2&#x2F;bin</span><br><span class="line">  # add cuBLAS, cuSPARSE, cuRAND, cuSOLVER, cuFFT to path</span><br><span class="line">  export LD_LIBRARY_PATH&#x3D;$LD_LIBRARY_PATH:&#x2F;usr&#x2F;local&#x2F;cuda-11.2&#x2F;lib64:&#x2F;usr&#x2F;lib&#x2F;x86_64-linux-gnu</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-</li>
-<li><p>安装paddleocr</p>
-<ul>
-<li><pre><code class="lang-sh">paddleocr --image_dir &quot;https://marketing-publication.s3.us-west-2.amazonaws.com/tmp/ocr_bill/images/bill/1.png&quot; --use_angle_cls true --lang en --use_gpu True
-</code></pre>
-</li>
-</ul>
-</li>
-</ul>
-<h2 id="链接"><a href="#链接" class="headerlink" title="链接"></a>链接</h2><ul>
-<li><a href="https://zhuanlan.zhihu.com/p/520536351">cuda安装教程</a></li>
-<li><a href="https://developer.nvidia.com/cuda-11.2.0-download-archive">cuda网站</a></li>
-<li><a href="https://pytorch.org/">pytorch下载地址</a></li>
-<li><a href="https://www.paddlepaddle.org.cn/install/old?docurl=/documentation/docs/zh/install/pip/linux-pip.html">paddle安装地址</a></li>
-<li><a href="https://developer.nvidia.com/rdp/cudnn-archive">cudnn地址</a></li>
-<li><a href="https://blog.csdn.net/qq_44961869/article/details/115954258">cudnn教程</a></li>
-</ul>
-]]></content>
-      <categories>
-        <category>踩坑日记</category>
-      </categories>
   </entry>
   <entry>
     <title>关联挖掘</title>
@@ -845,195 +845,6 @@ $$
       </tags>
   </entry>
   <entry>
-    <title>多进程、多线程</title>
-    <url>/2021/04/11/%E5%A4%9A%E8%BF%9B%E7%A8%8B%E3%80%81%E5%A4%9A%E7%BA%BF%E7%A8%8B%EF%BC%88python%EF%BC%89/</url>
-    <content><![CDATA[<blockquote>
-<p>​    这周接到1个需求，项目经理觉得我这边构造数据太过缓慢，由于数据量过大，以前数据构造完后将其导入MPP，利用copy_from速度还是很快的，一般为10W/s。现在换成Kafka消息队列，又由于python库自带的原因（这个是组里大神告诉我的），无法像java开发利用list导数据，因此我只能一条一条以json的形式将数据放入消息队列，一般为800条/s。原先构造5000W数据需要7H，经过优化后暂时需要3.5H，性能提升一倍。有点小开心，话不多说，石海同学开始将一下个人对于标题的理解。。。。</p>
-<p>​    进一步优化利用多进程的JoinableQueue，一边一直产生数据，另一边一直消费数据，现在5000W数据大约需要1.5H，性能较最初提升了近五倍。</p>
-</blockquote>
-<h2 id="历史"><a href="#历史" class="headerlink" title="历史"></a>历史</h2><p>上古年代：在很久很久以前，当时主流的磁盘操作系统MS-DOS是只支持单任务操作的，就打个比方，如果我想在电脑上听音乐和看电影，是不能同时开启的，只能先听音乐后看电影，或者位置互换。</p>
-<p>2002：横空出世的Intel Pentium 4HT处理器，提出了cpu多线程（SMT），其支持一个cpu进行多任务开启。</p>
-<p>————你总不能要求Guido1989年为了打发圣诞节假期发明的一种编译语言还要设计一下多线程的部分。</p>
-<p>2006：在秋季的英特尔信息技术峰会上，Inter总裁宣布，其在11月份将会交付第一台4核cpu处理器，而这距离双核发布还不到1年，支持多核时代就此拉开序幕。</p>
-<p>————为什么说python多线程是历史遗留问题，因为在当时想要在两个或者更多的处理器对同一个对象运行时，为了保护线程数据完整性和状态同步，最简单的方法就是加锁，于是出现了GIL这把超级大锁。</p>
-<p>2006-至今：GPU也浩浩荡荡发展了十几年了，过程我就不细说了（因为不懂），总之对于图象类任务GPU和CPU不是一个量级上的，以前看过一个视频，很好的解释了CPU和GPU的区别。比如我要画一幅图，cpu需要一笔一划将他画出来，而GPU是直接在脑子里构思好，一炮就把图打出来了。因此对于神经网络这个模型，多个神经元同时进行计算，GPU比CPU快太多。。。。。</p>
-<h2 id="编译器、解释器、IDE"><a href="#编译器、解释器、IDE" class="headerlink" title="编译器、解释器、IDE"></a>编译器、解释器、IDE</h2><p><strong>编译器</strong>：对于C、C++这类语言需要先编译后运行，其中编译的时候就是编译器。</p>
-<p><strong>解释器</strong>：对于python、PHP、JavaScript等就是利用解释器，’一边编译一边解释‘，不过速度会比较慢，因此产生一种叫预编译的东西，python在运行时就先生成pyc的二进制临时文件，在出结果。</p>
-<p>预编译：Java、C#，运行前将源代码编译成中间代码，然后再解释器运行，这种执行效率比编译运行会有效率一些，避免重复编译。</p>
-<p><strong>IDE</strong>：集成<a href="https://baike.baidu.com/item/开发环境">开发环境</a>（<a href="https://baike.baidu.com/item/IDE">IDE</a>，Integrated Development Environment ），用于提供程序开发环境的应用程序，python常用的就是pycharm和jupyter notebook。</p>
-<h2 id="GIL锁"><a href="#GIL锁" class="headerlink" title="GIL锁"></a>GIL锁</h2><p><strong>概念：</strong>GIL全称Global Interpreter Lock,其并不是python的特性，由于Cpython是大部分环境下默认的python执行环境，而在实现python解释器会自动上锁。</p>
-<p><strong>目的：</strong>确保每个进程只有一个线程运行，所以在外面我们一般说python的多线程是伪线程。因为不管你有几个核，你用多线程也只能跑一个核。</p>
-<h2 id="进程、线程、协程的利用"><a href="#进程、线程、协程的利用" class="headerlink" title="进程、线程、协程的利用"></a>进程、线程、协程的利用</h2><p><strong>进程</strong>：拥有代码和打开的文件资源、数据资源、独立的内存空间。</p>
-<p><strong>线程</strong>：从属于进程，是程序的实际执行者，线程拥有自己的栈空间。</p>
-<p><strong>协程</strong>：从属于线程，是一种比线程更加轻量级的存在。</p>
-<p><strong>总结：</strong></p>
-<p><strong>对操作系统来说，线程是最小的执行单元，进程是最小的资源管理单元。</strong></p>
-<h2 id="多进程"><a href="#多进程" class="headerlink" title="多进程"></a>多进程</h2><p>我觉得最简单的讲，多进程就是你在任务窗口看建了几个任务。比如你电脑上有16个核，理论上你可以开16个进程，每个进程占满一个cpu。对python而言由于没有多线程的利用，所有在单进程无法满足需求时，自然得利用多进程。</p>
-<h3 id="单任务单进程"><a href="#单任务单进程" class="headerlink" title="单任务单进程"></a>单任务单进程</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> multiprocessing <span class="keyword">import</span> Process</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">work</span>(<span class="params">name</span>):</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;<span class="subst">&#123;name&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    p = Process(target=work,args=(<span class="string">&#x27;single task&#x27;</span>,))</span><br><span class="line">    p.start()</span><br><span class="line">    p.join()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>我还看到一种是用run不用start的，但大概看了下没什么特殊的，不过这个join只能用于start.所以建议还是都用start，这个join是阻塞的意思，简单来说：主进程和其他子进程结束的话，都等着，等我结束了才能结束。</p>
-<p>举个例子：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> multiprocessing <span class="keyword">import</span> Process</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">work1</span>(<span class="params">name</span>):</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">5</span>):</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&#x27;<span class="subst">&#123;name&#125;</span>:<span class="subst">&#123;os.getpid()&#125;</span>&#x27;</span>)</span><br><span class="line">        time.sleep(<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">work2</span>(<span class="params">name</span>):</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">5</span>):</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&#x27;<span class="subst">&#123;name&#125;</span>:<span class="subst">&#123;os.getpid()&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    p1 = Process(target=work1,args=(<span class="string">&#x27;single task1&#x27;</span>,))</span><br><span class="line">    p2 = Process(target=work2,args=(<span class="string">&#x27;single task2&#x27;</span>,))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;主进程:<span class="subst">&#123;os.getpid()&#125;</span>&#x27;</span>)</span><br><span class="line">    p1.start()</span><br><span class="line">    p1.join()</span><br><span class="line">    p2.start()</span><br><span class="line">    p2.join()</span><br></pre></td></tr></table></figure>
-<p>如果这么写，主进程你走你的，work2子进程你给我等一下。等我run完你在run。</p>
-<p><strong>注意：</strong>每个子进程之间的join不是串行的，是并行的。既无论你多少个子进程，谁最后结束，谁关闭文件。</p>
-<h3 id="单任务多进程"><a href="#单任务多进程" class="headerlink" title="单任务多进程"></a>单任务多进程</h3><p>比如你要启动50个进程，然后写50个子进程就太慢了。因此，对于多进程有一种新的形式。</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">long_time_task</span>(<span class="params">name</span>):</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;Run task %s (%s)...&#x27;</span> % (name, os.getpid()))</span><br><span class="line">    start = time.time()</span><br><span class="line">    time.sleep(random.random() * <span class="number">3</span>)</span><br><span class="line">    end = time.time()</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;Task %s runs %0.2f seconds.&#x27;</span> % (name, (end - start)))</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__==<span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;Parent process %s.&#x27;</span> % os.getpid())</span><br><span class="line">    p = Pool(<span class="number">4</span>)</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">5</span>):</span><br><span class="line">        p.apply_async(long_time_task, args=(i,))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;Waiting for all subprocesses done...&#x27;</span>)</span><br><span class="line">    p.close()</span><br><span class="line">    p.join()</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;All subprocesses done.&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">########################################################</span></span><br><span class="line"><span class="comment">#运行结果</span></span><br><span class="line"><span class="comment">########################################################</span></span><br><span class="line">Parent process <span class="number">7748.</span></span><br><span class="line">Waiting <span class="keyword">for</span> <span class="built_in">all</span> subprocesses done...</span><br><span class="line">Run task <span class="number">0</span> (<span class="number">7780</span>)...</span><br><span class="line">Run task <span class="number">1</span> (<span class="number">7781</span>)...</span><br><span class="line">Run task <span class="number">2</span> (<span class="number">7782</span>)...</span><br><span class="line">Run task <span class="number">3</span> (<span class="number">7783</span>)...</span><br><span class="line">Run task <span class="number">4</span> (<span class="number">7781</span>)...</span><br><span class="line">All subprocesses done.</span><br></pre></td></tr></table></figure>
-<p>可以看到task1和task4的进程是一样的，因为只启动了4个进程，因此第5个进程需要等待其他进程结束才开始运行。</p>
-<p><strong>注意：</strong>close不加直接写join是会报错的。</p>
-<h3 id="多任务多进程"><a href="#多任务多进程" class="headerlink" title="多任务多进程"></a>多任务多进程</h3><p>我这边用的是经典的生产者和消费者模型，及一个模型构造生产者，一个模型构造消费者，两者通过自带的JoinableQueue进行通信。（不要用deque里面的队列！！）</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> random</span><br><span class="line"><span class="keyword">from</span>  multiprocessing <span class="keyword">import</span> JoinableQueue,Process</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">producer</span>(<span class="params">q,name,food</span>):</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">5</span>):</span><br><span class="line">        time.sleep(random.random())</span><br><span class="line">        fd = <span class="string">&#x27;%s%s&#x27;</span>%(food,i+<span class="number">1</span>)</span><br><span class="line">        q.put(fd)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&#x27;%s生产了一个%s&#x27;</span>%(name,food))</span><br><span class="line">    q.join()  <span class="comment"># 我启动了生产者之后，生产者函数一直在生成数据，直到生产完所有数据将队列q.join()一下，意思是当我生产的数据都被消费者消费完之后 队列的阻塞才结束。</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">consumer</span>(<span class="params">q,name</span>):</span>  <span class="comment"># 消费者不需要像Queue那样判断从队列里拿到None再退出执行消费者函数了</span></span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        food = q.get()</span><br><span class="line">        time.sleep(random.random())</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&#x27;%s吃了%s&#x27;</span>%(name,food))</span><br><span class="line">        q.task_done()  <span class="comment"># 消费者每次从队列里面q.get()一个数据，处理过后就使用队列.task_done()</span></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    jq = JoinableQueue()</span><br><span class="line">    p =Process(target=producer,args=(jq,<span class="string">&#x27;喜洋洋&#x27;</span>,<span class="string">&#x27;包子&#x27;</span>))</span><br><span class="line">    p.start()</span><br><span class="line">    c = Process(target=consumer,args=(jq,<span class="string">&#x27;灰太狼&#x27;</span>))</span><br><span class="line">    c.daemon = <span class="literal">True</span>  <span class="comment"># 守护进程，如果用Pool就不用这个也没事</span></span><br><span class="line">    c.start()</span><br><span class="line">    p.join()  <span class="comment"># 阻塞生产者</span></span><br></pre></td></tr></table></figure>
-<p>具体实现情况</p>
-<ol>
-<li>启动一个生产者，和一个消费者（这里可以用多进程消费），看具体时间</li>
-<li>生产者结束后将JoinableQueue进行阻塞，直到队列全部被消费后，才结束进程。</li>
-</ol>
-<p>Queue与JoinableQueue的区别</p>
-<ol>
-<li>Queue在消费者中需要if判断队列，不然的话就陷入死循环。而jionableQueue不用，其只需要将队列堵塞后，队列消费完程序才解决。</li>
-<li>Queue很难控制，因为如果只是判断队列是否存在，就需要考虑产生和消耗队列的时间。因此我认为还是JoinableQueue好</li>
-</ol>
-<h2 id="多线程"><a href="#多线程" class="headerlink" title="多线程"></a>多线程</h2><p>开头就说了，python虽然线程是真正的线程，但在解释器执行的时候会遇到GIL锁，导致其无论多少核，只能跑满一个核，所以对于比较简单的可以运行多线程，好像在爬虫里面运用多线程的比较多。</p>
-<p>那为什么有的程序一个进程一开用了N个cpu，那是因为他进程中存在利用c扩写的库，他将关键的部分用C/C++写成python扩展，其他还用python写。一般计算密集型的程序都会用C代码编写并通过扩展的方式集成到python脚本（numpy）。在扩展中完全可以用C创建原生线程，而且不用锁GIL，充分利用CPU的计算资源。</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> threading  <span class="keyword">import</span> Thread</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">work1</span>():</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;work1 has working&#x27;</span>)</span><br><span class="line">    time.sleep(<span class="number">3</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">work2</span>():</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;work2 has working&#x27;</span>)</span><br><span class="line">    time.sleep(<span class="number">5</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">work3</span>():</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;work3 has working&#x27;</span>)</span><br><span class="line">    time.sleep(<span class="number">8</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    start_time =time.time()</span><br><span class="line">    p1 = Thread(target=work1)</span><br><span class="line">    p2 = Thread(target=work2)</span><br><span class="line">    p3 = Thread(target=work3)</span><br><span class="line">    p1.start()</span><br><span class="line">    p2.start()</span><br><span class="line">    p3.start()</span><br><span class="line">    p3.join()</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;cost time <span class="subst">&#123;time.time()-start_time&#125;</span>&#x27;</span>)</span><br></pre></td></tr></table></figure>
-<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">能否利用Pool批量构造生产者和消费者，</span><br><span class="line">暂时只能做到Pool构造消费者，多个Process构造生产者进行生产。。。</span><br><span class="line">（除非使用process分别构造生产者和消费者模型）</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>python</category>
-      </categories>
-      <tags>
-        <tag>工程开发</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>对比学习_SimCSE</title>
-    <url>/2021/09/30/%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0-SimCSE/</url>
-    <content><![CDATA[<blockquote>
-<p>前短时间接到一个title i2i召回数据的任务，最开始只是想用简单的Doc2vec输出每个title的emb然后用faiss做召回，但是效果很差。后来尝试了用Bert直接输出结果，效果也很差。后面看论文发现Bert的emb存在模型坍塌问题【详细可以参考美团的ConSERT任务】。最后利用SimCSE比较合理的解决了需求</p>
-</blockquote>
-<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><ol>
-<li>什么是自监督学习，什么是对比学习？</li>
-<li>SimCSE生成监督数据的方法是什么？</li>
-<li>为什么生成的句向量这么有用？</li>
-<li>他的优劣势是什么？</li>
-</ol>
-<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><h3 id="自监督学习"><a href="#自监督学习" class="headerlink" title="自监督学习"></a>自监督学习</h3><p>首先，我们知道现在训练模型的方式主要是两种：有监督和无监督，并且我个人认为无监督的使用场景是远远大于有监督的。无监督有一个比较特别的分支是自监督，他的特点就是不需要人工标注的类别标签信息，直接利用数据本身作为监督信息，来学习样本数据的特征表达。</p>
-<p>自监督主要分为两类：</p>
-<ul>
-<li>Generative Methods：其中的典型代表就是自编码器，其利用数据本身压缩再重构去比较生成的数据与原始数据的差距。</li>
-<li>Contrastive Methods：这类方法则是通过将数据分别与正例样本和负例样本在特征空间进行对比，来学习样本的特征表示。</li>
-</ul>
-<p><strong>备注</strong>：我个人任务word2vec也可以属于自监督范畴，不过不属于上面两类，他是利用文本词与词之间关系去学习每个单词的embedding</p>
-<h3 id="对比学习"><a href="#对比学习" class="headerlink" title="对比学习"></a>对比学习</h3><p>上面说了，对比学习属于自监督学习的一个大类，他主要的难点就是如何生成相似的正样本。其最开始是在cv中使用的，后面NLPer也不甘示弱的进行研究，才有了今天NLP在对比学习领域的百花齐放，具体的进展可以看<a href="https://zhuanlan.zhihu.com/p/367290573">张俊林博客</a>。</p>
-<p>SimCSE全称(Simple Contrastive Learning of Sentence Embeddings)，是一种在没有监督训练数据的情况下训练句子向量的对比学习框架。并且从无监督和有监督两种方法给出了结果。</p>
-<ul>
-<li>无监督SimCSE：仅使用dropout进行数据增强操作。具体来说，将同一个样本输入预训练编码器两次(BERT)，由于每次的dropout是不同的，那么就会生成两个经过dropout后的句向量表示。这里的dropout主要是指传统的feature dropout，在标准的Transformer实现中，每个sub-layer后都默认配置了dropout。除此之外，Transformer也在multi-head attention和feed-forward network的激活函数层添加了dropout。利用dropout将这两个样本作为“正样本对”，于此同时，同一个batch里面不同样本做”负样本对”</li>
-<li>有监督SimCSE：基于natural language inference (NLI) 数据集进行训练，具体来说，论文将entailment样本作为“正样本对”，并将contradiction样本作为hard“负样本对”，并且从实验证明该方法是有效的。</li>
-</ul>
-<h2 id="指标详解"><a href="#指标详解" class="headerlink" title="指标详解"></a>指标详解</h2><p>在《<strong>Understanding Contrastive Representation Learning through Alignment and Uniformity on the Hypersphere</strong>》一文中，作者指出了现有的对比学习都遵循以下两大原则即：相似样本应该保持靠近，并且不同的样本应该分散嵌入在高维球体。于此同时SimCSE的作者也提到了这两点，他也认为这两点是衡量表示质量很重要的指标。</p>
-<h3 id="alignment"><a href="#alignment" class="headerlink" title="alignment"></a>alignment</h3><p>用于衡量两个样本的相似程度，其计算公式如下：</p>
-<script type="math/tex; mode=display">
-L=E\left \| f(x)-f(y)\right \|_{2 }^{\alpha}</script><p>同时作者给出了在pytorch中的代码</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">lalign</span>(<span class="params">x, y, alpha=<span class="number">2</span></span>):</span></span><br><span class="line">  <span class="keyword">return</span> (x - y).norm(dim=<span class="number">1</span>).<span class="built_in">pow</span>(alpha).mean()</span><br></pre></td></tr></table></figure>
-<h3 id="uniformity"><a href="#uniformity" class="headerlink" title="uniformity"></a>uniformity</h3><p>衡量规整后的特征在unit 超球体上的分布的均匀性，其计算公式如下：</p>
-<script type="math/tex; mode=display">
-L=log(E[e^{-t\left \| f(x)-f(y)\right \|^{2}}])</script><p>同时作者给出了在pytorch中的代码</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">lunif</span>(<span class="params">x, t=<span class="number">2</span></span>):</span></span><br><span class="line">  sq_pdist = torch.pdist(x, p=<span class="number">2</span>).<span class="built_in">pow</span>(<span class="number">2</span>)</span><br><span class="line">  <span class="keyword">return</span> sq_pdist.mul(-t).exp().mean().log()</span><br></pre></td></tr></table></figure>
-<p>两者结合，作者是介绍可以直接作为损失进行优化的：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">loss = lalign(x, y) + lam * (lunif(x) + lunif(y)) / <span class="number">2</span></span><br></pre></td></tr></table></figure>
-<h2 id="损失函数"><a href="#损失函数" class="headerlink" title="损失函数"></a>损失函数</h2><h3 id="unsup"><a href="#unsup" class="headerlink" title="unsup"></a>unsup</h3><script type="math/tex; mode=display">
-L=-log\frac{e^{sim(h_{i},{h_{i}}^{+})/\tau }}{\sum_{j=1}^{N}e^{sim(h_{i},{h_{j}}^{+})/\tau}}</script><ul>
-<li>$h_{i}$表示查询向量，+表示对比向量，j表示大小为N的batch下其他向量</li>
-<li>$\tau$表示温度参数，默认是0.07，<a href="https://zhuanlan.zhihu.com/p/357071960">详解温度参数</a></li>
-<li>sim()表示余弦相似度，当然用内积也是一样的，因为l2标准化后的内积等价于余弦相似度</li>
-</ul>
-<h3 id="Sup"><a href="#Sup" class="headerlink" title="Sup"></a>Sup</h3><script type="math/tex; mode=display">
-L = -log\frac{e^{sim(h_{i},{h_{i}}^{+})/\tau}}{\sum_{j=1}^{N}(e^{sim(h_{i},{h_{j}}^{+})/\tau}+e^{sim(h_{i},{h_{j}}^{-})/\tau})}</script><ul>
-<li>其他和无监督方法没有区别，只是将负向量也纳入分母</li>
-</ul>
-<p><strong>备注</strong>：其实他的目标就是为了让分子尽可能的小，分母尽可能的大，那分子其实就代表alignment指标，分母就是代表uniformity指标，其实简单看和交叉墒损失函数很像，并且在Sentence transfomer包中的实现也是这样子的。</p>
-<h2 id="代码详解"><a href="#代码详解" class="headerlink" title="代码详解"></a>代码详解</h2><h3 id="SimCSE包"><a href="#SimCSE包" class="headerlink" title="SimCSE包"></a>SimCSE包</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> simcse <span class="keyword">import</span> SimCSE</span><br><span class="line">model = SimCSE(<span class="string">&quot;princeton-nlp/sup-simcse-bert-base-uncased&quot;</span>)</span><br><span class="line">sentences = [<span class="string">&#x27;A woman is reading.&#x27;</span>, <span class="string">&#x27;A man is playing a guitar.&#x27;</span>]</span><br><span class="line">model.build_index(sentences)</span><br><span class="line">results = model.search(<span class="string">&quot;He plays guitar.&quot;</span>)</span><br></pre></td></tr></table></figure>
-<p>作者直接将训练好的模型放在huggingface上，并且下游利用Faiss进行向量搜索，详情可以直接看github代码，如果想自己训练也很简单，利用Sentence_transfomer包有现成的demo</p>
-<h3 id="Sentence-transfomer包"><a href="#Sentence-transfomer包" class="headerlink" title="Sentence_transfomer包"></a>Sentence_transfomer包</h3><p><strong>unsup</strong></p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> torch.utils.data <span class="keyword">import</span> DataLoader</span><br><span class="line"><span class="keyword">import</span> math</span><br><span class="line"><span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> models, losses</span><br><span class="line"><span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> LoggingHandler, SentenceTransformer, util, InputExample</span><br><span class="line"><span class="keyword">from</span> sentence_transformers.evaluation <span class="keyword">import</span> EmbeddingSimilarityEvaluator</span><br><span class="line"><span class="keyword">import</span> logging</span><br><span class="line"><span class="keyword">from</span> torch <span class="keyword">import</span> nn</span><br><span class="line"><span class="keyword">from</span> datetime <span class="keyword">import</span> datetime</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> gzip</span><br><span class="line"><span class="keyword">import</span> csv</span><br><span class="line"></span><br><span class="line">os.environ[<span class="string">&#x27;CUDA_VISIBLE_DEVICES&#x27;</span>] = <span class="string">&#x27;0,1&#x27;</span></span><br><span class="line">model_name = <span class="string">&#x27;distilbert-base-uncased&#x27;</span></span><br><span class="line">train_batch_size = <span class="number">128</span></span><br><span class="line">num_epochs = <span class="number">1</span></span><br><span class="line">max_seq_length = <span class="number">32</span></span><br><span class="line">model_save_path = <span class="string">&#x27;output/training_stsb_simcse-&#123;&#125;-&#123;&#125;-&#123;&#125;&#x27;</span>.<span class="built_in">format</span>(model_name, train_batch_size,</span><br><span class="line">                                                                datetime.now().strftime(<span class="string">&quot;%Y-%m-%d_%H-%M-%S&quot;</span>))</span><br><span class="line">sts_dataset_path = <span class="string">&#x27;data/stsbenchmark.tsv.gz&#x27;</span></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> os.path.exists(sts_dataset_path):</span><br><span class="line">    util.http_get(<span class="string">&#x27;https://sbert.net/datasets/stsbenchmark.tsv.gz&#x27;</span>, sts_dataset_path)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Here we define our SentenceTransformer model</span></span><br><span class="line">word_embedding_model = models.Transformer(model_name, max_seq_length=max_seq_length,</span><br><span class="line">                                          cache_dir=<span class="string">&#x27;../distilbert-base-uncased&#x27;</span>)</span><br><span class="line">pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())</span><br><span class="line">dense = models.Dense(pooling_model.pooling_output_dimension,<span class="number">512</span>,activation_function=nn.ReLU())  <span class="comment"># 降维操作</span></span><br><span class="line">model = SentenceTransformer(modules=[word_embedding_model, pooling_model,dense],device=<span class="string">&quot;cuda:1&quot;</span>)</span><br><span class="line">wikipedia_dataset_path = <span class="string">&#x27;data/wiki1m_for_simcse.txt&#x27;</span></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> os.path.exists(wikipedia_dataset_path):</span><br><span class="line">    util.http_get(</span><br><span class="line">        <span class="string">&#x27;https://huggingface.co/datasets/princeton-nlp/datasets-for-simcse/resolve/main/wiki1m_for_simcse.txt&#x27;</span>,</span><br><span class="line">        wikipedia_dataset_path)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;read wiki data&#x27;</span>)</span><br><span class="line">train_samples = []</span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(wikipedia_dataset_path, <span class="string">&#x27;r&#x27;</span>, encoding=<span class="string">&#x27;utf8&#x27;</span>) <span class="keyword">as</span> fIn:</span><br><span class="line">    <span class="keyword">for</span> line <span class="keyword">in</span> fIn.readlines()[:<span class="number">10000</span>]:</span><br><span class="line">        line = line.strip()</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(line) &gt;= <span class="number">10</span>:</span><br><span class="line">            train_samples.append(InputExample(texts=[line, line]))</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">len</span>(train_samples))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Read STSB dev dataset&#x27;</span>)</span><br><span class="line">dev_samples = []</span><br><span class="line">test_samples = []</span><br><span class="line"><span class="keyword">with</span> gzip.<span class="built_in">open</span>(sts_dataset_path, <span class="string">&#x27;rt&#x27;</span>, encoding=<span class="string">&#x27;utf8&#x27;</span>) <span class="keyword">as</span> fIn:</span><br><span class="line">    reader = csv.DictReader(fIn, delimiter=<span class="string">&#x27;\t&#x27;</span>, quoting=csv.QUOTE_NONE)</span><br><span class="line">    <span class="keyword">for</span> row <span class="keyword">in</span> reader:</span><br><span class="line">        score = <span class="built_in">float</span>(row[<span class="string">&#x27;score&#x27;</span>]) / <span class="number">5.0</span>  <span class="comment"># Normalize score to range 0 ... 1</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> row[<span class="string">&#x27;split&#x27;</span>] == <span class="string">&#x27;dev&#x27;</span>:</span><br><span class="line">            dev_samples.append(InputExample(texts=[row[<span class="string">&#x27;sentence1&#x27;</span>], row[<span class="string">&#x27;sentence2&#x27;</span>]], label=score))</span><br><span class="line">        <span class="keyword">elif</span> row[<span class="string">&#x27;split&#x27;</span>] == <span class="string">&#x27;test&#x27;</span>:</span><br><span class="line">            test_samples.append(InputExample(texts=[row[<span class="string">&#x27;sentence1&#x27;</span>], row[<span class="string">&#x27;sentence2&#x27;</span>]], label=score))</span><br><span class="line"></span><br><span class="line">dev_evaluator = EmbeddingSimilarityEvaluator.from_input_examples(dev_samples, batch_size=train_batch_size,</span><br><span class="line">                                                                 name=<span class="string">&#x27;sts-dev&#x27;</span>)</span><br><span class="line">test_evaluator = EmbeddingSimilarityEvaluator.from_input_examples(test_samples, batch_size=train_batch_size,</span><br><span class="line">                                                                  name=<span class="string">&#x27;sts-test&#x27;</span>)</span><br><span class="line"></span><br><span class="line">train_dataloader = DataLoader(train_samples, shuffle=<span class="literal">True</span>, batch_size=train_batch_size, drop_last=<span class="literal">True</span>)</span><br><span class="line">train_loss = losses.MultipleNegativesRankingLoss(model)</span><br><span class="line">warmup_steps = math.ceil(<span class="built_in">len</span>(train_dataloader) * num_epochs * <span class="number">0.1</span>)  <span class="comment"># 10% of train data for warm-up</span></span><br><span class="line">evaluation_steps = <span class="built_in">int</span>(<span class="built_in">len</span>(train_dataloader) * <span class="number">0.1</span>) <span class="comment">#Evaluate every 10% of the data</span></span><br><span class="line"></span><br><span class="line">dev_evaluator(model)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Start train model&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># train the model</span></span><br><span class="line">model.fit(train_objectives=[(train_dataloader,train_loss)],</span><br><span class="line">          evaluator=dev_evaluator,</span><br><span class="line">          epochs=num_epochs,</span><br><span class="line">          evaluation_steps=evaluation_steps,</span><br><span class="line">          warmup_steps=warmup_steps,</span><br><span class="line">          output_path=model_save_path,</span><br><span class="line">          optimizer_params=&#123;<span class="string">&#x27;lr&#x27;</span>:<span class="number">5e-5</span>&#125;,</span><br><span class="line">          use_amp=<span class="literal">False</span></span><br><span class="line">          )</span><br><span class="line"></span><br><span class="line">model = SentenceTransformer(model_save_path)</span><br><span class="line">test_evaluator(model, output_path=model_save_path)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p><strong>sup</strong></p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> torch.utils.data <span class="keyword">import</span> DataLoader</span><br><span class="line"><span class="keyword">import</span> math</span><br><span class="line"><span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> models, losses</span><br><span class="line"><span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> LoggingHandler, SentenceTransformer, util, InputExample</span><br><span class="line"><span class="keyword">from</span> sentence_transformers.evaluation <span class="keyword">import</span> EmbeddingSimilarityEvaluator</span><br><span class="line"><span class="keyword">import</span> logging</span><br><span class="line"><span class="keyword">from</span> datetime <span class="keyword">import</span> datetime</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> gzip</span><br><span class="line"><span class="keyword">import</span> csv</span><br><span class="line"></span><br><span class="line"><span class="comment"># argument</span></span><br><span class="line">model_name = <span class="string">&#x27;distilbert-base-uncased&#x27;</span>  <span class="comment"># 可以自行替换</span></span><br><span class="line">train_batch_size = <span class="number">32</span></span><br><span class="line">num_epochs = <span class="number">1</span></span><br><span class="line">max_seq_length = <span class="number">64</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Here we define our SentenceTransformer model</span></span><br><span class="line">word_embedding_model = models.Transformer(<span class="string">&#x27;bert-base-uncased&#x27;</span>, max_seq_length=max_seq_length,</span><br><span class="line">                                          cache_dir=<span class="string">&#x27;../distilbert-base-uncased&#x27;</span>)</span><br><span class="line">pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())</span><br><span class="line">model = SentenceTransformer(modules=[word_embedding_model, pooling_model])</span><br><span class="line"></span><br><span class="line"><span class="comment"># Use label sentences from NLI dataset train to train out model</span></span><br><span class="line"></span><br><span class="line">nli_dataset_path = <span class="string">&#x27;data/AllNLI.tsv.gz&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> os.path.exists(nli_dataset_path):</span><br><span class="line">    util.http_get(<span class="string">&#x27;https://sbert.net/datasets/AllNLI.tsv.gz&#x27;</span>, nli_dataset_path)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Read NLI dataset&#x27;</span>)</span><br><span class="line">model_save_path = <span class="string">&#x27;output/simcse-&#123;&#125;-&#123;&#125;-&#123;&#125;&#x27;</span>.<span class="built_in">format</span>(model_name, train_batch_size,</span><br><span class="line">                                                  datetime.now().strftime(<span class="string">&quot;%Y-%m-%d_%H-%M-%S&quot;</span>))</span><br><span class="line">train_samples = []</span><br><span class="line"><span class="keyword">with</span> gzip.<span class="built_in">open</span>(nli_dataset_path, <span class="string">&#x27;rt&#x27;</span>, encoding=<span class="string">&#x27;utf8&#x27;</span>) <span class="keyword">as</span> fIn:</span><br><span class="line">    reader = csv.DictReader(fIn, delimiter=<span class="string">&#x27;\t&#x27;</span>, quoting=csv.QUOTE_NONE)</span><br><span class="line">    count = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> row <span class="keyword">in</span> reader:</span><br><span class="line">        count += <span class="number">1</span></span><br><span class="line">        label = row[<span class="string">&#x27;label&#x27;</span>]</span><br><span class="line">        <span class="keyword">if</span> label == <span class="string">&#x27;contradiction&#x27;</span>:</span><br><span class="line">            premise = row[<span class="string">&#x27;sentence1&#x27;</span>]</span><br><span class="line">            negative = row[<span class="string">&#x27;sentence2&#x27;</span>]</span><br><span class="line">        <span class="keyword">elif</span> label == <span class="string">&#x27;entailment&#x27;</span>:</span><br><span class="line">            premise = row[<span class="string">&#x27;sentence1&#x27;</span>]</span><br><span class="line">            positive = row[<span class="string">&#x27;sentence2&#x27;</span>]</span><br><span class="line">        <span class="keyword">if</span> count % <span class="number">3</span> == <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">if</span> row[<span class="string">&#x27;split&#x27;</span>] == <span class="string">&#x27;train&#x27;</span>:</span><br><span class="line">                train_samples.append(InputExample(texts=[premise, positive, negative]))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&#x27;train sample length:<span class="subst">&#123;<span class="built_in">len</span>(train_samples)&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Check if dataset exsist. If not, download and extract  it</span></span><br><span class="line">sts_dataset_path = <span class="string">&#x27;data/stsbenchmark.tsv.gz&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> os.path.exists(sts_dataset_path):</span><br><span class="line">    util.http_get(<span class="string">&#x27;https://sbert.net/datasets/stsbenchmark.tsv.gz&#x27;</span>, sts_dataset_path)</span><br><span class="line"></span><br><span class="line">dev_samples = []</span><br><span class="line">test_samples = []</span><br><span class="line"><span class="keyword">with</span> gzip.<span class="built_in">open</span>(sts_dataset_path, <span class="string">&#x27;rt&#x27;</span>, encoding=<span class="string">&#x27;utf8&#x27;</span>) <span class="keyword">as</span> fIn:</span><br><span class="line">    reader = csv.DictReader(fIn, delimiter=<span class="string">&#x27;\t&#x27;</span>, quoting=csv.QUOTE_NONE)</span><br><span class="line">    <span class="keyword">for</span> row <span class="keyword">in</span> reader:</span><br><span class="line">        score = <span class="built_in">float</span>(row[<span class="string">&#x27;score&#x27;</span>]) / <span class="number">5.0</span>  <span class="comment"># Normalize score to range 0 ... 1</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> row[<span class="string">&#x27;split&#x27;</span>] == <span class="string">&#x27;dev&#x27;</span>:</span><br><span class="line">            dev_samples.append(InputExample(texts=[row[<span class="string">&#x27;sentence1&#x27;</span>], row[<span class="string">&#x27;sentence2&#x27;</span>]], label=score))</span><br><span class="line">        <span class="keyword">elif</span> row[<span class="string">&#x27;split&#x27;</span>] == <span class="string">&#x27;test&#x27;</span>:</span><br><span class="line">            test_samples.append(InputExample(texts=[row[<span class="string">&#x27;sentence1&#x27;</span>], row[<span class="string">&#x27;sentence2&#x27;</span>]], label=score))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">train_dataloader = DataLoader(train_samples, shuffle=<span class="literal">True</span>, batch_size=train_batch_size, drop_last=<span class="literal">True</span>)</span><br><span class="line">train_loss = losses.MultipleNegativesRankingLoss(model)</span><br><span class="line">dev_evaluator = EmbeddingSimilarityEvaluator.from_input_examples(dev_samples, batch_size=train_batch_size,</span><br><span class="line">                                                                 name=<span class="string">&#x27;nli-dev&#x27;</span>)</span><br><span class="line">test_evaluator = EmbeddingSimilarityEvaluator.from_input_examples(test_samples, batch_size=train_batch_size,</span><br><span class="line">                                                                  name=<span class="string">&#x27;nli-test&#x27;</span>)</span><br><span class="line">warmup_steps = math.ceil(<span class="built_in">len</span>(train_dataloader) * num_epochs * <span class="number">0.1</span>)  <span class="comment"># 10% of train data for warm-up</span></span><br><span class="line">evaluation_steps = <span class="built_in">int</span>(<span class="built_in">len</span>(train_dataloader) * <span class="number">0.1</span>)  <span class="comment"># Evaluate every 10% of the data</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Start training&#x27;</span>)</span><br><span class="line">model.fit(train_objectives=[(train_dataloader, train_loss)],</span><br><span class="line">          evaluator=dev_evaluator,</span><br><span class="line">          epochs=num_epochs,</span><br><span class="line">          evaluation_steps=evaluation_steps,</span><br><span class="line">          warmup_steps=warmup_steps,</span><br><span class="line">          output_path=model_save_path,</span><br><span class="line">          optimizer_params=&#123;<span class="string">&#x27;lr&#x27;</span>: <span class="number">5e-5</span>&#125;,</span><br><span class="line">          use_amp=<span class="literal">True</span>  <span class="comment"># Set to True, if your GPU supports FP16 cores</span></span><br><span class="line">          )</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Start test&#x27;</span>)</span><br><span class="line">model = SentenceTransformer(model_save_path)</span><br><span class="line">test_evaluator(model, output_path=model_save_path)</span><br></pre></td></tr></table></figure>
-<p>sup在demo中没有，只是训练数据的构造需要自己去改写一下。如果是简单的复现，用上面几个包就可以了，避免重复造轮子，但如果想对组件进行相应的替换，那就得自己写，我以后有时间也想尝试复现一下。</p>
-<h2 id="实际对比效果"><a href="#实际对比效果" class="headerlink" title="实际对比效果"></a>实际对比效果</h2><p><strong>query</strong>:Sexy Elegant Base Tanks &amp; Camis Female Smooth Sling Dress</p>
-<p><strong>result</strong>：</p>
-<div class="table-container">
-<table>
-<thead>
-<tr>
-<th>Doc2vec</th>
-<th>SimCSE</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Glossy Stainless Steel Simple Laser Open Bracelet</td>
-<td>Sexy Tanks &amp; Camis Female Viscose Sling Dress</td>
-</tr>
-<tr>
-<td>Elegant Small Smile Face Cute Letter Earrings</td>
-<td>Waisted Sexy Fitting Base Tanks &amp; Camis Sling Dress</td>
-</tr>
-<tr>
-<td>Elegant Simple Cross Shell Beads Earrings</td>
-<td>Sexy Base Tanks &amp; Camis Summer Female Sling Dress</td>
-</tr>
-<tr>
-<td>Sexy Takato Ultra-thin Lace Lace Sexy Stockings</td>
-<td>Waisted Split Elegant Base Tanks &amp; Camis Female New Style Sling Dress</td>
-</tr>
-<tr>
-<td>Magnet Pillow Core Will Gift Magnet Gift Pillow</td>
-<td>Waisted Base Tanks &amp; Camis Vintage Female Sling Dress</td>
-</tr>
-<tr>
-<td>Fitting Suit Collar Short Sleeve Spring Summer High Waist Female Knit Dress</td>
-<td>Elegant V-neck Satin Fitting Thin Sling Dress Female Tanks &amp; Camis External Wear Dress</td>
-</tr>
-<tr>
-<td>Elegant Heart Simple Small Piercing Jewelry</td>
-<td>Sexy Off-the-shoulder Casual Pirinted Sling Dress</td>
-</tr>
-<tr>
-<td>Sexy Dress Women’s One Shoulder Slit Long Skirt</td>
-<td>Thin Long Split Sexy Fitting Elegant Base Tanks &amp; Camis Female Black Sling Dress</td>
-</tr>
-<tr>
-<td>Leather Spring Summer Leather New Arrived First Layer Vintage Manual Simple Single Shoes</td>
-<td>Mid-length Sexy Tanks &amp; Camis Ultrashort Female Smooth Dress</td>
-</tr>
-</tbody>
-</table>
-</div>
-<p>我只能说，对比学习在语句表达上确实和docvec不是一个量级的，太强了。。。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ol>
-<li>SimCSE在语句表达上很不错，而且他好像还比美团后出的Consert还要强一些</li>
-<li>至少这篇论文说明了在模型中做数据增强，比从源头做替换/裁剪等方式数据增强效果更好</li>
-<li>SimCSE有两个问题，在原作者近期的论文中【ESimCSE】提出来了，并且提出了解决方案：<ol>
-<li>由于正样本长度都是一样的，因此从长度这个特征来说，就可以区分很多样本，为了避免这个问题。原作者利用一种相对安全的方式：word repetition，就是对随机对句子进行单词重复的操作，一方面改变了正样本长度相等的缺陷，另一方面保持两者特征相似。</li>
-<li>他承担不了大的batch-size,一方面是内存不允许，一方面是效果也会下降，因此作者仿造在cv中的Momentum Contrast的操作用于提升性能。【为了缩小train和predict的差距，ESimCSE关闭了MC encoder中的dropout】</li>
-</ol>
-</li>
-<li>这篇论文的模型就是用的Sentence Bert，只是损失函数换了，原论文是CosineSimilarityLoss，而这篇论文改成了InfoNCE，利用Bert的dropout直接强有力的提升对比学习的效果。</li>
-</ol>
-<h2 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h2><p><a href="https://arxiv.org/pdf/2005.10242.pdf">Alignment &amp; Uniformity</a></p>
-<p><a href="https://github.com/princeton-nlp/SimCSE">github_simcse</a></p>
-<p><a href="https://github.com/UKPLab/sentence-transformers/">github_sen_tran</a></p>
-<p><a href="https://arxiv.org/abs/2104.08821">paper_simcse</a></p>
-<p><a href="https://arxiv.org/abs/2105.11741">paper_consert</a></p>
-<p><a href="https://arxiv.org/pdf/2109.04380.pdf">paper_esimcse</a></p>
-<p><a href="https://arxiv.org/abs/1911.05722">paper Moco</a></p>
-]]></content>
-      <categories>
-        <category>深度学习</category>
-      </categories>
-      <tags>
-        <tag>对比学习</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>异常检测整理</title>
     <url>/2021/04/08/%E5%BC%82%E5%B8%B8%E6%A3%80%E6%B5%8B/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><strong>定义</strong>：识别不正常情况与挖掘非逻辑数据的技术，也叫outliers。</p>
@@ -1282,6 +1093,224 @@ L = -log\frac{e^{sim(h_{i},{h_{i}}^{+})/\tau}}{\sum_{j=1}^{N}(e^{sim(h_{i},{h_{j
       </tags>
   </entry>
   <entry>
+    <title>多进程、多线程</title>
+    <url>/2021/04/11/%E5%A4%9A%E8%BF%9B%E7%A8%8B%E3%80%81%E5%A4%9A%E7%BA%BF%E7%A8%8B%EF%BC%88python%EF%BC%89/</url>
+    <content><![CDATA[<blockquote>
+<p>​    这周接到1个需求，项目经理觉得我这边构造数据太过缓慢，由于数据量过大，以前数据构造完后将其导入MPP，利用copy_from速度还是很快的，一般为10W/s。现在换成Kafka消息队列，又由于python库自带的原因（这个是组里大神告诉我的），无法像java开发利用list导数据，因此我只能一条一条以json的形式将数据放入消息队列，一般为800条/s。原先构造5000W数据需要7H，经过优化后暂时需要3.5H，性能提升一倍。有点小开心，话不多说，石海同学开始将一下个人对于标题的理解。。。。</p>
+<p>​    进一步优化利用多进程的JoinableQueue，一边一直产生数据，另一边一直消费数据，现在5000W数据大约需要1.5H，性能较最初提升了近五倍。</p>
+</blockquote>
+<h2 id="历史"><a href="#历史" class="headerlink" title="历史"></a>历史</h2><p>上古年代：在很久很久以前，当时主流的磁盘操作系统MS-DOS是只支持单任务操作的，就打个比方，如果我想在电脑上听音乐和看电影，是不能同时开启的，只能先听音乐后看电影，或者位置互换。</p>
+<p>2002：横空出世的Intel Pentium 4HT处理器，提出了cpu多线程（SMT），其支持一个cpu进行多任务开启。</p>
+<p>————你总不能要求Guido1989年为了打发圣诞节假期发明的一种编译语言还要设计一下多线程的部分。</p>
+<p>2006：在秋季的英特尔信息技术峰会上，Inter总裁宣布，其在11月份将会交付第一台4核cpu处理器，而这距离双核发布还不到1年，支持多核时代就此拉开序幕。</p>
+<p>————为什么说python多线程是历史遗留问题，因为在当时想要在两个或者更多的处理器对同一个对象运行时，为了保护线程数据完整性和状态同步，最简单的方法就是加锁，于是出现了GIL这把超级大锁。</p>
+<p>2006-至今：GPU也浩浩荡荡发展了十几年了，过程我就不细说了（因为不懂），总之对于图象类任务GPU和CPU不是一个量级上的，以前看过一个视频，很好的解释了CPU和GPU的区别。比如我要画一幅图，cpu需要一笔一划将他画出来，而GPU是直接在脑子里构思好，一炮就把图打出来了。因此对于神经网络这个模型，多个神经元同时进行计算，GPU比CPU快太多。。。。。</p>
+<h2 id="编译器、解释器、IDE"><a href="#编译器、解释器、IDE" class="headerlink" title="编译器、解释器、IDE"></a>编译器、解释器、IDE</h2><p><strong>编译器</strong>：对于C、C++这类语言需要先编译后运行，其中编译的时候就是编译器。</p>
+<p><strong>解释器</strong>：对于python、PHP、JavaScript等就是利用解释器，’一边编译一边解释‘，不过速度会比较慢，因此产生一种叫预编译的东西，python在运行时就先生成pyc的二进制临时文件，在出结果。</p>
+<p>预编译：Java、C#，运行前将源代码编译成中间代码，然后再解释器运行，这种执行效率比编译运行会有效率一些，避免重复编译。</p>
+<p><strong>IDE</strong>：集成<a href="https://baike.baidu.com/item/开发环境">开发环境</a>（<a href="https://baike.baidu.com/item/IDE">IDE</a>，Integrated Development Environment ），用于提供程序开发环境的应用程序，python常用的就是pycharm和jupyter notebook。</p>
+<h2 id="GIL锁"><a href="#GIL锁" class="headerlink" title="GIL锁"></a>GIL锁</h2><p><strong>概念：</strong>GIL全称Global Interpreter Lock,其并不是python的特性，由于Cpython是大部分环境下默认的python执行环境，而在实现python解释器会自动上锁。</p>
+<p><strong>目的：</strong>确保每个进程只有一个线程运行，所以在外面我们一般说python的多线程是伪线程。因为不管你有几个核，你用多线程也只能跑一个核。</p>
+<h2 id="进程、线程、协程的利用"><a href="#进程、线程、协程的利用" class="headerlink" title="进程、线程、协程的利用"></a>进程、线程、协程的利用</h2><p><strong>进程</strong>：拥有代码和打开的文件资源、数据资源、独立的内存空间。</p>
+<p><strong>线程</strong>：从属于进程，是程序的实际执行者，线程拥有自己的栈空间。</p>
+<p><strong>协程</strong>：从属于线程，是一种比线程更加轻量级的存在。</p>
+<p><strong>总结：</strong></p>
+<p><strong>对操作系统来说，线程是最小的执行单元，进程是最小的资源管理单元。</strong></p>
+<h2 id="多进程"><a href="#多进程" class="headerlink" title="多进程"></a>多进程</h2><p>我觉得最简单的讲，多进程就是你在任务窗口看建了几个任务。比如你电脑上有16个核，理论上你可以开16个进程，每个进程占满一个cpu。对python而言由于没有多线程的利用，所有在单进程无法满足需求时，自然得利用多进程。</p>
+<h3 id="单任务单进程"><a href="#单任务单进程" class="headerlink" title="单任务单进程"></a>单任务单进程</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> multiprocessing <span class="keyword">import</span> Process</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">work</span>(<span class="params">name</span>):</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;<span class="subst">&#123;name&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    p = Process(target=work,args=(<span class="string">&#x27;single task&#x27;</span>,))</span><br><span class="line">    p.start()</span><br><span class="line">    p.join()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>我还看到一种是用run不用start的，但大概看了下没什么特殊的，不过这个join只能用于start.所以建议还是都用start，这个join是阻塞的意思，简单来说：主进程和其他子进程结束的话，都等着，等我结束了才能结束。</p>
+<p>举个例子：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> multiprocessing <span class="keyword">import</span> Process</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">work1</span>(<span class="params">name</span>):</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">5</span>):</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&#x27;<span class="subst">&#123;name&#125;</span>:<span class="subst">&#123;os.getpid()&#125;</span>&#x27;</span>)</span><br><span class="line">        time.sleep(<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">work2</span>(<span class="params">name</span>):</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">5</span>):</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&#x27;<span class="subst">&#123;name&#125;</span>:<span class="subst">&#123;os.getpid()&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    p1 = Process(target=work1,args=(<span class="string">&#x27;single task1&#x27;</span>,))</span><br><span class="line">    p2 = Process(target=work2,args=(<span class="string">&#x27;single task2&#x27;</span>,))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;主进程:<span class="subst">&#123;os.getpid()&#125;</span>&#x27;</span>)</span><br><span class="line">    p1.start()</span><br><span class="line">    p1.join()</span><br><span class="line">    p2.start()</span><br><span class="line">    p2.join()</span><br></pre></td></tr></table></figure>
+<p>如果这么写，主进程你走你的，work2子进程你给我等一下。等我run完你在run。</p>
+<p><strong>注意：</strong>每个子进程之间的join不是串行的，是并行的。既无论你多少个子进程，谁最后结束，谁关闭文件。</p>
+<h3 id="单任务多进程"><a href="#单任务多进程" class="headerlink" title="单任务多进程"></a>单任务多进程</h3><p>比如你要启动50个进程，然后写50个子进程就太慢了。因此，对于多进程有一种新的形式。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">long_time_task</span>(<span class="params">name</span>):</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;Run task %s (%s)...&#x27;</span> % (name, os.getpid()))</span><br><span class="line">    start = time.time()</span><br><span class="line">    time.sleep(random.random() * <span class="number">3</span>)</span><br><span class="line">    end = time.time()</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;Task %s runs %0.2f seconds.&#x27;</span> % (name, (end - start)))</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__==<span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;Parent process %s.&#x27;</span> % os.getpid())</span><br><span class="line">    p = Pool(<span class="number">4</span>)</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">5</span>):</span><br><span class="line">        p.apply_async(long_time_task, args=(i,))</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;Waiting for all subprocesses done...&#x27;</span>)</span><br><span class="line">    p.close()</span><br><span class="line">    p.join()</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;All subprocesses done.&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">########################################################</span></span><br><span class="line"><span class="comment">#运行结果</span></span><br><span class="line"><span class="comment">########################################################</span></span><br><span class="line">Parent process <span class="number">7748.</span></span><br><span class="line">Waiting <span class="keyword">for</span> <span class="built_in">all</span> subprocesses done...</span><br><span class="line">Run task <span class="number">0</span> (<span class="number">7780</span>)...</span><br><span class="line">Run task <span class="number">1</span> (<span class="number">7781</span>)...</span><br><span class="line">Run task <span class="number">2</span> (<span class="number">7782</span>)...</span><br><span class="line">Run task <span class="number">3</span> (<span class="number">7783</span>)...</span><br><span class="line">Run task <span class="number">4</span> (<span class="number">7781</span>)...</span><br><span class="line">All subprocesses done.</span><br></pre></td></tr></table></figure>
+<p>可以看到task1和task4的进程是一样的，因为只启动了4个进程，因此第5个进程需要等待其他进程结束才开始运行。</p>
+<p><strong>注意：</strong>close不加直接写join是会报错的。</p>
+<h3 id="多任务多进程"><a href="#多任务多进程" class="headerlink" title="多任务多进程"></a>多任务多进程</h3><p>我这边用的是经典的生产者和消费者模型，及一个模型构造生产者，一个模型构造消费者，两者通过自带的JoinableQueue进行通信。（不要用deque里面的队列！！）</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> random</span><br><span class="line"><span class="keyword">from</span>  multiprocessing <span class="keyword">import</span> JoinableQueue,Process</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">producer</span>(<span class="params">q,name,food</span>):</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">5</span>):</span><br><span class="line">        time.sleep(random.random())</span><br><span class="line">        fd = <span class="string">&#x27;%s%s&#x27;</span>%(food,i+<span class="number">1</span>)</span><br><span class="line">        q.put(fd)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&#x27;%s生产了一个%s&#x27;</span>%(name,food))</span><br><span class="line">    q.join()  <span class="comment"># 我启动了生产者之后，生产者函数一直在生成数据，直到生产完所有数据将队列q.join()一下，意思是当我生产的数据都被消费者消费完之后 队列的阻塞才结束。</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">consumer</span>(<span class="params">q,name</span>):</span>  <span class="comment"># 消费者不需要像Queue那样判断从队列里拿到None再退出执行消费者函数了</span></span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        food = q.get()</span><br><span class="line">        time.sleep(random.random())</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&#x27;%s吃了%s&#x27;</span>%(name,food))</span><br><span class="line">        q.task_done()  <span class="comment"># 消费者每次从队列里面q.get()一个数据，处理过后就使用队列.task_done()</span></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    jq = JoinableQueue()</span><br><span class="line">    p =Process(target=producer,args=(jq,<span class="string">&#x27;喜洋洋&#x27;</span>,<span class="string">&#x27;包子&#x27;</span>))</span><br><span class="line">    p.start()</span><br><span class="line">    c = Process(target=consumer,args=(jq,<span class="string">&#x27;灰太狼&#x27;</span>))</span><br><span class="line">    c.daemon = <span class="literal">True</span>  <span class="comment"># 守护进程，如果用Pool就不用这个也没事</span></span><br><span class="line">    c.start()</span><br><span class="line">    p.join()  <span class="comment"># 阻塞生产者</span></span><br></pre></td></tr></table></figure>
+<p>具体实现情况</p>
+<ol>
+<li>启动一个生产者，和一个消费者（这里可以用多进程消费），看具体时间</li>
+<li>生产者结束后将JoinableQueue进行阻塞，直到队列全部被消费后，才结束进程。</li>
+</ol>
+<p>Queue与JoinableQueue的区别</p>
+<ol>
+<li>Queue在消费者中需要if判断队列，不然的话就陷入死循环。而jionableQueue不用，其只需要将队列堵塞后，队列消费完程序才解决。</li>
+<li>Queue很难控制，因为如果只是判断队列是否存在，就需要考虑产生和消耗队列的时间。因此我认为还是JoinableQueue好</li>
+</ol>
+<h2 id="多线程"><a href="#多线程" class="headerlink" title="多线程"></a>多线程</h2><p>开头就说了，python虽然线程是真正的线程，但在解释器执行的时候会遇到GIL锁，导致其无论多少核，只能跑满一个核，所以对于比较简单的可以运行多线程，好像在爬虫里面运用多线程的比较多。</p>
+<p>那为什么有的程序一个进程一开用了N个cpu，那是因为他进程中存在利用c扩写的库，他将关键的部分用C/C++写成python扩展，其他还用python写。一般计算密集型的程序都会用C代码编写并通过扩展的方式集成到python脚本（numpy）。在扩展中完全可以用C创建原生线程，而且不用锁GIL，充分利用CPU的计算资源。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> threading  <span class="keyword">import</span> Thread</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">work1</span>():</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;work1 has working&#x27;</span>)</span><br><span class="line">    time.sleep(<span class="number">3</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">work2</span>():</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;work2 has working&#x27;</span>)</span><br><span class="line">    time.sleep(<span class="number">5</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">work3</span>():</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;work3 has working&#x27;</span>)</span><br><span class="line">    time.sleep(<span class="number">8</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    start_time =time.time()</span><br><span class="line">    p1 = Thread(target=work1)</span><br><span class="line">    p2 = Thread(target=work2)</span><br><span class="line">    p3 = Thread(target=work3)</span><br><span class="line">    p1.start()</span><br><span class="line">    p2.start()</span><br><span class="line">    p3.start()</span><br><span class="line">    p3.join()</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;cost time <span class="subst">&#123;time.time()-start_time&#125;</span>&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">能否利用Pool批量构造生产者和消费者，</span><br><span class="line">暂时只能做到Pool构造消费者，多个Process构造生产者进行生产。。。</span><br><span class="line">（除非使用process分别构造生产者和消费者模型）</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>python</category>
+      </categories>
+      <tags>
+        <tag>工程开发</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>对比学习_SimCSE</title>
+    <url>/2021/09/30/%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0-SimCSE/</url>
+    <content><![CDATA[<blockquote>
+<p>前短时间接到一个title i2i召回数据的任务，最开始只是想用简单的Doc2vec输出每个title的emb然后用faiss做召回，但是效果很差。后来尝试了用Bert直接输出结果，效果也很差。后面看论文发现Bert的emb存在模型坍塌问题【详细可以参考美团的ConSERT任务】。最后利用SimCSE比较合理的解决了需求</p>
+</blockquote>
+<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><ol>
+<li>什么是自监督学习，什么是对比学习？</li>
+<li>SimCSE生成监督数据的方法是什么？</li>
+<li>为什么生成的句向量这么有用？</li>
+<li>他的优劣势是什么？</li>
+</ol>
+<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><h3 id="自监督学习"><a href="#自监督学习" class="headerlink" title="自监督学习"></a>自监督学习</h3><p>首先，我们知道现在训练模型的方式主要是两种：有监督和无监督，并且我个人认为无监督的使用场景是远远大于有监督的。无监督有一个比较特别的分支是自监督，他的特点就是不需要人工标注的类别标签信息，直接利用数据本身作为监督信息，来学习样本数据的特征表达。</p>
+<p>自监督主要分为两类：</p>
+<ul>
+<li>Generative Methods：其中的典型代表就是自编码器，其利用数据本身压缩再重构去比较生成的数据与原始数据的差距。</li>
+<li>Contrastive Methods：这类方法则是通过将数据分别与正例样本和负例样本在特征空间进行对比，来学习样本的特征表示。</li>
+</ul>
+<p><strong>备注</strong>：我个人任务word2vec也可以属于自监督范畴，不过不属于上面两类，他是利用文本词与词之间关系去学习每个单词的embedding</p>
+<h3 id="对比学习"><a href="#对比学习" class="headerlink" title="对比学习"></a>对比学习</h3><p>上面说了，对比学习属于自监督学习的一个大类，他主要的难点就是如何生成相似的正样本。其最开始是在cv中使用的，后面NLPer也不甘示弱的进行研究，才有了今天NLP在对比学习领域的百花齐放，具体的进展可以看<a href="https://zhuanlan.zhihu.com/p/367290573">张俊林博客</a>。</p>
+<p>SimCSE全称(Simple Contrastive Learning of Sentence Embeddings)，是一种在没有监督训练数据的情况下训练句子向量的对比学习框架。并且从无监督和有监督两种方法给出了结果。</p>
+<ul>
+<li>无监督SimCSE：仅使用dropout进行数据增强操作。具体来说，将同一个样本输入预训练编码器两次(BERT)，由于每次的dropout是不同的，那么就会生成两个经过dropout后的句向量表示。这里的dropout主要是指传统的feature dropout，在标准的Transformer实现中，每个sub-layer后都默认配置了dropout。除此之外，Transformer也在multi-head attention和feed-forward network的激活函数层添加了dropout。利用dropout将这两个样本作为“正样本对”，于此同时，同一个batch里面不同样本做”负样本对”</li>
+<li>有监督SimCSE：基于natural language inference (NLI) 数据集进行训练，具体来说，论文将entailment样本作为“正样本对”，并将contradiction样本作为hard“负样本对”，并且从实验证明该方法是有效的。</li>
+</ul>
+<h2 id="指标详解"><a href="#指标详解" class="headerlink" title="指标详解"></a>指标详解</h2><p>在《<strong>Understanding Contrastive Representation Learning through Alignment and Uniformity on the Hypersphere</strong>》一文中，作者指出了现有的对比学习都遵循以下两大原则即：相似样本应该保持靠近，并且不同的样本应该分散嵌入在高维球体。于此同时SimCSE的作者也提到了这两点，他也认为这两点是衡量表示质量很重要的指标。</p>
+<h3 id="alignment"><a href="#alignment" class="headerlink" title="alignment"></a>alignment</h3><p>用于衡量两个样本的相似程度，其计算公式如下：</p>
+<script type="math/tex; mode=display">
+L=E\left \| f(x)-f(y)\right \|_{2 }^{\alpha}</script><p>同时作者给出了在pytorch中的代码</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">lalign</span>(<span class="params">x, y, alpha=<span class="number">2</span></span>):</span></span><br><span class="line">  <span class="keyword">return</span> (x - y).norm(dim=<span class="number">1</span>).<span class="built_in">pow</span>(alpha).mean()</span><br></pre></td></tr></table></figure>
+<h3 id="uniformity"><a href="#uniformity" class="headerlink" title="uniformity"></a>uniformity</h3><p>衡量规整后的特征在unit 超球体上的分布的均匀性，其计算公式如下：</p>
+<script type="math/tex; mode=display">
+L=log(E[e^{-t\left \| f(x)-f(y)\right \|^{2}}])</script><p>同时作者给出了在pytorch中的代码</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">lunif</span>(<span class="params">x, t=<span class="number">2</span></span>):</span></span><br><span class="line">  sq_pdist = torch.pdist(x, p=<span class="number">2</span>).<span class="built_in">pow</span>(<span class="number">2</span>)</span><br><span class="line">  <span class="keyword">return</span> sq_pdist.mul(-t).exp().mean().log()</span><br></pre></td></tr></table></figure>
+<p>两者结合，作者是介绍可以直接作为损失进行优化的：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">loss = lalign(x, y) + lam * (lunif(x) + lunif(y)) / <span class="number">2</span></span><br></pre></td></tr></table></figure>
+<h2 id="损失函数"><a href="#损失函数" class="headerlink" title="损失函数"></a>损失函数</h2><h3 id="unsup"><a href="#unsup" class="headerlink" title="unsup"></a>unsup</h3><script type="math/tex; mode=display">
+L=-log\frac{e^{sim(h_{i},{h_{i}}^{+})/\tau }}{\sum_{j=1}^{N}e^{sim(h_{i},{h_{j}}^{+})/\tau}}</script><ul>
+<li>$h_{i}$表示查询向量，+表示对比向量，j表示大小为N的batch下其他向量</li>
+<li>$\tau$表示温度参数，默认是0.07，<a href="https://zhuanlan.zhihu.com/p/357071960">详解温度参数</a></li>
+<li>sim()表示余弦相似度，当然用内积也是一样的，因为l2标准化后的内积等价于余弦相似度</li>
+</ul>
+<h3 id="Sup"><a href="#Sup" class="headerlink" title="Sup"></a>Sup</h3><script type="math/tex; mode=display">
+L = -log\frac{e^{sim(h_{i},{h_{i}}^{+})/\tau}}{\sum_{j=1}^{N}(e^{sim(h_{i},{h_{j}}^{+})/\tau}+e^{sim(h_{i},{h_{j}}^{-})/\tau})}</script><ul>
+<li>其他和无监督方法没有区别，只是将负向量也纳入分母</li>
+</ul>
+<p><strong>备注</strong>：其实他的目标就是为了让分子尽可能的小，分母尽可能的大，那分子其实就代表alignment指标，分母就是代表uniformity指标，其实简单看和交叉墒损失函数很像，并且在Sentence transfomer包中的实现也是这样子的。</p>
+<h2 id="代码详解"><a href="#代码详解" class="headerlink" title="代码详解"></a>代码详解</h2><h3 id="SimCSE包"><a href="#SimCSE包" class="headerlink" title="SimCSE包"></a>SimCSE包</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> simcse <span class="keyword">import</span> SimCSE</span><br><span class="line">model = SimCSE(<span class="string">&quot;princeton-nlp/sup-simcse-bert-base-uncased&quot;</span>)</span><br><span class="line">sentences = [<span class="string">&#x27;A woman is reading.&#x27;</span>, <span class="string">&#x27;A man is playing a guitar.&#x27;</span>]</span><br><span class="line">model.build_index(sentences)</span><br><span class="line">results = model.search(<span class="string">&quot;He plays guitar.&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p>作者直接将训练好的模型放在huggingface上，并且下游利用Faiss进行向量搜索，详情可以直接看github代码，如果想自己训练也很简单，利用Sentence_transfomer包有现成的demo</p>
+<h3 id="Sentence-transfomer包"><a href="#Sentence-transfomer包" class="headerlink" title="Sentence_transfomer包"></a>Sentence_transfomer包</h3><p><strong>unsup</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> torch.utils.data <span class="keyword">import</span> DataLoader</span><br><span class="line"><span class="keyword">import</span> math</span><br><span class="line"><span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> models, losses</span><br><span class="line"><span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> LoggingHandler, SentenceTransformer, util, InputExample</span><br><span class="line"><span class="keyword">from</span> sentence_transformers.evaluation <span class="keyword">import</span> EmbeddingSimilarityEvaluator</span><br><span class="line"><span class="keyword">import</span> logging</span><br><span class="line"><span class="keyword">from</span> torch <span class="keyword">import</span> nn</span><br><span class="line"><span class="keyword">from</span> datetime <span class="keyword">import</span> datetime</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> gzip</span><br><span class="line"><span class="keyword">import</span> csv</span><br><span class="line"></span><br><span class="line">os.environ[<span class="string">&#x27;CUDA_VISIBLE_DEVICES&#x27;</span>] = <span class="string">&#x27;0,1&#x27;</span></span><br><span class="line">model_name = <span class="string">&#x27;distilbert-base-uncased&#x27;</span></span><br><span class="line">train_batch_size = <span class="number">128</span></span><br><span class="line">num_epochs = <span class="number">1</span></span><br><span class="line">max_seq_length = <span class="number">32</span></span><br><span class="line">model_save_path = <span class="string">&#x27;output/training_stsb_simcse-&#123;&#125;-&#123;&#125;-&#123;&#125;&#x27;</span>.<span class="built_in">format</span>(model_name, train_batch_size,</span><br><span class="line">                                                                datetime.now().strftime(<span class="string">&quot;%Y-%m-%d_%H-%M-%S&quot;</span>))</span><br><span class="line">sts_dataset_path = <span class="string">&#x27;data/stsbenchmark.tsv.gz&#x27;</span></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> os.path.exists(sts_dataset_path):</span><br><span class="line">    util.http_get(<span class="string">&#x27;https://sbert.net/datasets/stsbenchmark.tsv.gz&#x27;</span>, sts_dataset_path)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Here we define our SentenceTransformer model</span></span><br><span class="line">word_embedding_model = models.Transformer(model_name, max_seq_length=max_seq_length,</span><br><span class="line">                                          cache_dir=<span class="string">&#x27;../distilbert-base-uncased&#x27;</span>)</span><br><span class="line">pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())</span><br><span class="line">dense = models.Dense(pooling_model.pooling_output_dimension,<span class="number">512</span>,activation_function=nn.ReLU())  <span class="comment"># 降维操作</span></span><br><span class="line">model = SentenceTransformer(modules=[word_embedding_model, pooling_model,dense],device=<span class="string">&quot;cuda:1&quot;</span>)</span><br><span class="line">wikipedia_dataset_path = <span class="string">&#x27;data/wiki1m_for_simcse.txt&#x27;</span></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> os.path.exists(wikipedia_dataset_path):</span><br><span class="line">    util.http_get(</span><br><span class="line">        <span class="string">&#x27;https://huggingface.co/datasets/princeton-nlp/datasets-for-simcse/resolve/main/wiki1m_for_simcse.txt&#x27;</span>,</span><br><span class="line">        wikipedia_dataset_path)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;read wiki data&#x27;</span>)</span><br><span class="line">train_samples = []</span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(wikipedia_dataset_path, <span class="string">&#x27;r&#x27;</span>, encoding=<span class="string">&#x27;utf8&#x27;</span>) <span class="keyword">as</span> fIn:</span><br><span class="line">    <span class="keyword">for</span> line <span class="keyword">in</span> fIn.readlines()[:<span class="number">10000</span>]:</span><br><span class="line">        line = line.strip()</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(line) &gt;= <span class="number">10</span>:</span><br><span class="line">            train_samples.append(InputExample(texts=[line, line]))</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">len</span>(train_samples))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Read STSB dev dataset&#x27;</span>)</span><br><span class="line">dev_samples = []</span><br><span class="line">test_samples = []</span><br><span class="line"><span class="keyword">with</span> gzip.<span class="built_in">open</span>(sts_dataset_path, <span class="string">&#x27;rt&#x27;</span>, encoding=<span class="string">&#x27;utf8&#x27;</span>) <span class="keyword">as</span> fIn:</span><br><span class="line">    reader = csv.DictReader(fIn, delimiter=<span class="string">&#x27;\t&#x27;</span>, quoting=csv.QUOTE_NONE)</span><br><span class="line">    <span class="keyword">for</span> row <span class="keyword">in</span> reader:</span><br><span class="line">        score = <span class="built_in">float</span>(row[<span class="string">&#x27;score&#x27;</span>]) / <span class="number">5.0</span>  <span class="comment"># Normalize score to range 0 ... 1</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> row[<span class="string">&#x27;split&#x27;</span>] == <span class="string">&#x27;dev&#x27;</span>:</span><br><span class="line">            dev_samples.append(InputExample(texts=[row[<span class="string">&#x27;sentence1&#x27;</span>], row[<span class="string">&#x27;sentence2&#x27;</span>]], label=score))</span><br><span class="line">        <span class="keyword">elif</span> row[<span class="string">&#x27;split&#x27;</span>] == <span class="string">&#x27;test&#x27;</span>:</span><br><span class="line">            test_samples.append(InputExample(texts=[row[<span class="string">&#x27;sentence1&#x27;</span>], row[<span class="string">&#x27;sentence2&#x27;</span>]], label=score))</span><br><span class="line"></span><br><span class="line">dev_evaluator = EmbeddingSimilarityEvaluator.from_input_examples(dev_samples, batch_size=train_batch_size,</span><br><span class="line">                                                                 name=<span class="string">&#x27;sts-dev&#x27;</span>)</span><br><span class="line">test_evaluator = EmbeddingSimilarityEvaluator.from_input_examples(test_samples, batch_size=train_batch_size,</span><br><span class="line">                                                                  name=<span class="string">&#x27;sts-test&#x27;</span>)</span><br><span class="line"></span><br><span class="line">train_dataloader = DataLoader(train_samples, shuffle=<span class="literal">True</span>, batch_size=train_batch_size, drop_last=<span class="literal">True</span>)</span><br><span class="line">train_loss = losses.MultipleNegativesRankingLoss(model)</span><br><span class="line">warmup_steps = math.ceil(<span class="built_in">len</span>(train_dataloader) * num_epochs * <span class="number">0.1</span>)  <span class="comment"># 10% of train data for warm-up</span></span><br><span class="line">evaluation_steps = <span class="built_in">int</span>(<span class="built_in">len</span>(train_dataloader) * <span class="number">0.1</span>) <span class="comment">#Evaluate every 10% of the data</span></span><br><span class="line"></span><br><span class="line">dev_evaluator(model)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Start train model&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># train the model</span></span><br><span class="line">model.fit(train_objectives=[(train_dataloader,train_loss)],</span><br><span class="line">          evaluator=dev_evaluator,</span><br><span class="line">          epochs=num_epochs,</span><br><span class="line">          evaluation_steps=evaluation_steps,</span><br><span class="line">          warmup_steps=warmup_steps,</span><br><span class="line">          output_path=model_save_path,</span><br><span class="line">          optimizer_params=&#123;<span class="string">&#x27;lr&#x27;</span>:<span class="number">5e-5</span>&#125;,</span><br><span class="line">          use_amp=<span class="literal">False</span></span><br><span class="line">          )</span><br><span class="line"></span><br><span class="line">model = SentenceTransformer(model_save_path)</span><br><span class="line">test_evaluator(model, output_path=model_save_path)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><strong>sup</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> torch.utils.data <span class="keyword">import</span> DataLoader</span><br><span class="line"><span class="keyword">import</span> math</span><br><span class="line"><span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> models, losses</span><br><span class="line"><span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> LoggingHandler, SentenceTransformer, util, InputExample</span><br><span class="line"><span class="keyword">from</span> sentence_transformers.evaluation <span class="keyword">import</span> EmbeddingSimilarityEvaluator</span><br><span class="line"><span class="keyword">import</span> logging</span><br><span class="line"><span class="keyword">from</span> datetime <span class="keyword">import</span> datetime</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> gzip</span><br><span class="line"><span class="keyword">import</span> csv</span><br><span class="line"></span><br><span class="line"><span class="comment"># argument</span></span><br><span class="line">model_name = <span class="string">&#x27;distilbert-base-uncased&#x27;</span>  <span class="comment"># 可以自行替换</span></span><br><span class="line">train_batch_size = <span class="number">32</span></span><br><span class="line">num_epochs = <span class="number">1</span></span><br><span class="line">max_seq_length = <span class="number">64</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Here we define our SentenceTransformer model</span></span><br><span class="line">word_embedding_model = models.Transformer(<span class="string">&#x27;bert-base-uncased&#x27;</span>, max_seq_length=max_seq_length,</span><br><span class="line">                                          cache_dir=<span class="string">&#x27;../distilbert-base-uncased&#x27;</span>)</span><br><span class="line">pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())</span><br><span class="line">model = SentenceTransformer(modules=[word_embedding_model, pooling_model])</span><br><span class="line"></span><br><span class="line"><span class="comment"># Use label sentences from NLI dataset train to train out model</span></span><br><span class="line"></span><br><span class="line">nli_dataset_path = <span class="string">&#x27;data/AllNLI.tsv.gz&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> os.path.exists(nli_dataset_path):</span><br><span class="line">    util.http_get(<span class="string">&#x27;https://sbert.net/datasets/AllNLI.tsv.gz&#x27;</span>, nli_dataset_path)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Read NLI dataset&#x27;</span>)</span><br><span class="line">model_save_path = <span class="string">&#x27;output/simcse-&#123;&#125;-&#123;&#125;-&#123;&#125;&#x27;</span>.<span class="built_in">format</span>(model_name, train_batch_size,</span><br><span class="line">                                                  datetime.now().strftime(<span class="string">&quot;%Y-%m-%d_%H-%M-%S&quot;</span>))</span><br><span class="line">train_samples = []</span><br><span class="line"><span class="keyword">with</span> gzip.<span class="built_in">open</span>(nli_dataset_path, <span class="string">&#x27;rt&#x27;</span>, encoding=<span class="string">&#x27;utf8&#x27;</span>) <span class="keyword">as</span> fIn:</span><br><span class="line">    reader = csv.DictReader(fIn, delimiter=<span class="string">&#x27;\t&#x27;</span>, quoting=csv.QUOTE_NONE)</span><br><span class="line">    count = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> row <span class="keyword">in</span> reader:</span><br><span class="line">        count += <span class="number">1</span></span><br><span class="line">        label = row[<span class="string">&#x27;label&#x27;</span>]</span><br><span class="line">        <span class="keyword">if</span> label == <span class="string">&#x27;contradiction&#x27;</span>:</span><br><span class="line">            premise = row[<span class="string">&#x27;sentence1&#x27;</span>]</span><br><span class="line">            negative = row[<span class="string">&#x27;sentence2&#x27;</span>]</span><br><span class="line">        <span class="keyword">elif</span> label == <span class="string">&#x27;entailment&#x27;</span>:</span><br><span class="line">            premise = row[<span class="string">&#x27;sentence1&#x27;</span>]</span><br><span class="line">            positive = row[<span class="string">&#x27;sentence2&#x27;</span>]</span><br><span class="line">        <span class="keyword">if</span> count % <span class="number">3</span> == <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">if</span> row[<span class="string">&#x27;split&#x27;</span>] == <span class="string">&#x27;train&#x27;</span>:</span><br><span class="line">                train_samples.append(InputExample(texts=[premise, positive, negative]))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&#x27;train sample length:<span class="subst">&#123;<span class="built_in">len</span>(train_samples)&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Check if dataset exsist. If not, download and extract  it</span></span><br><span class="line">sts_dataset_path = <span class="string">&#x27;data/stsbenchmark.tsv.gz&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> os.path.exists(sts_dataset_path):</span><br><span class="line">    util.http_get(<span class="string">&#x27;https://sbert.net/datasets/stsbenchmark.tsv.gz&#x27;</span>, sts_dataset_path)</span><br><span class="line"></span><br><span class="line">dev_samples = []</span><br><span class="line">test_samples = []</span><br><span class="line"><span class="keyword">with</span> gzip.<span class="built_in">open</span>(sts_dataset_path, <span class="string">&#x27;rt&#x27;</span>, encoding=<span class="string">&#x27;utf8&#x27;</span>) <span class="keyword">as</span> fIn:</span><br><span class="line">    reader = csv.DictReader(fIn, delimiter=<span class="string">&#x27;\t&#x27;</span>, quoting=csv.QUOTE_NONE)</span><br><span class="line">    <span class="keyword">for</span> row <span class="keyword">in</span> reader:</span><br><span class="line">        score = <span class="built_in">float</span>(row[<span class="string">&#x27;score&#x27;</span>]) / <span class="number">5.0</span>  <span class="comment"># Normalize score to range 0 ... 1</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> row[<span class="string">&#x27;split&#x27;</span>] == <span class="string">&#x27;dev&#x27;</span>:</span><br><span class="line">            dev_samples.append(InputExample(texts=[row[<span class="string">&#x27;sentence1&#x27;</span>], row[<span class="string">&#x27;sentence2&#x27;</span>]], label=score))</span><br><span class="line">        <span class="keyword">elif</span> row[<span class="string">&#x27;split&#x27;</span>] == <span class="string">&#x27;test&#x27;</span>:</span><br><span class="line">            test_samples.append(InputExample(texts=[row[<span class="string">&#x27;sentence1&#x27;</span>], row[<span class="string">&#x27;sentence2&#x27;</span>]], label=score))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">train_dataloader = DataLoader(train_samples, shuffle=<span class="literal">True</span>, batch_size=train_batch_size, drop_last=<span class="literal">True</span>)</span><br><span class="line">train_loss = losses.MultipleNegativesRankingLoss(model)</span><br><span class="line">dev_evaluator = EmbeddingSimilarityEvaluator.from_input_examples(dev_samples, batch_size=train_batch_size,</span><br><span class="line">                                                                 name=<span class="string">&#x27;nli-dev&#x27;</span>)</span><br><span class="line">test_evaluator = EmbeddingSimilarityEvaluator.from_input_examples(test_samples, batch_size=train_batch_size,</span><br><span class="line">                                                                  name=<span class="string">&#x27;nli-test&#x27;</span>)</span><br><span class="line">warmup_steps = math.ceil(<span class="built_in">len</span>(train_dataloader) * num_epochs * <span class="number">0.1</span>)  <span class="comment"># 10% of train data for warm-up</span></span><br><span class="line">evaluation_steps = <span class="built_in">int</span>(<span class="built_in">len</span>(train_dataloader) * <span class="number">0.1</span>)  <span class="comment"># Evaluate every 10% of the data</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Start training&#x27;</span>)</span><br><span class="line">model.fit(train_objectives=[(train_dataloader, train_loss)],</span><br><span class="line">          evaluator=dev_evaluator,</span><br><span class="line">          epochs=num_epochs,</span><br><span class="line">          evaluation_steps=evaluation_steps,</span><br><span class="line">          warmup_steps=warmup_steps,</span><br><span class="line">          output_path=model_save_path,</span><br><span class="line">          optimizer_params=&#123;<span class="string">&#x27;lr&#x27;</span>: <span class="number">5e-5</span>&#125;,</span><br><span class="line">          use_amp=<span class="literal">True</span>  <span class="comment"># Set to True, if your GPU supports FP16 cores</span></span><br><span class="line">          )</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Start test&#x27;</span>)</span><br><span class="line">model = SentenceTransformer(model_save_path)</span><br><span class="line">test_evaluator(model, output_path=model_save_path)</span><br></pre></td></tr></table></figure>
+<p>sup在demo中没有，只是训练数据的构造需要自己去改写一下。如果是简单的复现，用上面几个包就可以了，避免重复造轮子，但如果想对组件进行相应的替换，那就得自己写，我以后有时间也想尝试复现一下。</p>
+<h2 id="实际对比效果"><a href="#实际对比效果" class="headerlink" title="实际对比效果"></a>实际对比效果</h2><p><strong>query</strong>:Sexy Elegant Base Tanks &amp; Camis Female Smooth Sling Dress</p>
+<p><strong>result</strong>：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Doc2vec</th>
+<th>SimCSE</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Glossy Stainless Steel Simple Laser Open Bracelet</td>
+<td>Sexy Tanks &amp; Camis Female Viscose Sling Dress</td>
+</tr>
+<tr>
+<td>Elegant Small Smile Face Cute Letter Earrings</td>
+<td>Waisted Sexy Fitting Base Tanks &amp; Camis Sling Dress</td>
+</tr>
+<tr>
+<td>Elegant Simple Cross Shell Beads Earrings</td>
+<td>Sexy Base Tanks &amp; Camis Summer Female Sling Dress</td>
+</tr>
+<tr>
+<td>Sexy Takato Ultra-thin Lace Lace Sexy Stockings</td>
+<td>Waisted Split Elegant Base Tanks &amp; Camis Female New Style Sling Dress</td>
+</tr>
+<tr>
+<td>Magnet Pillow Core Will Gift Magnet Gift Pillow</td>
+<td>Waisted Base Tanks &amp; Camis Vintage Female Sling Dress</td>
+</tr>
+<tr>
+<td>Fitting Suit Collar Short Sleeve Spring Summer High Waist Female Knit Dress</td>
+<td>Elegant V-neck Satin Fitting Thin Sling Dress Female Tanks &amp; Camis External Wear Dress</td>
+</tr>
+<tr>
+<td>Elegant Heart Simple Small Piercing Jewelry</td>
+<td>Sexy Off-the-shoulder Casual Pirinted Sling Dress</td>
+</tr>
+<tr>
+<td>Sexy Dress Women’s One Shoulder Slit Long Skirt</td>
+<td>Thin Long Split Sexy Fitting Elegant Base Tanks &amp; Camis Female Black Sling Dress</td>
+</tr>
+<tr>
+<td>Leather Spring Summer Leather New Arrived First Layer Vintage Manual Simple Single Shoes</td>
+<td>Mid-length Sexy Tanks &amp; Camis Ultrashort Female Smooth Dress</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>我只能说，对比学习在语句表达上确实和docvec不是一个量级的，太强了。。。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ol>
+<li>SimCSE在语句表达上很不错，而且他好像还比美团后出的Consert还要强一些</li>
+<li>至少这篇论文说明了在模型中做数据增强，比从源头做替换/裁剪等方式数据增强效果更好</li>
+<li>SimCSE有两个问题，在原作者近期的论文中【ESimCSE】提出来了，并且提出了解决方案：<ol>
+<li>由于正样本长度都是一样的，因此从长度这个特征来说，就可以区分很多样本，为了避免这个问题。原作者利用一种相对安全的方式：word repetition，就是对随机对句子进行单词重复的操作，一方面改变了正样本长度相等的缺陷，另一方面保持两者特征相似。</li>
+<li>他承担不了大的batch-size,一方面是内存不允许，一方面是效果也会下降，因此作者仿造在cv中的Momentum Contrast的操作用于提升性能。【为了缩小train和predict的差距，ESimCSE关闭了MC encoder中的dropout】</li>
+</ol>
+</li>
+<li>这篇论文的模型就是用的Sentence Bert，只是损失函数换了，原论文是CosineSimilarityLoss，而这篇论文改成了InfoNCE，利用Bert的dropout直接强有力的提升对比学习的效果。</li>
+</ol>
+<h2 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h2><p><a href="https://arxiv.org/pdf/2005.10242.pdf">Alignment &amp; Uniformity</a></p>
+<p><a href="https://github.com/princeton-nlp/SimCSE">github_simcse</a></p>
+<p><a href="https://github.com/UKPLab/sentence-transformers/">github_sen_tran</a></p>
+<p><a href="https://arxiv.org/abs/2104.08821">paper_simcse</a></p>
+<p><a href="https://arxiv.org/abs/2105.11741">paper_consert</a></p>
+<p><a href="https://arxiv.org/pdf/2109.04380.pdf">paper_esimcse</a></p>
+<p><a href="https://arxiv.org/abs/1911.05722">paper Moco</a></p>
+]]></content>
+      <categories>
+        <category>深度学习</category>
+      </categories>
+      <tags>
+        <tag>对比学习</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>数据标准化和中心化</title>
+    <url>/2021/08/19/%E6%95%B0%E6%8D%AE%E6%A0%87%E5%87%86%E5%8C%96%E5%92%8C%E4%B8%AD%E5%BF%83%E5%8C%96/</url>
+    <content><![CDATA[<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>标准化：也叫归一化，常用的有最小—最大标准化、Z-score标准化、Sigmod函数等，利用上述标准化操作，将原始数据化为<strong>无量纲</strong>的数值。这在回归和神经网络类模型是很必要的。</p>
+<p>中心化：也叫去均质化，让数据通过中心化处理，得到均值为0的数据【如果方差为1，那就是Z-score标准化】。同时中心化后的数据对向量来说也容易描述，因为是以原点为基准的。</p>
+<h2 id="公式"><a href="#公式" class="headerlink" title="公式"></a>公式</h2><p>最小—最大标准化：将数据变为0-1</p>
+<script type="math/tex; mode=display">
+\tilde{x}=\frac{x-min}{max-min}</script><p>Z-score标准化：</p>
+<script type="math/tex; mode=display">
+\tilde{x}=\frac{x-u}{\sigma }</script><p>sigmod函数：</p>
+<script type="math/tex; mode=display">
+f(x)=\frac{1}{1+e^{-x}}</script><p><strong>备注</strong>：</p>
+<ol>
+<li>当$\sigma=1$就是中心化公式，所以中心化可以说是一种特殊的标准化</li>
+<li>sigmod函数其实主要是在激活函数中对上一层神经层结果进行标准化，但也可以理解成对下一层神经层的输入做标准化。</li>
+</ol>
+<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ol>
+<li>提升精度：消除量纲，针对梯度下降相关的算法，不同量纲的数据会产生干扰，可能本来是A特征对结果的影响更大，但因为其量纲较小，导致其影响力还不如量纲大的特征，从来导致精度的下降。</li>
+<li>提神速度：同样，由于消除了量纲，在梯度下降过程中，将会容易收敛到最优解。</li>
+</ol>
+<p><strong>备注</strong>：但是对于非梯度下降优化器或者是树模型是可以不标准的，因为数据的量纲并不影响树模型的分裂，对于特征而言该在哪里分裂就还是在那里分裂。</p>
+]]></content>
+      <categories>
+        <category>基础知识</category>
+      </categories>
+      <tags>
+        <tag>数据预处理</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>熵</title>
     <url>/2021/05/31/%E7%86%B5/</url>
     <content><![CDATA[<blockquote>
@@ -1329,35 +1358,6 @@ L = -log\frac{e^{sim(h_{i},{h_{i}}^{+})/\tau}}{\sum_{j=1}^{N}(e^{sim(h_{i},{h_{j
       </categories>
       <tags>
         <tag>基础知识</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>数据标准化和中心化</title>
-    <url>/2021/08/19/%E6%95%B0%E6%8D%AE%E6%A0%87%E5%87%86%E5%8C%96%E5%92%8C%E4%B8%AD%E5%BF%83%E5%8C%96/</url>
-    <content><![CDATA[<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>标准化：也叫归一化，常用的有最小—最大标准化、Z-score标准化、Sigmod函数等，利用上述标准化操作，将原始数据化为<strong>无量纲</strong>的数值。这在回归和神经网络类模型是很必要的。</p>
-<p>中心化：也叫去均质化，让数据通过中心化处理，得到均值为0的数据【如果方差为1，那就是Z-score标准化】。同时中心化后的数据对向量来说也容易描述，因为是以原点为基准的。</p>
-<h2 id="公式"><a href="#公式" class="headerlink" title="公式"></a>公式</h2><p>最小—最大标准化：将数据变为0-1</p>
-<script type="math/tex; mode=display">
-\tilde{x}=\frac{x-min}{max-min}</script><p>Z-score标准化：</p>
-<script type="math/tex; mode=display">
-\tilde{x}=\frac{x-u}{\sigma }</script><p>sigmod函数：</p>
-<script type="math/tex; mode=display">
-f(x)=\frac{1}{1+e^{-x}}</script><p><strong>备注</strong>：</p>
-<ol>
-<li>当$\sigma=1$就是中心化公式，所以中心化可以说是一种特殊的标准化</li>
-<li>sigmod函数其实主要是在激活函数中对上一层神经层结果进行标准化，但也可以理解成对下一层神经层的输入做标准化。</li>
-</ol>
-<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ol>
-<li>提升精度：消除量纲，针对梯度下降相关的算法，不同量纲的数据会产生干扰，可能本来是A特征对结果的影响更大，但因为其量纲较小，导致其影响力还不如量纲大的特征，从来导致精度的下降。</li>
-<li>提神速度：同样，由于消除了量纲，在梯度下降过程中，将会容易收敛到最优解。</li>
-</ol>
-<p><strong>备注</strong>：但是对于非梯度下降优化器或者是树模型是可以不标准的，因为数据的量纲并不影响树模型的分裂，对于特征而言该在哪里分裂就还是在那里分裂。</p>
-]]></content>
-      <categories>
-        <category>基础知识</category>
-      </categories>
-      <tags>
-        <tag>数据预处理</tag>
       </tags>
   </entry>
 </search>
