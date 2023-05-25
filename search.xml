@@ -42,6 +42,63 @@ H^{(l+1)}=\sigma (\tilde{D}^{-1/2}\tilde{A}\tilde{D}^{-1/2}H^{l}W^{l})</script><
       </tags>
   </entry>
   <entry>
+    <title>GNN系列之_GraphSAGE</title>
+    <url>/2021/08/17/GNN%E7%B3%BB%E5%88%97%E4%B9%8B-GraphSAGE/</url>
+    <content><![CDATA[<h1 id="GraphSAGE"><a href="#GraphSAGE" class="headerlink" title="GraphSAGE"></a>GraphSAGE</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>17年<strong>Hamilton</strong>在GCN发布不久以后就发布了这篇文章，原文是《Inductive Representation Learning on Large Graphs》，从题目很明显可以看出，该论文强调两个事情：1.inductive；2.Large Graphs。</p>
+<p>1.什么是inductive</p>
+<p>在常用的机器学习或者深度学习模型中，我们通常会讲数据集分为训练集，测试集，验证集，各个集合之间相互是独立的，因为如果存在交集就变成了数据泄漏，那测试集的效果就不能正确的反应结果。但是在GCN中，由于模型中存在领结矩阵，这个是数据集通用的，这样的训练方式叫做transductive。因为为了避免这种类似数据泄漏的操作，GraphSAGE是一种inductive模式，即训练集，测试集，验证集相互独立。</p>
+<p>2.为什么叫适用于大规模图</p>
+<p>从GCN的公式中我们可以知道，GCN的训练需要将全部的领结矩阵放入训练，这样对于大规模图训练是不可用的，而GraphSAGE是利用采样聚合的方式，训练聚合函数，因此可以用minbatch来训练大规模图。</p>
+<p>3.为什么叫GraphSAGE</p>
+<p>这个是我在一开始就想问的，一个图表示训练模型为什么取这个名字，后来看论文才知道，SAGE取自两个单词：(SAmple and aggreGatE），也是简单的表明该模型的两个特色。</p>
+<h2 id="实现步骤"><a href="#实现步骤" class="headerlink" title="实现步骤"></a>实现步骤</h2><p><strong>伪代码</strong></p>
+<p><img src="/images/GraphSAGE.png" alt="伪代码"></p>
+<p>参数解释：</p>
+<ul>
+<li>K：层数</li>
+<li>AGGREGATE：聚合函数，有3种</li>
+<li>concat：拼接矩阵</li>
+</ul>
+<p>个人理解：输入初始特征矩阵（可以是one-hot/随机初始化），经过K层聚合矩阵，其实也是聚合了K步的领结信息，利用某种<strong>聚合</strong>函数，将每个节点的特征和其<strong>采样</strong>的领结节点特征进行融合。</p>
+<p><strong>损失函数</strong></p>
+<script type="math/tex; mode=display">
+J_{g}(z_{u})=-log(\sigma (z_{u}^{T}z_{v}))-Q\cdot E_{v_{n}\sim P{_{n}}^{(v)}}log(\sigma (-z_{u}^{T}z_{v_{n}}))</script><ul>
+<li>$z_{u}$为节点u通过GraphSAGE生成的embedding。</li>
+<li>节点v是节点u随机游走访达“邻居”。</li>
+<li>$v<em>{n}\sim P{</em>{n}}$表示负采样：节点$v_{n}$是从节点u的负采样分布 <img src="https://www.zhihu.com/equation?tex=P_n" alt="[公式]"> 采样的，Q为采样样本数。</li>
+</ul>
+<p>简单理解就是希望节点u与“邻居”v的embedding也相似（对应公式第一项），而与“没有交集”的节点 <img src="https://www.zhihu.com/equation?tex=v_n" alt="[公式]"> 不相似（对应公式第二项)。</p>
+<h2 id="聚合函数"><a href="#聚合函数" class="headerlink" title="聚合函数"></a>聚合函数</h2><h3 id="Mean-aggregator"><a href="#Mean-aggregator" class="headerlink" title="Mean aggregator"></a>Mean aggregator</h3><p><strong>平均聚合</strong></p>
+<script type="math/tex; mode=display">
+\begin{matrix}
+h_{N(v)}^{k}=mean(\{h_{u}^{k-1},u\in N(v)\})
+\\ 
+h_{v}^{k}=\sigma (W^{k}\cdot CONCAT(h_{v}^{k-1},h_{N_{(u)}}^{k}))
+\end{matrix}</script><p>就是伪代码写的那种，先对k-1采样的领结节点特征进行求平均，然后和K-1层的节点进行拼接，在利用参数Wk进行纬度转换。</p>
+<p><strong>归纳式聚合</strong></p>
+<script type="math/tex; mode=display">
+h_{v}^{k}=\sigma (W^{k}\cdot mean(\{h_{v}^{k-1}\}\cup \{h_{u}^{k-1},\forall u\in N(v) \}))</script><p>直接对k-1层，v节点+采样的领结节点特征进行求平均，利用参数$W^{k}$进行纬度转换。</p>
+<h3 id="LSTM"><a href="#LSTM" class="headerlink" title="LSTM"></a>LSTM</h3><p>对领结节点进行随机排序，因为采样的LSTM是固定的，然后作为序列放入LSTM最后输出一个embedding就是v。</p>
+<h3 id="Pooling"><a href="#Pooling" class="headerlink" title="Pooling"></a>Pooling</h3><script type="math/tex; mode=display">
+Aggregate_{k}^{pool}=max(\{\sigma (W_{pool}h_{u_{i}}^{k}+b),\forall u_{i}\in N(v)\})</script><p>把各个邻居节点单独经过一个MLP得到一个向量，最后把所有邻居的向量做一个max-pooling或者mean-pooling来获取。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><strong>优点：</strong></p>
+<ol>
+<li>GraphSAGE基于采样+聚合的策略，可以很好的解决GCN将整个邻接矩阵放入训练导致内存溢出的问题，可以用于大规模图中。</li>
+<li>GCN不能去推测没有看到的节点，因为他的训练依赖邻接矩阵，而GraphSAGE训练的是一个聚合函数，所以他可以用已只节点去推测未知节点，前提是未知节点的领结节点存在于GraphSAGE中。</li>
+</ol>
+<p><strong>不足</strong>：</p>
+<ol>
+<li>他既然是聚合函数，没有用到Attention，也就是说对于权重的分配没有采取更好的策略。因此才诞生了GAT。</li>
+</ol>
+]]></content>
+      <categories>
+        <category>深度学习</category>
+      </categories>
+      <tags>
+        <tag>GNNs</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Graph_embedding之SDNE</title>
     <url>/2021/07/05/Graph-embedding%E4%B9%8BSDNE/</url>
     <content><![CDATA[<h1 id="目标"><a href="#目标" class="headerlink" title="目标"></a>目标</h1><p>复现SDNE，思考如何利用点击和相关属性获取合适的商品embedding，用于以后的商品聚类。</p>
@@ -121,63 +178,6 @@ H^{(l+1)}=\sigma (\tilde{D}^{-1/2}\tilde{A}\tilde{D}^{-1/2}H^{l}W^{l})</script><
       </tags>
   </entry>
   <entry>
-    <title>GNN系列之_GraphSAGE</title>
-    <url>/2021/08/17/GNN%E7%B3%BB%E5%88%97%E4%B9%8B-GraphSAGE/</url>
-    <content><![CDATA[<h1 id="GraphSAGE"><a href="#GraphSAGE" class="headerlink" title="GraphSAGE"></a>GraphSAGE</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>17年<strong>Hamilton</strong>在GCN发布不久以后就发布了这篇文章，原文是《Inductive Representation Learning on Large Graphs》，从题目很明显可以看出，该论文强调两个事情：1.inductive；2.Large Graphs。</p>
-<p>1.什么是inductive</p>
-<p>在常用的机器学习或者深度学习模型中，我们通常会讲数据集分为训练集，测试集，验证集，各个集合之间相互是独立的，因为如果存在交集就变成了数据泄漏，那测试集的效果就不能正确的反应结果。但是在GCN中，由于模型中存在领结矩阵，这个是数据集通用的，这样的训练方式叫做transductive。因为为了避免这种类似数据泄漏的操作，GraphSAGE是一种inductive模式，即训练集，测试集，验证集相互独立。</p>
-<p>2.为什么叫适用于大规模图</p>
-<p>从GCN的公式中我们可以知道，GCN的训练需要将全部的领结矩阵放入训练，这样对于大规模图训练是不可用的，而GraphSAGE是利用采样聚合的方式，训练聚合函数，因此可以用minbatch来训练大规模图。</p>
-<p>3.为什么叫GraphSAGE</p>
-<p>这个是我在一开始就想问的，一个图表示训练模型为什么取这个名字，后来看论文才知道，SAGE取自两个单词：(SAmple and aggreGatE），也是简单的表明该模型的两个特色。</p>
-<h2 id="实现步骤"><a href="#实现步骤" class="headerlink" title="实现步骤"></a>实现步骤</h2><p><strong>伪代码</strong></p>
-<p><img src="/images/GraphSAGE.png" alt="伪代码"></p>
-<p>参数解释：</p>
-<ul>
-<li>K：层数</li>
-<li>AGGREGATE：聚合函数，有3种</li>
-<li>concat：拼接矩阵</li>
-</ul>
-<p>个人理解：输入初始特征矩阵（可以是one-hot/随机初始化），经过K层聚合矩阵，其实也是聚合了K步的领结信息，利用某种<strong>聚合</strong>函数，将每个节点的特征和其<strong>采样</strong>的领结节点特征进行融合。</p>
-<p><strong>损失函数</strong></p>
-<script type="math/tex; mode=display">
-J_{g}(z_{u})=-log(\sigma (z_{u}^{T}z_{v}))-Q\cdot E_{v_{n}\sim P{_{n}}^{(v)}}log(\sigma (-z_{u}^{T}z_{v_{n}}))</script><ul>
-<li>$z_{u}$为节点u通过GraphSAGE生成的embedding。</li>
-<li>节点v是节点u随机游走访达“邻居”。</li>
-<li>$v<em>{n}\sim P{</em>{n}}$表示负采样：节点$v_{n}$是从节点u的负采样分布 <img src="https://www.zhihu.com/equation?tex=P_n" alt="[公式]"> 采样的，Q为采样样本数。</li>
-</ul>
-<p>简单理解就是希望节点u与“邻居”v的embedding也相似（对应公式第一项），而与“没有交集”的节点 <img src="https://www.zhihu.com/equation?tex=v_n" alt="[公式]"> 不相似（对应公式第二项)。</p>
-<h2 id="聚合函数"><a href="#聚合函数" class="headerlink" title="聚合函数"></a>聚合函数</h2><h3 id="Mean-aggregator"><a href="#Mean-aggregator" class="headerlink" title="Mean aggregator"></a>Mean aggregator</h3><p><strong>平均聚合</strong></p>
-<script type="math/tex; mode=display">
-\begin{matrix}
-h_{N(v)}^{k}=mean(\{h_{u}^{k-1},u\in N(v)\})
-\\ 
-h_{v}^{k}=\sigma (W^{k}\cdot CONCAT(h_{v}^{k-1},h_{N_{(u)}}^{k}))
-\end{matrix}</script><p>就是伪代码写的那种，先对k-1采样的领结节点特征进行求平均，然后和K-1层的节点进行拼接，在利用参数Wk进行纬度转换。</p>
-<p><strong>归纳式聚合</strong></p>
-<script type="math/tex; mode=display">
-h_{v}^{k}=\sigma (W^{k}\cdot mean(\{h_{v}^{k-1}\}\cup \{h_{u}^{k-1},\forall u\in N(v) \}))</script><p>直接对k-1层，v节点+采样的领结节点特征进行求平均，利用参数$W^{k}$进行纬度转换。</p>
-<h3 id="LSTM"><a href="#LSTM" class="headerlink" title="LSTM"></a>LSTM</h3><p>对领结节点进行随机排序，因为采样的LSTM是固定的，然后作为序列放入LSTM最后输出一个embedding就是v。</p>
-<h3 id="Pooling"><a href="#Pooling" class="headerlink" title="Pooling"></a>Pooling</h3><script type="math/tex; mode=display">
-Aggregate_{k}^{pool}=max(\{\sigma (W_{pool}h_{u_{i}}^{k}+b),\forall u_{i}\in N(v)\})</script><p>把各个邻居节点单独经过一个MLP得到一个向量，最后把所有邻居的向量做一个max-pooling或者mean-pooling来获取。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><strong>优点：</strong></p>
-<ol>
-<li>GraphSAGE基于采样+聚合的策略，可以很好的解决GCN将整个邻接矩阵放入训练导致内存溢出的问题，可以用于大规模图中。</li>
-<li>GCN不能去推测没有看到的节点，因为他的训练依赖邻接矩阵，而GraphSAGE训练的是一个聚合函数，所以他可以用已只节点去推测未知节点，前提是未知节点的领结节点存在于GraphSAGE中。</li>
-</ol>
-<p><strong>不足</strong>：</p>
-<ol>
-<li>他既然是聚合函数，没有用到Attention，也就是说对于权重的分配没有采取更好的策略。因此才诞生了GAT。</li>
-</ol>
-]]></content>
-      <categories>
-        <category>深度学习</category>
-      </categories>
-      <tags>
-        <tag>GNNs</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Graph_embedding之deepwalk</title>
     <url>/2021/06/04/Graph-embedding%E4%B9%8Bdeepwalk/</url>
     <content><![CDATA[<h3 id="历史"><a href="#历史" class="headerlink" title="历史"></a>历史</h3><p>deepwalk的作者Bryan参照word2vec的思想，将文本应用到图的结构中，形成了这篇文章，内容也不复杂，也算是为后世的Graph embedding开了一个头。</p>
@@ -211,90 +211,6 @@ Aggregate_{k}^{pool}=max(\{\sigma (W_{pool}h_{u_{i}}^{k}+b),\forall u_{i}\in N(v
       <tags>
         <tag>Graph Embedding</tag>
       </tags>
-  </entry>
-  <entry>
-    <title>NLP预处理：词干提取和词性还原</title>
-    <url>/2021/06/04/NLP%E9%A2%84%E5%A4%84%E7%90%86%EF%BC%9A%E8%AF%8D%E5%B9%B2%E6%8F%90%E5%8F%96%E5%92%8C%E8%AF%8D%E6%80%A7%E8%BF%98%E5%8E%9F/</url>
-    <content><![CDATA[<blockquote>
-<p>最近在做的项目里面需要做一个关键词多属性提取，然后由于以前接触的都是中文的项目，所以就会拿中文分词的一些操作来用，但在英文的项目，其实就有词干提取和词性还原两种非常好用的方法</p>
-</blockquote>
-<p>自然语言处理中一个很重要的操作就是所谓的stemming 和 lemmatization，二者非常类似。它们是词形规范化的两类重要方式，都能够达到有效归并词形的目的，二者既有联系也有区别。</p>
-<h2 id="词干提取"><a href="#词干提取" class="headerlink" title="词干提取"></a>词干提取</h2><p>NLTK中提供了三种最常用的词干提取器接口，即 Porter stemmer, Lancaster Stemmer 和 Snowball Stemmer。而且词干提取主要是基于规则的算法。</p>
-<p><strong>Porter</strong></p>
-<p>1980年最原始的词干提取法</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem.porter <span class="keyword">import</span> PorterStemmer</span><br><span class="line">text=<span class="string">&#x27;chineses&#x27;</span></span><br><span class="line">porter_stemmer = PorterStemmer()</span><br><span class="line">stem_text = porter_stemmer.stem(text)</span><br><span class="line"><span class="built_in">print</span>(stem_text)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: <span class="string">&#x27;chines&#x27;</span></span><br></pre></td></tr></table></figure>
-<p><strong>Snowball</strong></p>
-<p>也称为Porter2.0，本人说提取的比1好，这个不清楚，但确实相比较1.0会快一些，感觉上效率有提升1/3.</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem.snowball <span class="keyword">import</span> EnglishStemmer</span><br><span class="line">text=<span class="string">&#x27;chineses&#x27;</span></span><br><span class="line">porter_stemmer = PorterStemmer()</span><br><span class="line">stem_text = porter_stemmer.stem(text)</span><br><span class="line"><span class="built_in">print</span>(stem_text)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: ‘chines’</span><br></pre></td></tr></table></figure>
-<p><strong>Lancaster</strong></p>
-<p>据说比较激进，没什么人用过</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem <span class="keyword">import</span> LancasterStemmer</span><br><span class="line">text=<span class="string">&#x27;chineses&#x27;</span></span><br><span class="line">lancas_stemmer = LancasterStemmer()</span><br><span class="line">stem_text = lancas_stemmer.stem(text)</span><br><span class="line"><span class="built_in">print</span>(stem_text)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: ‘chines’</span><br></pre></td></tr></table></figure>
-<h2 id="词性还原"><a href="#词性还原" class="headerlink" title="词性还原"></a>词性还原</h2><p>基于字典的映射，而且在NLTK中要求标明词性，否则会出问题。一般需要先走词性标注，再走词性还原，因此整体链路相较于词干提取较长。</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem <span class="keyword">import</span> WordNetLemmatizer  </span><br><span class="line">lemmatizer = WordNetLemmatizer()  </span><br><span class="line">word = lemmatizer.lemmatize(<span class="string">&#x27;leaves&#x27;</span>,pos=<span class="string">&#x27;n&#x27;</span>) </span><br><span class="line"><span class="built_in">print</span>(word)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: <span class="string">&#x27;leaf&#x27;</span></span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>特征工程</category>
-      </categories>
-      <tags>
-        <tag>NLP</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>PaddleOCR踩坑日记</title>
-    <url>/2022/08/22/PaddleOCR%E8%B8%A9%E5%9D%91%E6%97%A5%E8%AE%B0/</url>
-    <content><![CDATA[<h1 id="PaddleOCR踩坑日记"><a href="#PaddleOCR踩坑日记" class="headerlink" title="PaddleOCR踩坑日记"></a>PaddleOCR踩坑日记</h1><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>由于项目需要，调研了一下paddleocr在文字识别的效果，在离线服务器部署完成，但是迁移线上时出现了极为麻烦的环境配置问题，所以特意写下这篇文章，以防日后出现相同的情况。</p>
-<h2 id="具体安装步骤"><a href="#具体安装步骤" class="headerlink" title="具体安装步骤"></a>具体安装步骤</h2><ul>
-<li>检查系统版本[我是16.04版本]</li>
-</ul>
-<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">lsb_release -a</span><br><span class="line"></span><br><span class="line">No LSB modules are available.</span><br><span class="line">Distributor ID:	Ubuntu</span><br><span class="line">Description:	Ubuntu 16.04.7 LTS</span><br><span class="line">Release:	16.04</span><br><span class="line">Codename:	xenial</span><br></pre></td></tr></table></figure>
-<ul>
-<li><p>根据系统版本安装对应的cuda版本【我是11.2版本，主要是Paddle-gpu适配的是10.2/11.2/11.6】</p>
-<ul>
-<li>不用单独安装nvidia驱动，安装cudatoolkit时会自动匹配上，如果有Nvidia驱动直接nvidia-uninstall卸载即可</li>
-<li>查看paddleocr允许的cuda版本</li>
-</ul>
-</li>
-<li><p>根据对应的cuda版本安装pytorch【版本比使用低一些不要紧】</p>
-</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">pip3 install torch torchvision torchaudio --extra-index-url https:&#x2F;&#x2F;download.pytorch.org&#x2F;whl&#x2F;cu111</span><br></pre></td></tr></table></figure>
-<ul>
-<li>根据对应的cuda安装paddleocr【我装的是2.2.2】<ul>
-<li><strong>要求！！！CUDA 11.2，cuDNN 8.1.1（多卡环境下 NCCL&gt;=2.7）</strong></li>
-</ul>
-</li>
-</ul>
-<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">python -m pip install paddlepaddle-gpu==2.2.2.post112 -f https://www.paddlepaddle.org.cn/whl/linux/mkl/avx/stable.html</span><br></pre></td></tr></table></figure>
-<ul>
-<li><p>根据cuda，paddleocr安装cudnn8.1.1</p>
-<ul>
-<li><p>首先下载压缩包</p>
-</li>
-<li><p>```sh<br>tar -xvf cudnn-11.2-linux-x64-v8.1.1.33.tgz<br>cd cuda<br>cp lib64/<em> /usr/local/cuda-11.2/lib64/<br>cp include/</em> /usr/local/cuda-11.2/include/<br>chmod a+r /usr/local/cuda-11.2/lib64/<em> /usr/local/cuda-11.2/include/</em></p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">- 把下面这段话加到～&#x2F;.bashrc文件内，然后source ～&#x2F;.bashrc</span><br><span class="line"></span><br><span class="line">  &#96;&#96;&#96;sh</span><br><span class="line">  # add nvcc compiler to path</span><br><span class="line">  export PATH&#x3D;$PATH:&#x2F;usr&#x2F;local&#x2F;cuda-11.2&#x2F;bin</span><br><span class="line">  # add cuBLAS, cuSPARSE, cuRAND, cuSOLVER, cuFFT to path</span><br><span class="line">  export LD_LIBRARY_PATH&#x3D;$LD_LIBRARY_PATH:&#x2F;usr&#x2F;local&#x2F;cuda-11.2&#x2F;lib64:&#x2F;usr&#x2F;lib&#x2F;x86_64-linux-gnu</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-</li>
-<li><p>安装paddleocr</p>
-<ul>
-<li><pre><code class="lang-sh">paddleocr --image_dir &quot;https://marketing-publication.s3.us-west-2.amazonaws.com/tmp/ocr_bill/images/bill/1.png&quot; --use_angle_cls true --lang en --use_gpu True
-</code></pre>
-</li>
-</ul>
-</li>
-</ul>
-<h2 id="链接"><a href="#链接" class="headerlink" title="链接"></a>链接</h2><ul>
-<li><a href="https://zhuanlan.zhihu.com/p/520536351">cuda安装教程</a></li>
-<li><a href="https://developer.nvidia.com/cuda-11.2.0-download-archive">cuda网站</a></li>
-<li><a href="https://pytorch.org/">pytorch下载地址</a></li>
-<li><a href="https://www.paddlepaddle.org.cn/install/old?docurl=/documentation/docs/zh/install/pip/linux-pip.html">paddle安装地址</a></li>
-<li><a href="https://developer.nvidia.com/rdp/cudnn-archive">cudnn地址</a></li>
-<li><a href="https://blog.csdn.net/qq_44961869/article/details/115954258">cudnn教程</a></li>
-</ul>
-]]></content>
-      <categories>
-        <category>踩坑日记</category>
-      </categories>
   </entry>
   <entry>
     <title>Louvain算法</title>
@@ -350,6 +266,60 @@ P_{ij}=\frac{K_i*K_j}{2m}=K_i*\frac{K_j}{2m}</script><p>$K<em>j/2m$表示节点j
       </categories>
       <tags>
         <tag>community detective</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>NLP预处理：词干提取和词性还原</title>
+    <url>/2021/06/04/NLP%E9%A2%84%E5%A4%84%E7%90%86%EF%BC%9A%E8%AF%8D%E5%B9%B2%E6%8F%90%E5%8F%96%E5%92%8C%E8%AF%8D%E6%80%A7%E8%BF%98%E5%8E%9F/</url>
+    <content><![CDATA[<blockquote>
+<p>最近在做的项目里面需要做一个关键词多属性提取，然后由于以前接触的都是中文的项目，所以就会拿中文分词的一些操作来用，但在英文的项目，其实就有词干提取和词性还原两种非常好用的方法</p>
+</blockquote>
+<p>自然语言处理中一个很重要的操作就是所谓的stemming 和 lemmatization，二者非常类似。它们是词形规范化的两类重要方式，都能够达到有效归并词形的目的，二者既有联系也有区别。</p>
+<h2 id="词干提取"><a href="#词干提取" class="headerlink" title="词干提取"></a>词干提取</h2><p>NLTK中提供了三种最常用的词干提取器接口，即 Porter stemmer, Lancaster Stemmer 和 Snowball Stemmer。而且词干提取主要是基于规则的算法。</p>
+<p><strong>Porter</strong></p>
+<p>1980年最原始的词干提取法</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem.porter <span class="keyword">import</span> PorterStemmer</span><br><span class="line">text=<span class="string">&#x27;chineses&#x27;</span></span><br><span class="line">porter_stemmer = PorterStemmer()</span><br><span class="line">stem_text = porter_stemmer.stem(text)</span><br><span class="line"><span class="built_in">print</span>(stem_text)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: <span class="string">&#x27;chines&#x27;</span></span><br></pre></td></tr></table></figure>
+<p><strong>Snowball</strong></p>
+<p>也称为Porter2.0，本人说提取的比1好，这个不清楚，但确实相比较1.0会快一些，感觉上效率有提升1/3.</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem.snowball <span class="keyword">import</span> EnglishStemmer</span><br><span class="line">text=<span class="string">&#x27;chineses&#x27;</span></span><br><span class="line">porter_stemmer = PorterStemmer()</span><br><span class="line">stem_text = porter_stemmer.stem(text)</span><br><span class="line"><span class="built_in">print</span>(stem_text)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: ‘chines’</span><br></pre></td></tr></table></figure>
+<p><strong>Lancaster</strong></p>
+<p>据说比较激进，没什么人用过</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem <span class="keyword">import</span> LancasterStemmer</span><br><span class="line">text=<span class="string">&#x27;chineses&#x27;</span></span><br><span class="line">lancas_stemmer = LancasterStemmer()</span><br><span class="line">stem_text = lancas_stemmer.stem(text)</span><br><span class="line"><span class="built_in">print</span>(stem_text)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: ‘chines’</span><br></pre></td></tr></table></figure>
+<h2 id="词性还原"><a href="#词性还原" class="headerlink" title="词性还原"></a>词性还原</h2><p>基于字典的映射，而且在NLTK中要求标明词性，否则会出问题。一般需要先走词性标注，再走词性还原，因此整体链路相较于词干提取较长。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem <span class="keyword">import</span> WordNetLemmatizer  </span><br><span class="line">lemmatizer = WordNetLemmatizer()  </span><br><span class="line">word = lemmatizer.lemmatize(<span class="string">&#x27;leaves&#x27;</span>,pos=<span class="string">&#x27;n&#x27;</span>) </span><br><span class="line"><span class="built_in">print</span>(word)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: <span class="string">&#x27;leaf&#x27;</span></span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>特征工程</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Python动态修改类方法</title>
+    <url>/2023/05/25/Python%E5%8A%A8%E6%80%81%E4%BF%AE%E6%94%B9%E7%B1%BB%E6%96%B9%E6%B3%95/</url>
+    <content><![CDATA[<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>研究《<a href="https://github.com/imClumsyPanda/langchain-ChatGLM">langchain-ChatGLM</a>》项目的过程中，发现一个比较神奇的写法，可能还是我自己见识太少，以后还是得多看各种大佬写的源码。</p>
+<p><strong>大佬的源码</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">similarity_search_with_score_by_vector</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">        self, embedding: <span class="type">List</span>[<span class="built_in">float</span>], k: <span class="built_in">int</span> = <span class="number">4</span></span></span></span><br><span class="line"><span class="function"><span class="params"></span>) -&gt; <span class="type">List</span>[<span class="type">Tuple</span>[Document, <span class="built_in">float</span>]]:</span></span><br><span class="line">	<span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 第一次看到这样修改类的方法</span></span><br><span class="line">FAISS.similarity_search_with_score_by_vector = similarity_search_with_score_by_vector</span><br></pre></td></tr></table></figure>
+<p>在之前的思维中一般写法都是先继承这个类，然后再重新写一下这个函数，不知道python原来可以直接动态修改类方法。</p>
+<h1 id="实操"><a href="#实操" class="headerlink" title="实操"></a>实操</h1><p>总结下来主要就是<strong>三种</strong>：</p>
+<ol>
+<li>直接继承一个类，然后重写这个函数</li>
+<li>用上面讲到的方法动态修改</li>
+<li>也可以用setattr魔法函数动态修改类的属性和方法</li>
+</ol>
+<p>话不多说，上Code</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Student</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, name</span>):</span></span><br><span class="line">        self.name = name</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">self_introduce</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&#x27;I am <span class="subst">&#123;self.name&#125;</span>.&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">NewStudent</span>(<span class="params">Student</span>):</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self,name</span>):</span></span><br><span class="line">        <span class="built_in">super</span>(NewStudent, self).__init__(name) </span><br><span class="line">        self.name=name</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">self_introduce</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="built_in">print</span>(<span class="string">f&#x27;My name is <span class="subst">&#123;self.name&#125;</span>1. Nice to meet you!&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">new_self_introduce</span>(<span class="params">self</span>):</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;My name is <span class="subst">&#123;self.name&#125;</span>2. Nice to meet you!&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">set_self_introduce</span>(<span class="params">self</span>):</span></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&#x27;My name is <span class="subst">&#123;self.name&#125;</span>3. Nice to meet you!&#x27;</span>)</span><br><span class="line"></span><br><span class="line">a = Student(<span class="string">&#x27;xiaoming&#x27;</span>)</span><br><span class="line">a.self_introduce()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 第一种方法</span></span><br><span class="line"></span><br><span class="line">n = NewStudent(<span class="string">&#x27;xiaoming&#x27;</span>)</span><br><span class="line">n.self_introduce()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 第二种种方法</span></span><br><span class="line">Student.self_introduce = new_self_introduce</span><br><span class="line">a.self_introduce()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 第三种方法</span></span><br><span class="line"><span class="built_in">setattr</span>(Student,<span class="string">&quot;self_introduce&quot;</span>,set_self_introduce)</span><br><span class="line">a.self_introduce()</span><br><span class="line"></span><br><span class="line">b = Student(<span class="string">&#x27;xiaohong&#x27;</span>)</span><br><span class="line">b.self_introduce()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h1 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h1><ul>
+<li>如果不是说要重复调用一个类的新方法，直接用setattr或者直接替换对象的方式，可以说简单高效</li>
+<li>如果说一个类的新方法要被多方调用，可以考虑用继承的方法，当然可读性也会高一些</li>
+</ul>
+]]></content>
+      <categories>
+        <category>python</category>
+      </categories>
+      <tags>
+        <tag>基础知识</tag>
       </tags>
   </entry>
   <entry>
@@ -526,169 +496,61 @@ $$
       </tags>
   </entry>
   <entry>
-    <title>Transomer学习</title>
-    <url>/2021/04/11/%E5%88%9D%E8%AF%86Transomer/</url>
-    <content><![CDATA[<h1 id="Transfomer拆分"><a href="#Transfomer拆分" class="headerlink" title="Transfomer拆分"></a>Transfomer拆分</h1><p>为了更好的学习当前NLP主流模型，如Bert，GPT2及Bert一系列的衍生物，Transfomer是这一系列的基础。因此本文的主要目的是记录个人基于一些博客和原论文对Transfomer模型进行拆分的结果。</p>
-<p><strong>目的</strong>：减少计算量并提高并行效率，同时不减弱最终的实验结果。</p>
-<p><strong>创新点</strong>：</p>
-<ol>
-<li>Self-attention</li>
-<li>Multi-Head Attention</li>
-</ol>
-<h1 id="背景知识"><a href="#背景知识" class="headerlink" title="背景知识"></a>背景知识</h1><h2 id="seq2seq"><a href="#seq2seq" class="headerlink" title="seq2seq"></a>seq2seq</h2><p>定义：seq2seq模型是采用一系列项目(单词、字母、图像特征等)并输出另一个项目序列的模型。在机器翻译中，序列是一系列单词，经过seq2seq后，输出同样是一系列单词。</p>
-<video src="F:\video\seq2seq_2.mp4"></video>
-
-<p>接下来我们掀开这个model内部，该模型主要由一个Encoder和一个Decoder组成。</p>
-<ul>
-<li>Encoder：处理输入序列的每个项目，捕捉载体中的信息（context）。</li>
-<li>Decoder：处理完整序列后，Encoder将信息（context）传递至Decoder，并且开始逐项生产输出序列。</li>
+    <title>PaddleOCR踩坑日记</title>
+    <url>/2022/08/22/PaddleOCR%E8%B8%A9%E5%9D%91%E6%97%A5%E8%AE%B0/</url>
+    <content><![CDATA[<h1 id="PaddleOCR踩坑日记"><a href="#PaddleOCR踩坑日记" class="headerlink" title="PaddleOCR踩坑日记"></a>PaddleOCR踩坑日记</h1><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>由于项目需要，调研了一下paddleocr在文字识别的效果，在离线服务器部署完成，但是迁移线上时出现了极为麻烦的环境配置问题，所以特意写下这篇文章，以防日后出现相同的情况。</p>
+<h2 id="具体安装步骤"><a href="#具体安装步骤" class="headerlink" title="具体安装步骤"></a>具体安装步骤</h2><ul>
+<li>检查系统版本[我是16.04版本]</li>
 </ul>
-<video src="F:\video\seq2seq_4.mp4"></video>
-
-<p>而context是一个向量，其大小基于等同于编码器中RNN的隐藏神经元。</p>
-<p>在单词输入之前，我们需要将单词转化为词向量，其可以通过word2vec等模型进行预训练训练词库，然后将单词按照词库的词向量简单提取即可，在上面的资历中，其处理过程如下：</p>
-<p><img src="F:\video\embedding.png" alt="embedding"></p>
-<p>这里简单将其设为维度4，通常设为200或300，在此，简单展示一下RNN的实现原理。</p>
-<video src="F:\video\RNN_1.mp4"></video>
-
-<p>利用先前的输入的隐藏状态，RNN将其输出至一个新的隐藏状态，接下来我们看看seq2seq中的隐藏状态是怎么进行的。</p>
-<video src="F:\video\seq2seq_5.mp4"></video>
-
-<p>Encoder中最后一个hidden-state实际就是前文提到的context，接下来我们进一步拆解，展示其具体细节。</p>
-<video src="F:\video\seq2seq_6.mp4"></video>
-
-<p>总结：由于在Encoder阶段，每个单词输入都会产生一个新的hidden_state，最后输出一个context给Decoder进行解码。因此，当文本内容过长时，容易丢失部分信息，为了解决这个问题，Attention应运而生。</p>
-<h2 id="Attention"><a href="#Attention" class="headerlink" title="Attention"></a>Attention</h2><p>Attention这个概念最早出现在《Neural machine traslation by jointly learning to align and translate》论文中，其后《Neural image caption generation with visual attention》对attention形式进行总结。</p>
-<p>定义：为了解决文本过长信息丢失的问题，相较于seq2seq模型，attention最大的区别就是他不在要求把所以信息都编入最后的隐藏状态中，而是可以在编码过程中，对每一个隐藏状态进行保留，最后在解码的过程中，每一步都会选择性的从编码的隐藏状态中选一个和当前状态最接近的子集进行处理，这样在产生每一个输出时就能够充分利用输入序列携程的信息，下面很好的展示了attention在seq2seq模型中运用。</p>
-<video src="F:\video\seq2seq_7.mp4"></video>
-
-<p>接下来，我们放大一下decoder对于attention后隐藏状态的具体使用，其在每一步解码均要进行。</p>
-<ol>
-<li>查看在attention机制中每个具体的隐藏状态，选出其与句子中的那个单词最相关。</li>
-<li>给每个隐藏状态打分。</li>
-<li>将每个隐藏状态进行softmax以放大具有高分数的隐藏状态。</li>
-<li>进行总和形成attention输入Decoder的向量。</li>
-</ol>
-<video src="F:\video\attention_process.mp4"></video>
-
-<p>最后，将整个过程放一起，以便更好的理解attention机制(代码实现的时候进一步理解)。</p>
-<ol>
-<li>Decoder输入：初始化一个解码器隐藏状态+经过预训练后的词向量。</li>
-<li>将前两者输入到RNN中，产生一个新的隐藏状态h4和输出，将输出丢弃(seq2seq是直接将context送入下一个RNN作为输入)。</li>
-<li>attention：利用h4和encoder层简历的隐藏状态进行计算context（c4）。</li>
-<li>将c4和h4进行concatenate。</li>
-<li>将其结果通过前向神经网络，输出一个结果。</li>
-<li>该结果表示当前时间输出的对应文字。</li>
-<li>重复下一个步骤。</li>
-</ol>
-<video src="F:\video\attention_tensor_dance.mp4"></video>
-
-<p>注意：该模型并不是将输入和输出的单词一一对应，他有可能一个单词对应两个单词甚至影响第三个单词，这是经过训练得到的。</p>
-<h1 id="正文"><a href="#正文" class="headerlink" title="正文"></a>正文</h1><p>总算要写到Transformer部分了，有点小激动，让我们一起来看看这个影响到现在的模型到底长啥样，为了便于理解，我这边会结合代码+论文进行讲解。</p>
-<p>首先，引入原论文的结构图</p>
-<p><img src="F:\video\结构图.png" alt="结构图"></p>
-<p>看不懂不要紧，这边引入代码的结构图</p>
-<p><img src="F:\video\代码结构图.png" alt="代码结构图"></p>
-<h2 id="Encoder-Decoder"><a href="#Encoder-Decoder" class="headerlink" title="Encoder-Decoder"></a>Encoder-Decoder</h2><p>从宏观角度来看，Transformer与Seq2Seq的结构相同，依然引入经典的Encoder-Decoder结构，只是其中的神经层已经不是以前的RNN和CNN，而是完全引入注意力机制来进行构建。</p>
-<p><img src="F:\video\stack.png" alt="stack"></p>
-<p>上图代码的复现结构</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">EncoderDecoder</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        整体来说Transformer还是Encoder和Decoder结构，其中包括两个Embedding，一块Encoder，一块Decoder，一个输出层</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, encoder, decoder, src_embed, tgt_embed, generator</span>):</span></span><br><span class="line">        <span class="built_in">super</span>(EncoderDecoder, self).__init__()</span><br><span class="line">        self.encoder = encoder</span><br><span class="line">        self.decoder = decoder</span><br><span class="line">        self.src_embed = src_embed</span><br><span class="line">        self.tgt_embed = tgt_embed</span><br><span class="line">        self.generator = generator</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, src, tgt, src_mask, tgt_mask</span>):</span></span><br><span class="line">        <span class="string">&quot;&quot;&quot;Take in and process masked src and target sequences.&quot;&quot;&quot;</span></span><br><span class="line">        <span class="keyword">return</span> self.decode(self.encode(src, src_mask), src_mask, tgt, tgt_mask)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">encode</span>(<span class="params">self, src, src_mask</span>):</span></span><br><span class="line">        <span class="keyword">return</span> self.encoder(self.src_embed(src), src_mask)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">decode</span>(<span class="params">self, memory, src_mask, tgt, tgt_mask</span>):</span></span><br><span class="line">        <span class="keyword">return</span> self.decoder(self.tgt_embed(tgt), memory, src_mask, tgt_mask)</span><br></pre></td></tr></table></figure>
-<p>接下来，我将按照结构顺序一一介绍</p>
-<h2 id="Embedding"><a href="#Embedding" class="headerlink" title="Embedding"></a>Embedding</h2><p>这一层没什么好说的倒是，就是一个Embedding层。</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Embeddings</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line">	<span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">		将单词转化为词向量</span></span><br><span class="line"><span class="string">	&quot;&quot;&quot;</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, d_model, vocab</span>):</span></span><br><span class="line">        <span class="built_in">super</span>(Embeddings, self).__init__()</span><br><span class="line">        self.lut = nn.Embedding(vocab, d_model)</span><br><span class="line">        self.d_model = d_model</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, x</span>):</span></span><br><span class="line">        <span class="keyword">return</span> self.lut(x) * math.sqrt(self.d_model)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p><strong>困惑</strong>：为什么要乘以sqrt(d_model),希望有大神给予指点！</p>
-<h2 id="Positional-Emcoding"><a href="#Positional-Emcoding" class="headerlink" title="Positional Emcoding"></a>Positional Emcoding</h2><p>由于Transfomer完全引入注意力机制，其不像CNN和RNN会对输入单词顺序自动打上标签，其无法输出每个单词的顺序，在机器翻译中可是爆炸的啊，举个例子，你输入一句：我欠你的一千万不用还了，他返回一句：你欠我的一千万不用还了，那不是血崩。</p>
-<p>为了解决这个问题，Transfomer在Encoder过程中为每个输入单词打上一个位置编码，然后在Decoder将位置变量信息添加，该方法不用模型训练，直接按规则进行添加。</p>
-<p>我们看看原论文里的图</p>
-<p><img src="F:\video\Emcodeing.png" alt="Emcodeing"></p>
-<p>其计算的具体公式在原论文3.5，</p>
-<p><img src="F:\video\Emcoding公式.png" alt="Emcoding公式"></p>
-<p>对于上述公式，代码中进行了对数转化，具体如下</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">PositionalEncoding</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    	位置变量公式详见https://arxiv.org/abs/1706.03762(3.5)</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, d_model, dropout, max_len=<span class="number">5000</span></span>):</span></span><br><span class="line">        <span class="built_in">super</span>(PositionalEncoding, self).__init__()</span><br><span class="line">        self.dropout = nn.Dropout(dropout)</span><br><span class="line">        <span class="comment"># pe 初始化为0，shape为 [n, d_model] 的矩阵，用来存放最终的PositionalEncoding的</span></span><br><span class="line">        pe = torch.zeros(max_len, d_model)</span><br><span class="line">        <span class="comment"># position 表示位置，shape为 [max_len, 1]，从0开始到 max_len</span></span><br><span class="line">        position = torch.arange(<span class="number">0.</span>, max_len).unsqueeze(<span class="number">1</span>)</span><br><span class="line">        <span class="comment"># 这个是变形得到的，shape 为 [1, d_model//2]</span></span><br><span class="line">        div_term = torch.exp(torch.arange(<span class="number">0.</span>, d_model, <span class="number">2</span>) * -(math.log(<span class="number">10000.0</span>) / d_model))</span><br><span class="line">        <span class="comment"># 矩阵相乘 (max_len, 1) 与 (1, d_model // 2) 相乘，最后结果 shape   (max_len, d_model // 2)</span></span><br><span class="line">        <span class="comment"># 即所有行，一半的列。（行为句子的长度，列为向量的维度）</span></span><br><span class="line">        boy = position * div_term</span><br><span class="line">        <span class="comment"># 偶数列  奇数列 分别赋值</span></span><br><span class="line">        pe[:, <span class="number">0</span>::<span class="number">2</span>] = torch.sin(boy)</span><br><span class="line">        pe[:, <span class="number">1</span>::<span class="number">2</span>] = torch.cos(boy)</span><br><span class="line">        <span class="comment"># 为何还要在前面加一维？？？</span></span><br><span class="line">        pe = pe.unsqueeze(<span class="number">0</span>)</span><br><span class="line">        <span class="comment"># Parameter 会在反向传播时更新</span></span><br><span class="line">        <span class="comment"># Buffer不会，是固定的，本文就是不想让其被修改</span></span><br><span class="line">        self.register_buffer(<span class="string">&#x27;pe&#x27;</span>, pe)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, x</span>):</span></span><br><span class="line">        <span class="comment"># x能和后面的相加说明shape是一致的，也是 (1, sentence_len, d_model)</span></span><br><span class="line">        <span class="comment"># forward 其实就是，将原来的Embedding 再加上 Positional Embedding</span></span><br><span class="line">        x += Variable(self.pe[:, :x.size(<span class="number">1</span>)], requires_grad=<span class="literal">False</span>)</span><br><span class="line">        <span class="keyword">return</span> self.dropout(x)</span><br></pre></td></tr></table></figure>
-<h2 id="Encoder"><a href="#Encoder" class="headerlink" title="Encoder"></a>Encoder</h2><p>Encoder代码结构</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Encoder</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;核心Encoder是由N层堆叠而成&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, layer, N</span>):</span></span><br><span class="line">        <span class="built_in">super</span>(Encoder, self).__init__()</span><br><span class="line">        self.layers = clones(layer, N)</span><br><span class="line">        self.norm = LayerNorm(layer.size)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, x, mask</span>):</span></span><br><span class="line">        <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        将输入x和掩码mask逐层传递下去，最后再 LayerNorm 一下。</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        <span class="keyword">for</span> layer <span class="keyword">in</span> self.layers:</span><br><span class="line">            x = layer(x, mask)</span><br><span class="line">        <span class="keyword">return</span> self.norm(x)</span><br></pre></td></tr></table></figure>
-<p>Encoder块主要就是利用Clone函数重复构建相同结构的Encoder_layer.</p>
-<h3 id="Clone"><a href="#Clone" class="headerlink" title="Clone"></a>Clone</h3><p>整个Encoder部分由N个Encoder_layer堆积二乘，为了复刻每个层的结构，构建克隆函数。(Decoder类似)</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">clones</span>(<span class="params">module, N</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    	copyN层形成一个list</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">return</span> nn.ModuleList([copy.deepcopy(module) <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(N)])</span><br></pre></td></tr></table></figure>
-<h3 id="Encoder-layer"><a href="#Encoder-layer" class="headerlink" title="Encoder_layer"></a>Encoder_layer</h3><p>接下来，我们在将独立的Encoder_layer进行拆分，看看里面到底是什么东西。</p>
-<p><img src="F:\video\encoderlayer.png" alt="encoderlayer"></p>
-<p>上图很清晰的展示Encoder_layer内部的结构，X1，X2是经过转化的词向量，经过Positional Emcoding进入Encider_layer,喝口水，这部分要讲的有点多……</p>
-<p>首先，Encoder_layer分为上下两层，第一层包含self-attention+SublayerConnection,第二层为FNN+SublayerConnection。Attention的内容我后面再说，这里先讲下什么是SublayerConnection。attention的内容我后面再说，这里先讲下什么是SublayerConnection。</p>
-<p><strong>SublayerConnection</strong></p>
-<p>SublayerConnection内部设计基于两个核心：</p>
-<ol>
-<li>Residual_Connection（残差连接），这是上图的Add</li>
-<li>Layer Normalize(层级归一化)，这是上图的Normalize</li>
-</ol>
-<p>如下图所示，残差连接，就是在原图正常的结构下，将X进行保留，最终得出的结果是X+F(x).</p>
-<p><strong>优势</strong>：反向传播过程中，对X求导会多出一个常数1，梯度连乘，不会出现梯度消失(详细的内容等我以后探究一下)</p>
-<p><img src="F:\video\Residual connection.png" alt="Residual connection"></p>
-<p>具体代码如下：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">SublayerConnection</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">		A residual connection followed by a layer norm.Note for code simplicity the norms is first as opposed to last.</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, size, dropout</span>):</span></span><br><span class="line">        <span class="built_in">super</span>(SublayerConnection, self).__init__()</span><br><span class="line">        self.norm = LayerNorm(size)</span><br><span class="line">        self.dropout = nn.Dropout(dropout)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, x, sublayer</span>):</span></span><br><span class="line">        <span class="keyword">return</span> x + self.dropout(sublayer(self.norm(x)))</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p><strong>Layer Normalize</strong></p>
-<p>归一化最简单的理解就是将输入转化为均值为0，方差为1的数据，而由于NLP中Sequence长短不一，LN相较于BN在RNN这种类似的结构效果会好很多。其具体的概括就是：对每一个输入样本进行归一化操作，保证该样本在多维度符合均值0，方差为1.</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">LayerNorm</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;构建一个 layernorm层，具体细节看论文 https://arxiv.org/abs/1607.06450</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, features, eps=<span class="number">1e-6</span></span>):</span></span><br><span class="line">        <span class="built_in">super</span>(LayerNorm, self).__init__()</span><br><span class="line">        self.a_2 = nn.Parameter(torch.ones(features))</span><br><span class="line">        self.b_2 = nn.Parameter(torch.zeros(features))</span><br><span class="line">        self.eps = eps</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, x</span>):</span></span><br><span class="line">        mean = x.mean(-<span class="number">1</span>, keepdim=<span class="literal">True</span>)</span><br><span class="line">        std = x.std(-<span class="number">1</span>, keepdim=<span class="literal">True</span>)</span><br><span class="line">        <span class="keyword">return</span> self.a_2 * (x - mean) / (std + self.eps) + self.b_2</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p><strong>FNN</strong></p>
-<p>前馈神经网络，这就不细说了，具体代码如下：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">PositionwiseFeedForward</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, d_model, d_ff, dropout=<span class="number">0.1</span></span>):</span></span><br><span class="line">        <span class="built_in">super</span>(PositionwiseFeedForward, self).__init__()</span><br><span class="line">        self.w_1 = nn.Linear(d_model, d_ff)</span><br><span class="line">        self.w_2 = nn.Linear(d_ff, d_model)</span><br><span class="line">        self.dropout = nn.Dropout(dropout)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, x</span>):</span></span><br><span class="line">        <span class="keyword">return</span> self.w_2(self.dropout(F.relu(self.w_1(x))))</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>放张图，清晰一点</p>
-<p><img src="F:\video\FNN.png" alt="FNN"></p>
-<h2 id="Decoder"><a href="#Decoder" class="headerlink" title="Decoder"></a>Decoder</h2><p>与Encoder结构类似，其由N个Decoder_layer组成(Transformer中N=6),相较于Encoder,其接受的参数多了Encoder生成的memory以及目标句子中的掩码gt_mask.</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Decoder</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line">	<span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">		Gener is N layer decoder with masking</span></span><br><span class="line"><span class="string">	&quot;&quot;&quot;</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, layer, N</span>):</span></span><br><span class="line">        <span class="built_in">super</span>(Decoder, self).__init__()</span><br><span class="line">        self.layers = clones(layer, N)</span><br><span class="line">        self.norm = LayerNorm(layer.size)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, x, memory, src_mask, tgt_mask</span>):</span></span><br><span class="line">        <span class="keyword">for</span> layer <span class="keyword">in</span> self.layers:</span><br><span class="line">            x = layer(x, memory, src_mask, tgt_mask)</span><br><span class="line">        <span class="keyword">return</span> self.norm(x)</span><br></pre></td></tr></table></figure>
-<h3 id="Decoder-layer"><a href="#Decoder-layer" class="headerlink" title="Decoder layer"></a>Decoder layer</h3><p>下图很好的表明了Decoder_layer的区别</p>
-<p><img src="F:\video\Decoder.png" alt="Decoder"></p>
-<p>简单的解释一下，每一个Decoder_layer有三层组成</p>
-<p>第一层：Self-Attention+SublayerConnection</p>
-<p>第二层：Encoder-Decoder Attention+SublayerConnection(Decoder独有)</p>
-<p>第三层：FFN+SublayerConnection</p>
-<p>具体代码如下：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">DecoderLayer</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, size, self_attn, src_attn, feed_forward, dropout</span>):</span></span><br><span class="line">        <span class="built_in">super</span>(DecoderLayer, self).__init__()</span><br><span class="line">        self.size = size</span><br><span class="line">        self.self_attn = self_attn</span><br><span class="line">        self.src_attn = src_attn</span><br><span class="line">        self.feed_forward = feed_forward</span><br><span class="line">        self.sublayer = clones(SublayerConnection(size, dropout), <span class="number">3</span>)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, x, memory, src_mask, tgt_mask</span>):</span></span><br><span class="line">        m = memory</span><br><span class="line">        x = self.sublayer[<span class="number">0</span>](x, <span class="keyword">lambda</span> x: self.self_attn(x, x, x, tgt_mask))</span><br><span class="line">        x = self.sublayer[<span class="number">1</span>](x, <span class="keyword">lambda</span> x: self.src_attn(x, m, m, src_mask))</span><br><span class="line">        <span class="keyword">return</span> self.sublayer[<span class="number">2</span>](x, self.feed_forward)</span><br></pre></td></tr></table></figure>
-<h3 id="Mask"><a href="#Mask" class="headerlink" title="Mask"></a>Mask</h3><p><strong>作用：</strong>Mask简单来说就是掩码的意思，在我们这里的意思大概就是对某些值进行掩盖，不使其产生效果。</p>
-<p>文中的Mask主要包括<strong>两种</strong>：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">lsb_release -a</span><br><span class="line"></span><br><span class="line">No LSB modules are available.</span><br><span class="line">Distributor ID:	Ubuntu</span><br><span class="line">Description:	Ubuntu 16.04.7 LTS</span><br><span class="line">Release:	16.04</span><br><span class="line">Codename:	xenial</span><br></pre></td></tr></table></figure>
 <ul>
-<li>src_mask(padding_mask):由于Sequence长短不一，利用Padding对其填充为0，然后在对其进行attention的过程中，这些位置没有意义的，src_mask的作用就是不将Attention机制放在这些位置上进行处理，这就是padding_mask,其基于作用于所有attention。</li>
-<li>tgt_mask(sequence_mask):对于机器翻译而言，采用监督学习，而原句子和目标句子对输入模型进行训练，那就需要确保，Decoder在生成单词的过程中，不能看到后面的单词，这就是sequence_mask，其主要在Decoder中的self-attention中起作用。</li>
+<li><p>根据系统版本安装对应的cuda版本【我是11.2版本，主要是Paddle-gpu适配的是10.2/11.2/11.6】</p>
+<ul>
+<li>不用单独安装nvidia驱动，安装cudatoolkit时会自动匹配上，如果有Nvidia驱动直接nvidia-uninstall卸载即可</li>
+<li>查看paddleocr允许的cuda版本</li>
 </ul>
-<p>具体代码：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">subsequent_mask</span>(<span class="params">size</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    	Mask out subequent position</span></span><br><span class="line"><span class="string">    	这个是tgt_mask,他不让decoder过程中看到后面的单词，训练模型的过程中掩盖翻译后面的单词。</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="built_in">print</span>(subsequent_mask(<span class="number">3</span>))</span><br><span class="line">    tensor([[[<span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>],</span><br><span class="line">             [<span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>],</span><br><span class="line">             [<span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>]]], dtype=torch.uint8)</span><br><span class="line"></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    attn_shape = (1, size, size)</span></span><br><span class="line"><span class="string">    subsequent_mask = np.triu(np.ones(attn_shape), k=1).astype(&#x27;uint8&#x27;)</span></span><br><span class="line"><span class="string">    return torch.from_numpy(subsequent_mask) == 0</span></span><br></pre></td></tr></table></figure>
-<h3 id="Attention-1"><a href="#Attention-1" class="headerlink" title="Attention"></a>Attention</h3><p>Transfomer的最大创新就是两种Attention，Self-Attention，Multi-Head Attention</p>
-<p>Self-Attention</p>
-<p>作用：简单来说，就是计算句子里每个单词受其他单词的影响程度，其最大意义在于可以学到语义依赖关系。</p>
-<p>计算公式：</p>
-<p><img src="C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1588909761573.png" alt="1588909761573"></p>
-<p>不好理解，上图</p>
-<p><img src="F:\video\softmax.png" alt="softmax"></p>
-<p>再看看原论文的图</p>
-<p><img src="F:\video\scaled dot attention.png" alt="scaled dot attention"></p>
-<p>再来看看代码：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">attention</span>(<span class="params">query, key, value, mask=<span class="literal">None</span>, dropout=<span class="literal">None</span></span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;Compute &#x27;Scaled Dot Product Attention&quot;&quot;&quot;</span></span><br><span class="line">    d_k = query.size(-<span class="number">1</span>)</span><br><span class="line">    scores = torch.matmul(query, key.transpose(-<span class="number">2</span>, -<span class="number">1</span>)) / math.sqrt(d_k)</span><br><span class="line">    <span class="keyword">if</span> mask:</span><br><span class="line">        scores = scores.masked_fill(mask == <span class="number">0</span>, -<span class="number">1e9</span>)</span><br><span class="line">    p_attn = F.softmax(scores, dim=-<span class="number">1</span>)</span><br><span class="line">    <span class="keyword">if</span> dropout:</span><br><span class="line">        p_attn = dropout(p_attn)</span><br><span class="line">    <span class="keyword">return</span> torch.matmul(p_attn, value)</span><br></pre></td></tr></table></figure>
-<p>基本参照看公式应该可以很好的看懂这些代码，具体的步骤各位就参考原论文吧。</p>
-<p><strong>Multi-Head Attention</strong></p>
-<p>多个Self-Attention并行计算就叫多头计算（Multi-Head Attention）模式，也就是我们俗称的多头怪，你可以将其理解为集成学习，这也是Transformer训练速度超快的原因。</p>
-<p>废话不说，上图：</p>
-<p><img src="F:\video\Multi-head.png" alt="Multi-head"></p>
-<p>首先，我们接进来单词转化为词向量X(n,512)和W^Q, W^k, W^v(512,64)相乘，得出Q,K,V(n,64)，就生产一个Z(n,64),然后利用8个头并行操作，就生产8个Z(n,64).</p>
-<p><img src="F:\video\multi-head1.png" alt="multi-head1"></p>
-<p>然后将8个Z拼接起来，Z就变成了(n,512)内积W^0（512，512），输出最终的Z，传递到下一个FNN层。</p>
-<p><img src="F:\video\Multi-Head 结构层.png" alt="Multi-Head 结构层"></p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MultiHeadedAttention</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, h, d_model, dropout=<span class="number">0.1</span></span>):</span></span><br><span class="line">        <span class="string">&quot;Take in model size and number of heads.&quot;</span></span><br><span class="line">        <span class="built_in">super</span>(MultiHeadedAttention, self).__init__()</span><br><span class="line">        <span class="keyword">assert</span> d_model % h == <span class="number">0</span></span><br><span class="line">        <span class="comment"># We assume d_v always equals d_k</span></span><br><span class="line">        self.d_k = d_model // h</span><br><span class="line">        self.h = h</span><br><span class="line">        self.linears = clones(nn.Linear(d_model, d_model), <span class="number">4</span>)</span><br><span class="line">        self.attn = <span class="literal">None</span></span><br><span class="line">        self.dropout = nn.Dropout(p=dropout)</span><br><span class="line">        </span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, query, key, value, mask=<span class="literal">None</span></span>):</span></span><br><span class="line">        <span class="string">&quot;Implements Figure 2&quot;</span></span><br><span class="line">        <span class="keyword">if</span> mask <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">            <span class="comment"># Same mask applied to all h heads.</span></span><br><span class="line">            mask = mask.unsqueeze(<span class="number">1</span>)</span><br><span class="line">        nbatches = query.size(<span class="number">0</span>)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 1) Do all the linear projections in batch from d_model =&gt; h x d_k </span></span><br><span class="line">        query, key, value = \</span><br><span class="line">            [l(x).view(nbatches, -<span class="number">1</span>, self.h, self.d_k).transpose(<span class="number">1</span>, <span class="number">2</span>)</span><br><span class="line">             <span class="keyword">for</span> l, x <span class="keyword">in</span> <span class="built_in">zip</span>(self.linears, (query, key, value))]</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 2) Apply attention on all the projected vectors in batch. </span></span><br><span class="line">        x, self.attn = attention(query, key, value, mask=mask, </span><br><span class="line">                                 dropout=self.dropout)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 3) &quot;Concat&quot; using a view and apply a final linear. </span></span><br><span class="line">        x = x.transpose(<span class="number">1</span>, <span class="number">2</span>).contiguous() \</span><br><span class="line">             .view(nbatches, -<span class="number">1</span>, self.h * self.d_k)</span><br><span class="line">        <span class="keyword">return</span> self.linears[-<span class="number">1</span>](x)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h2 id="Generator"><a href="#Generator" class="headerlink" title="Generator"></a>Generator</h2><p>就是数据经过Encoder-Decoder结构后还需要一个线性连接层和softmax层，这一部分预测层，命名为Generator。</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Generator</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    	定义输出结构，一个线性连接层+softmax层</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, d_model, vocab</span>):</span></span><br><span class="line">        <span class="built_in">super</span>(Generator, self).__init__()</span><br><span class="line">        self.proj = nn.Linear(d_model, vocab)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, x</span>):</span></span><br><span class="line">        <span class="keyword">return</span> F.log_softmax(self.proj(x), dim=-<span class="number">1</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>好了，这基本上把整个Transfomer进行了一个非常细致的拆分。Transformer可以说现在所有最新模型的基础，对于这一部分还是需要好好理解。</p>
-<h1 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h1><ul>
-<li>[1] <a href="https://arxiv.org/pdf/1706.03762.pdf">原论文</a></li>
-<li>[2] <a href="https://jalammar.github.io/illustrated-transformer/">NLP国外大牛(Jay Alammar)详解Transformer</a></li>
-<li>[3] <a href="https://nlp.seas.harvard.edu/2018/04/03/attention.html#attention">哈佛NLP</a></li>
-<li>[4] <a href="https://juejin.im/post/5b9f1af0e51d450e425eb32d#heading-10">Blog</a></li>
-<li>[5] <a href="https://blog.csdn.net/baidu_20163013/article/details/97389827">Csdn</a></li>
+</li>
+<li><p>根据对应的cuda版本安装pytorch【版本比使用低一些不要紧】</p>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">pip3 install torch torchvision torchaudio --extra-index-url https:&#x2F;&#x2F;download.pytorch.org&#x2F;whl&#x2F;cu111</span><br></pre></td></tr></table></figure>
+<ul>
+<li>根据对应的cuda安装paddleocr【我装的是2.2.2】<ul>
+<li><strong>要求！！！CUDA 11.2，cuDNN 8.1.1（多卡环境下 NCCL&gt;=2.7）</strong></li>
+</ul>
+</li>
+</ul>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">python -m pip install paddlepaddle-gpu==2.2.2.post112 -f https://www.paddlepaddle.org.cn/whl/linux/mkl/avx/stable.html</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>根据cuda，paddleocr安装cudnn8.1.1</p>
+<ul>
+<li><p>首先下载压缩包</p>
+</li>
+<li><p>```sh<br>tar -xvf cudnn-11.2-linux-x64-v8.1.1.33.tgz<br>cd cuda<br>cp lib64/<em> /usr/local/cuda-11.2/lib64/<br>cp include/</em> /usr/local/cuda-11.2/include/<br>chmod a+r /usr/local/cuda-11.2/lib64/<em> /usr/local/cuda-11.2/include/</em></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">- 把下面这段话加到～&#x2F;.bashrc文件内，然后source ～&#x2F;.bashrc</span><br><span class="line"></span><br><span class="line">  &#96;&#96;&#96;sh</span><br><span class="line">  # add nvcc compiler to path</span><br><span class="line">  export PATH&#x3D;$PATH:&#x2F;usr&#x2F;local&#x2F;cuda-11.2&#x2F;bin</span><br><span class="line">  # add cuBLAS, cuSPARSE, cuRAND, cuSOLVER, cuFFT to path</span><br><span class="line">  export LD_LIBRARY_PATH&#x3D;$LD_LIBRARY_PATH:&#x2F;usr&#x2F;local&#x2F;cuda-11.2&#x2F;lib64:&#x2F;usr&#x2F;lib&#x2F;x86_64-linux-gnu</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p>安装paddleocr</p>
+<ul>
+<li><pre><code class="lang-sh">paddleocr --image_dir &quot;https://marketing-publication.s3.us-west-2.amazonaws.com/tmp/ocr_bill/images/bill/1.png&quot; --use_angle_cls true --lang en --use_gpu True
+</code></pre>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="链接"><a href="#链接" class="headerlink" title="链接"></a>链接</h2><ul>
+<li><a href="https://zhuanlan.zhihu.com/p/520536351">cuda安装教程</a></li>
+<li><a href="https://developer.nvidia.com/cuda-11.2.0-download-archive">cuda网站</a></li>
+<li><a href="https://pytorch.org/">pytorch下载地址</a></li>
+<li><a href="https://www.paddlepaddle.org.cn/install/old?docurl=/documentation/docs/zh/install/pip/linux-pip.html">paddle安装地址</a></li>
+<li><a href="https://developer.nvidia.com/rdp/cudnn-archive">cudnn地址</a></li>
+<li><a href="https://blog.csdn.net/qq_44961869/article/details/115954258">cudnn教程</a></li>
 </ul>
 ]]></content>
       <categories>
-        <category>深度学习</category>
+        <category>踩坑日记</category>
       </categories>
-      <tags>
-        <tag>transfomer</tag>
-      </tags>
   </entry>
   <entry>
     <title>初识NLP</title>
@@ -904,6 +766,171 @@ $$
       </tags>
   </entry>
   <entry>
+    <title>Transomer学习</title>
+    <url>/2021/04/11/%E5%88%9D%E8%AF%86Transomer/</url>
+    <content><![CDATA[<h1 id="Transfomer拆分"><a href="#Transfomer拆分" class="headerlink" title="Transfomer拆分"></a>Transfomer拆分</h1><p>为了更好的学习当前NLP主流模型，如Bert，GPT2及Bert一系列的衍生物，Transfomer是这一系列的基础。因此本文的主要目的是记录个人基于一些博客和原论文对Transfomer模型进行拆分的结果。</p>
+<p><strong>目的</strong>：减少计算量并提高并行效率，同时不减弱最终的实验结果。</p>
+<p><strong>创新点</strong>：</p>
+<ol>
+<li>Self-attention</li>
+<li>Multi-Head Attention</li>
+</ol>
+<h1 id="背景知识"><a href="#背景知识" class="headerlink" title="背景知识"></a>背景知识</h1><h2 id="seq2seq"><a href="#seq2seq" class="headerlink" title="seq2seq"></a>seq2seq</h2><p>定义：seq2seq模型是采用一系列项目(单词、字母、图像特征等)并输出另一个项目序列的模型。在机器翻译中，序列是一系列单词，经过seq2seq后，输出同样是一系列单词。</p>
+<video src="F:\video\seq2seq_2.mp4"></video>
+
+<p>接下来我们掀开这个model内部，该模型主要由一个Encoder和一个Decoder组成。</p>
+<ul>
+<li>Encoder：处理输入序列的每个项目，捕捉载体中的信息（context）。</li>
+<li>Decoder：处理完整序列后，Encoder将信息（context）传递至Decoder，并且开始逐项生产输出序列。</li>
+</ul>
+<video src="F:\video\seq2seq_4.mp4"></video>
+
+<p>而context是一个向量，其大小基于等同于编码器中RNN的隐藏神经元。</p>
+<p>在单词输入之前，我们需要将单词转化为词向量，其可以通过word2vec等模型进行预训练训练词库，然后将单词按照词库的词向量简单提取即可，在上面的资历中，其处理过程如下：</p>
+<p><img src="F:\video\embedding.png" alt="embedding"></p>
+<p>这里简单将其设为维度4，通常设为200或300，在此，简单展示一下RNN的实现原理。</p>
+<video src="F:\video\RNN_1.mp4"></video>
+
+<p>利用先前的输入的隐藏状态，RNN将其输出至一个新的隐藏状态，接下来我们看看seq2seq中的隐藏状态是怎么进行的。</p>
+<video src="F:\video\seq2seq_5.mp4"></video>
+
+<p>Encoder中最后一个hidden-state实际就是前文提到的context，接下来我们进一步拆解，展示其具体细节。</p>
+<video src="F:\video\seq2seq_6.mp4"></video>
+
+<p>总结：由于在Encoder阶段，每个单词输入都会产生一个新的hidden_state，最后输出一个context给Decoder进行解码。因此，当文本内容过长时，容易丢失部分信息，为了解决这个问题，Attention应运而生。</p>
+<h2 id="Attention"><a href="#Attention" class="headerlink" title="Attention"></a>Attention</h2><p>Attention这个概念最早出现在《Neural machine traslation by jointly learning to align and translate》论文中，其后《Neural image caption generation with visual attention》对attention形式进行总结。</p>
+<p>定义：为了解决文本过长信息丢失的问题，相较于seq2seq模型，attention最大的区别就是他不在要求把所以信息都编入最后的隐藏状态中，而是可以在编码过程中，对每一个隐藏状态进行保留，最后在解码的过程中，每一步都会选择性的从编码的隐藏状态中选一个和当前状态最接近的子集进行处理，这样在产生每一个输出时就能够充分利用输入序列携程的信息，下面很好的展示了attention在seq2seq模型中运用。</p>
+<video src="F:\video\seq2seq_7.mp4"></video>
+
+<p>接下来，我们放大一下decoder对于attention后隐藏状态的具体使用，其在每一步解码均要进行。</p>
+<ol>
+<li>查看在attention机制中每个具体的隐藏状态，选出其与句子中的那个单词最相关。</li>
+<li>给每个隐藏状态打分。</li>
+<li>将每个隐藏状态进行softmax以放大具有高分数的隐藏状态。</li>
+<li>进行总和形成attention输入Decoder的向量。</li>
+</ol>
+<video src="F:\video\attention_process.mp4"></video>
+
+<p>最后，将整个过程放一起，以便更好的理解attention机制(代码实现的时候进一步理解)。</p>
+<ol>
+<li>Decoder输入：初始化一个解码器隐藏状态+经过预训练后的词向量。</li>
+<li>将前两者输入到RNN中，产生一个新的隐藏状态h4和输出，将输出丢弃(seq2seq是直接将context送入下一个RNN作为输入)。</li>
+<li>attention：利用h4和encoder层简历的隐藏状态进行计算context（c4）。</li>
+<li>将c4和h4进行concatenate。</li>
+<li>将其结果通过前向神经网络，输出一个结果。</li>
+<li>该结果表示当前时间输出的对应文字。</li>
+<li>重复下一个步骤。</li>
+</ol>
+<video src="F:\video\attention_tensor_dance.mp4"></video>
+
+<p>注意：该模型并不是将输入和输出的单词一一对应，他有可能一个单词对应两个单词甚至影响第三个单词，这是经过训练得到的。</p>
+<h1 id="正文"><a href="#正文" class="headerlink" title="正文"></a>正文</h1><p>总算要写到Transformer部分了，有点小激动，让我们一起来看看这个影响到现在的模型到底长啥样，为了便于理解，我这边会结合代码+论文进行讲解。</p>
+<p>首先，引入原论文的结构图</p>
+<p><img src="F:\video\结构图.png" alt="结构图"></p>
+<p>看不懂不要紧，这边引入代码的结构图</p>
+<p><img src="F:\video\代码结构图.png" alt="代码结构图"></p>
+<h2 id="Encoder-Decoder"><a href="#Encoder-Decoder" class="headerlink" title="Encoder-Decoder"></a>Encoder-Decoder</h2><p>从宏观角度来看，Transformer与Seq2Seq的结构相同，依然引入经典的Encoder-Decoder结构，只是其中的神经层已经不是以前的RNN和CNN，而是完全引入注意力机制来进行构建。</p>
+<p><img src="F:\video\stack.png" alt="stack"></p>
+<p>上图代码的复现结构</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">EncoderDecoder</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        整体来说Transformer还是Encoder和Decoder结构，其中包括两个Embedding，一块Encoder，一块Decoder，一个输出层</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, encoder, decoder, src_embed, tgt_embed, generator</span>):</span></span><br><span class="line">        <span class="built_in">super</span>(EncoderDecoder, self).__init__()</span><br><span class="line">        self.encoder = encoder</span><br><span class="line">        self.decoder = decoder</span><br><span class="line">        self.src_embed = src_embed</span><br><span class="line">        self.tgt_embed = tgt_embed</span><br><span class="line">        self.generator = generator</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, src, tgt, src_mask, tgt_mask</span>):</span></span><br><span class="line">        <span class="string">&quot;&quot;&quot;Take in and process masked src and target sequences.&quot;&quot;&quot;</span></span><br><span class="line">        <span class="keyword">return</span> self.decode(self.encode(src, src_mask), src_mask, tgt, tgt_mask)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">encode</span>(<span class="params">self, src, src_mask</span>):</span></span><br><span class="line">        <span class="keyword">return</span> self.encoder(self.src_embed(src), src_mask)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">decode</span>(<span class="params">self, memory, src_mask, tgt, tgt_mask</span>):</span></span><br><span class="line">        <span class="keyword">return</span> self.decoder(self.tgt_embed(tgt), memory, src_mask, tgt_mask)</span><br></pre></td></tr></table></figure>
+<p>接下来，我将按照结构顺序一一介绍</p>
+<h2 id="Embedding"><a href="#Embedding" class="headerlink" title="Embedding"></a>Embedding</h2><p>这一层没什么好说的倒是，就是一个Embedding层。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Embeddings</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line">	<span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">		将单词转化为词向量</span></span><br><span class="line"><span class="string">	&quot;&quot;&quot;</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, d_model, vocab</span>):</span></span><br><span class="line">        <span class="built_in">super</span>(Embeddings, self).__init__()</span><br><span class="line">        self.lut = nn.Embedding(vocab, d_model)</span><br><span class="line">        self.d_model = d_model</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, x</span>):</span></span><br><span class="line">        <span class="keyword">return</span> self.lut(x) * math.sqrt(self.d_model)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><strong>困惑</strong>：为什么要乘以sqrt(d_model),希望有大神给予指点！</p>
+<h2 id="Positional-Emcoding"><a href="#Positional-Emcoding" class="headerlink" title="Positional Emcoding"></a>Positional Emcoding</h2><p>由于Transfomer完全引入注意力机制，其不像CNN和RNN会对输入单词顺序自动打上标签，其无法输出每个单词的顺序，在机器翻译中可是爆炸的啊，举个例子，你输入一句：我欠你的一千万不用还了，他返回一句：你欠我的一千万不用还了，那不是血崩。</p>
+<p>为了解决这个问题，Transfomer在Encoder过程中为每个输入单词打上一个位置编码，然后在Decoder将位置变量信息添加，该方法不用模型训练，直接按规则进行添加。</p>
+<p>我们看看原论文里的图</p>
+<p><img src="F:\video\Emcodeing.png" alt="Emcodeing"></p>
+<p>其计算的具体公式在原论文3.5，</p>
+<p><img src="F:\video\Emcoding公式.png" alt="Emcoding公式"></p>
+<p>对于上述公式，代码中进行了对数转化，具体如下</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">PositionalEncoding</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    	位置变量公式详见https://arxiv.org/abs/1706.03762(3.5)</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, d_model, dropout, max_len=<span class="number">5000</span></span>):</span></span><br><span class="line">        <span class="built_in">super</span>(PositionalEncoding, self).__init__()</span><br><span class="line">        self.dropout = nn.Dropout(dropout)</span><br><span class="line">        <span class="comment"># pe 初始化为0，shape为 [n, d_model] 的矩阵，用来存放最终的PositionalEncoding的</span></span><br><span class="line">        pe = torch.zeros(max_len, d_model)</span><br><span class="line">        <span class="comment"># position 表示位置，shape为 [max_len, 1]，从0开始到 max_len</span></span><br><span class="line">        position = torch.arange(<span class="number">0.</span>, max_len).unsqueeze(<span class="number">1</span>)</span><br><span class="line">        <span class="comment"># 这个是变形得到的，shape 为 [1, d_model//2]</span></span><br><span class="line">        div_term = torch.exp(torch.arange(<span class="number">0.</span>, d_model, <span class="number">2</span>) * -(math.log(<span class="number">10000.0</span>) / d_model))</span><br><span class="line">        <span class="comment"># 矩阵相乘 (max_len, 1) 与 (1, d_model // 2) 相乘，最后结果 shape   (max_len, d_model // 2)</span></span><br><span class="line">        <span class="comment"># 即所有行，一半的列。（行为句子的长度，列为向量的维度）</span></span><br><span class="line">        boy = position * div_term</span><br><span class="line">        <span class="comment"># 偶数列  奇数列 分别赋值</span></span><br><span class="line">        pe[:, <span class="number">0</span>::<span class="number">2</span>] = torch.sin(boy)</span><br><span class="line">        pe[:, <span class="number">1</span>::<span class="number">2</span>] = torch.cos(boy)</span><br><span class="line">        <span class="comment"># 为何还要在前面加一维？？？</span></span><br><span class="line">        pe = pe.unsqueeze(<span class="number">0</span>)</span><br><span class="line">        <span class="comment"># Parameter 会在反向传播时更新</span></span><br><span class="line">        <span class="comment"># Buffer不会，是固定的，本文就是不想让其被修改</span></span><br><span class="line">        self.register_buffer(<span class="string">&#x27;pe&#x27;</span>, pe)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, x</span>):</span></span><br><span class="line">        <span class="comment"># x能和后面的相加说明shape是一致的，也是 (1, sentence_len, d_model)</span></span><br><span class="line">        <span class="comment"># forward 其实就是，将原来的Embedding 再加上 Positional Embedding</span></span><br><span class="line">        x += Variable(self.pe[:, :x.size(<span class="number">1</span>)], requires_grad=<span class="literal">False</span>)</span><br><span class="line">        <span class="keyword">return</span> self.dropout(x)</span><br></pre></td></tr></table></figure>
+<h2 id="Encoder"><a href="#Encoder" class="headerlink" title="Encoder"></a>Encoder</h2><p>Encoder代码结构</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Encoder</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;核心Encoder是由N层堆叠而成&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, layer, N</span>):</span></span><br><span class="line">        <span class="built_in">super</span>(Encoder, self).__init__()</span><br><span class="line">        self.layers = clones(layer, N)</span><br><span class="line">        self.norm = LayerNorm(layer.size)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, x, mask</span>):</span></span><br><span class="line">        <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        将输入x和掩码mask逐层传递下去，最后再 LayerNorm 一下。</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        <span class="keyword">for</span> layer <span class="keyword">in</span> self.layers:</span><br><span class="line">            x = layer(x, mask)</span><br><span class="line">        <span class="keyword">return</span> self.norm(x)</span><br></pre></td></tr></table></figure>
+<p>Encoder块主要就是利用Clone函数重复构建相同结构的Encoder_layer.</p>
+<h3 id="Clone"><a href="#Clone" class="headerlink" title="Clone"></a>Clone</h3><p>整个Encoder部分由N个Encoder_layer堆积二乘，为了复刻每个层的结构，构建克隆函数。(Decoder类似)</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">clones</span>(<span class="params">module, N</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    	copyN层形成一个list</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">return</span> nn.ModuleList([copy.deepcopy(module) <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(N)])</span><br></pre></td></tr></table></figure>
+<h3 id="Encoder-layer"><a href="#Encoder-layer" class="headerlink" title="Encoder_layer"></a>Encoder_layer</h3><p>接下来，我们在将独立的Encoder_layer进行拆分，看看里面到底是什么东西。</p>
+<p><img src="F:\video\encoderlayer.png" alt="encoderlayer"></p>
+<p>上图很清晰的展示Encoder_layer内部的结构，X1，X2是经过转化的词向量，经过Positional Emcoding进入Encider_layer,喝口水，这部分要讲的有点多……</p>
+<p>首先，Encoder_layer分为上下两层，第一层包含self-attention+SublayerConnection,第二层为FNN+SublayerConnection。Attention的内容我后面再说，这里先讲下什么是SublayerConnection。attention的内容我后面再说，这里先讲下什么是SublayerConnection。</p>
+<p><strong>SublayerConnection</strong></p>
+<p>SublayerConnection内部设计基于两个核心：</p>
+<ol>
+<li>Residual_Connection（残差连接），这是上图的Add</li>
+<li>Layer Normalize(层级归一化)，这是上图的Normalize</li>
+</ol>
+<p>如下图所示，残差连接，就是在原图正常的结构下，将X进行保留，最终得出的结果是X+F(x).</p>
+<p><strong>优势</strong>：反向传播过程中，对X求导会多出一个常数1，梯度连乘，不会出现梯度消失(详细的内容等我以后探究一下)</p>
+<p><img src="F:\video\Residual connection.png" alt="Residual connection"></p>
+<p>具体代码如下：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">SublayerConnection</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">		A residual connection followed by a layer norm.Note for code simplicity the norms is first as opposed to last.</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, size, dropout</span>):</span></span><br><span class="line">        <span class="built_in">super</span>(SublayerConnection, self).__init__()</span><br><span class="line">        self.norm = LayerNorm(size)</span><br><span class="line">        self.dropout = nn.Dropout(dropout)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, x, sublayer</span>):</span></span><br><span class="line">        <span class="keyword">return</span> x + self.dropout(sublayer(self.norm(x)))</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><strong>Layer Normalize</strong></p>
+<p>归一化最简单的理解就是将输入转化为均值为0，方差为1的数据，而由于NLP中Sequence长短不一，LN相较于BN在RNN这种类似的结构效果会好很多。其具体的概括就是：对每一个输入样本进行归一化操作，保证该样本在多维度符合均值0，方差为1.</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">LayerNorm</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;构建一个 layernorm层，具体细节看论文 https://arxiv.org/abs/1607.06450</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, features, eps=<span class="number">1e-6</span></span>):</span></span><br><span class="line">        <span class="built_in">super</span>(LayerNorm, self).__init__()</span><br><span class="line">        self.a_2 = nn.Parameter(torch.ones(features))</span><br><span class="line">        self.b_2 = nn.Parameter(torch.zeros(features))</span><br><span class="line">        self.eps = eps</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, x</span>):</span></span><br><span class="line">        mean = x.mean(-<span class="number">1</span>, keepdim=<span class="literal">True</span>)</span><br><span class="line">        std = x.std(-<span class="number">1</span>, keepdim=<span class="literal">True</span>)</span><br><span class="line">        <span class="keyword">return</span> self.a_2 * (x - mean) / (std + self.eps) + self.b_2</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><strong>FNN</strong></p>
+<p>前馈神经网络，这就不细说了，具体代码如下：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">PositionwiseFeedForward</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, d_model, d_ff, dropout=<span class="number">0.1</span></span>):</span></span><br><span class="line">        <span class="built_in">super</span>(PositionwiseFeedForward, self).__init__()</span><br><span class="line">        self.w_1 = nn.Linear(d_model, d_ff)</span><br><span class="line">        self.w_2 = nn.Linear(d_ff, d_model)</span><br><span class="line">        self.dropout = nn.Dropout(dropout)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, x</span>):</span></span><br><span class="line">        <span class="keyword">return</span> self.w_2(self.dropout(F.relu(self.w_1(x))))</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>放张图，清晰一点</p>
+<p><img src="F:\video\FNN.png" alt="FNN"></p>
+<h2 id="Decoder"><a href="#Decoder" class="headerlink" title="Decoder"></a>Decoder</h2><p>与Encoder结构类似，其由N个Decoder_layer组成(Transformer中N=6),相较于Encoder,其接受的参数多了Encoder生成的memory以及目标句子中的掩码gt_mask.</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Decoder</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line">	<span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">		Gener is N layer decoder with masking</span></span><br><span class="line"><span class="string">	&quot;&quot;&quot;</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, layer, N</span>):</span></span><br><span class="line">        <span class="built_in">super</span>(Decoder, self).__init__()</span><br><span class="line">        self.layers = clones(layer, N)</span><br><span class="line">        self.norm = LayerNorm(layer.size)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, x, memory, src_mask, tgt_mask</span>):</span></span><br><span class="line">        <span class="keyword">for</span> layer <span class="keyword">in</span> self.layers:</span><br><span class="line">            x = layer(x, memory, src_mask, tgt_mask)</span><br><span class="line">        <span class="keyword">return</span> self.norm(x)</span><br></pre></td></tr></table></figure>
+<h3 id="Decoder-layer"><a href="#Decoder-layer" class="headerlink" title="Decoder layer"></a>Decoder layer</h3><p>下图很好的表明了Decoder_layer的区别</p>
+<p><img src="F:\video\Decoder.png" alt="Decoder"></p>
+<p>简单的解释一下，每一个Decoder_layer有三层组成</p>
+<p>第一层：Self-Attention+SublayerConnection</p>
+<p>第二层：Encoder-Decoder Attention+SublayerConnection(Decoder独有)</p>
+<p>第三层：FFN+SublayerConnection</p>
+<p>具体代码如下：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">DecoderLayer</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, size, self_attn, src_attn, feed_forward, dropout</span>):</span></span><br><span class="line">        <span class="built_in">super</span>(DecoderLayer, self).__init__()</span><br><span class="line">        self.size = size</span><br><span class="line">        self.self_attn = self_attn</span><br><span class="line">        self.src_attn = src_attn</span><br><span class="line">        self.feed_forward = feed_forward</span><br><span class="line">        self.sublayer = clones(SublayerConnection(size, dropout), <span class="number">3</span>)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, x, memory, src_mask, tgt_mask</span>):</span></span><br><span class="line">        m = memory</span><br><span class="line">        x = self.sublayer[<span class="number">0</span>](x, <span class="keyword">lambda</span> x: self.self_attn(x, x, x, tgt_mask))</span><br><span class="line">        x = self.sublayer[<span class="number">1</span>](x, <span class="keyword">lambda</span> x: self.src_attn(x, m, m, src_mask))</span><br><span class="line">        <span class="keyword">return</span> self.sublayer[<span class="number">2</span>](x, self.feed_forward)</span><br></pre></td></tr></table></figure>
+<h3 id="Mask"><a href="#Mask" class="headerlink" title="Mask"></a>Mask</h3><p><strong>作用：</strong>Mask简单来说就是掩码的意思，在我们这里的意思大概就是对某些值进行掩盖，不使其产生效果。</p>
+<p>文中的Mask主要包括<strong>两种</strong>：</p>
+<ul>
+<li>src_mask(padding_mask):由于Sequence长短不一，利用Padding对其填充为0，然后在对其进行attention的过程中，这些位置没有意义的，src_mask的作用就是不将Attention机制放在这些位置上进行处理，这就是padding_mask,其基于作用于所有attention。</li>
+<li>tgt_mask(sequence_mask):对于机器翻译而言，采用监督学习，而原句子和目标句子对输入模型进行训练，那就需要确保，Decoder在生成单词的过程中，不能看到后面的单词，这就是sequence_mask，其主要在Decoder中的self-attention中起作用。</li>
+</ul>
+<p>具体代码：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">subsequent_mask</span>(<span class="params">size</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    	Mask out subequent position</span></span><br><span class="line"><span class="string">    	这个是tgt_mask,他不让decoder过程中看到后面的单词，训练模型的过程中掩盖翻译后面的单词。</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="built_in">print</span>(subsequent_mask(<span class="number">3</span>))</span><br><span class="line">    tensor([[[<span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>],</span><br><span class="line">             [<span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>],</span><br><span class="line">             [<span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>]]], dtype=torch.uint8)</span><br><span class="line"></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    attn_shape = (1, size, size)</span></span><br><span class="line"><span class="string">    subsequent_mask = np.triu(np.ones(attn_shape), k=1).astype(&#x27;uint8&#x27;)</span></span><br><span class="line"><span class="string">    return torch.from_numpy(subsequent_mask) == 0</span></span><br></pre></td></tr></table></figure>
+<h3 id="Attention-1"><a href="#Attention-1" class="headerlink" title="Attention"></a>Attention</h3><p>Transfomer的最大创新就是两种Attention，Self-Attention，Multi-Head Attention</p>
+<p>Self-Attention</p>
+<p>作用：简单来说，就是计算句子里每个单词受其他单词的影响程度，其最大意义在于可以学到语义依赖关系。</p>
+<p>计算公式：</p>
+<p><img src="C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1588909761573.png" alt="1588909761573"></p>
+<p>不好理解，上图</p>
+<p><img src="F:\video\softmax.png" alt="softmax"></p>
+<p>再看看原论文的图</p>
+<p><img src="F:\video\scaled dot attention.png" alt="scaled dot attention"></p>
+<p>再来看看代码：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">attention</span>(<span class="params">query, key, value, mask=<span class="literal">None</span>, dropout=<span class="literal">None</span></span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;Compute &#x27;Scaled Dot Product Attention&quot;&quot;&quot;</span></span><br><span class="line">    d_k = query.size(-<span class="number">1</span>)</span><br><span class="line">    scores = torch.matmul(query, key.transpose(-<span class="number">2</span>, -<span class="number">1</span>)) / math.sqrt(d_k)</span><br><span class="line">    <span class="keyword">if</span> mask:</span><br><span class="line">        scores = scores.masked_fill(mask == <span class="number">0</span>, -<span class="number">1e9</span>)</span><br><span class="line">    p_attn = F.softmax(scores, dim=-<span class="number">1</span>)</span><br><span class="line">    <span class="keyword">if</span> dropout:</span><br><span class="line">        p_attn = dropout(p_attn)</span><br><span class="line">    <span class="keyword">return</span> torch.matmul(p_attn, value)</span><br></pre></td></tr></table></figure>
+<p>基本参照看公式应该可以很好的看懂这些代码，具体的步骤各位就参考原论文吧。</p>
+<p><strong>Multi-Head Attention</strong></p>
+<p>多个Self-Attention并行计算就叫多头计算（Multi-Head Attention）模式，也就是我们俗称的多头怪，你可以将其理解为集成学习，这也是Transformer训练速度超快的原因。</p>
+<p>废话不说，上图：</p>
+<p><img src="F:\video\Multi-head.png" alt="Multi-head"></p>
+<p>首先，我们接进来单词转化为词向量X(n,512)和W^Q, W^k, W^v(512,64)相乘，得出Q,K,V(n,64)，就生产一个Z(n,64),然后利用8个头并行操作，就生产8个Z(n,64).</p>
+<p><img src="F:\video\multi-head1.png" alt="multi-head1"></p>
+<p>然后将8个Z拼接起来，Z就变成了(n,512)内积W^0（512，512），输出最终的Z，传递到下一个FNN层。</p>
+<p><img src="F:\video\Multi-Head 结构层.png" alt="Multi-Head 结构层"></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MultiHeadedAttention</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, h, d_model, dropout=<span class="number">0.1</span></span>):</span></span><br><span class="line">        <span class="string">&quot;Take in model size and number of heads.&quot;</span></span><br><span class="line">        <span class="built_in">super</span>(MultiHeadedAttention, self).__init__()</span><br><span class="line">        <span class="keyword">assert</span> d_model % h == <span class="number">0</span></span><br><span class="line">        <span class="comment"># We assume d_v always equals d_k</span></span><br><span class="line">        self.d_k = d_model // h</span><br><span class="line">        self.h = h</span><br><span class="line">        self.linears = clones(nn.Linear(d_model, d_model), <span class="number">4</span>)</span><br><span class="line">        self.attn = <span class="literal">None</span></span><br><span class="line">        self.dropout = nn.Dropout(p=dropout)</span><br><span class="line">        </span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, query, key, value, mask=<span class="literal">None</span></span>):</span></span><br><span class="line">        <span class="string">&quot;Implements Figure 2&quot;</span></span><br><span class="line">        <span class="keyword">if</span> mask <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">            <span class="comment"># Same mask applied to all h heads.</span></span><br><span class="line">            mask = mask.unsqueeze(<span class="number">1</span>)</span><br><span class="line">        nbatches = query.size(<span class="number">0</span>)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 1) Do all the linear projections in batch from d_model =&gt; h x d_k </span></span><br><span class="line">        query, key, value = \</span><br><span class="line">            [l(x).view(nbatches, -<span class="number">1</span>, self.h, self.d_k).transpose(<span class="number">1</span>, <span class="number">2</span>)</span><br><span class="line">             <span class="keyword">for</span> l, x <span class="keyword">in</span> <span class="built_in">zip</span>(self.linears, (query, key, value))]</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 2) Apply attention on all the projected vectors in batch. </span></span><br><span class="line">        x, self.attn = attention(query, key, value, mask=mask, </span><br><span class="line">                                 dropout=self.dropout)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 3) &quot;Concat&quot; using a view and apply a final linear. </span></span><br><span class="line">        x = x.transpose(<span class="number">1</span>, <span class="number">2</span>).contiguous() \</span><br><span class="line">             .view(nbatches, -<span class="number">1</span>, self.h * self.d_k)</span><br><span class="line">        <span class="keyword">return</span> self.linears[-<span class="number">1</span>](x)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="Generator"><a href="#Generator" class="headerlink" title="Generator"></a>Generator</h2><p>就是数据经过Encoder-Decoder结构后还需要一个线性连接层和softmax层，这一部分预测层，命名为Generator。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Generator</span>(<span class="params">nn.Module</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    	定义输出结构，一个线性连接层+softmax层</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, d_model, vocab</span>):</span></span><br><span class="line">        <span class="built_in">super</span>(Generator, self).__init__()</span><br><span class="line">        self.proj = nn.Linear(d_model, vocab)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">forward</span>(<span class="params">self, x</span>):</span></span><br><span class="line">        <span class="keyword">return</span> F.log_softmax(self.proj(x), dim=-<span class="number">1</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>好了，这基本上把整个Transfomer进行了一个非常细致的拆分。Transformer可以说现在所有最新模型的基础，对于这一部分还是需要好好理解。</p>
+<h1 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h1><ul>
+<li>[1] <a href="https://arxiv.org/pdf/1706.03762.pdf">原论文</a></li>
+<li>[2] <a href="https://jalammar.github.io/illustrated-transformer/">NLP国外大牛(Jay Alammar)详解Transformer</a></li>
+<li>[3] <a href="https://nlp.seas.harvard.edu/2018/04/03/attention.html#attention">哈佛NLP</a></li>
+<li>[4] <a href="https://juejin.im/post/5b9f1af0e51d450e425eb32d#heading-10">Blog</a></li>
+<li>[5] <a href="https://blog.csdn.net/baidu_20163013/article/details/97389827">Csdn</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>深度学习</category>
+      </categories>
+      <tags>
+        <tag>transfomer</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>对比学习_SimCSE</title>
     <url>/2021/09/30/%E5%AF%B9%E6%AF%94%E5%AD%A6%E4%B9%A0-SimCSE/</url>
     <content><![CDATA[<blockquote>
@@ -1031,35 +1058,6 @@ L = -log\frac{e^{sim(h_{i},{h_{i}}^{+})/\tau}}{\sum_{j=1}^{N}(e^{sim(h_{i},{h_{j
       </categories>
       <tags>
         <tag>对比学习</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>数据标准化和中心化</title>
-    <url>/2021/08/19/%E6%95%B0%E6%8D%AE%E6%A0%87%E5%87%86%E5%8C%96%E5%92%8C%E4%B8%AD%E5%BF%83%E5%8C%96/</url>
-    <content><![CDATA[<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>标准化：也叫归一化，常用的有最小—最大标准化、Z-score标准化、Sigmod函数等，利用上述标准化操作，将原始数据化为<strong>无量纲</strong>的数值。这在回归和神经网络类模型是很必要的。</p>
-<p>中心化：也叫去均质化，让数据通过中心化处理，得到均值为0的数据【如果方差为1，那就是Z-score标准化】。同时中心化后的数据对向量来说也容易描述，因为是以原点为基准的。</p>
-<h2 id="公式"><a href="#公式" class="headerlink" title="公式"></a>公式</h2><p>最小—最大标准化：将数据变为0-1</p>
-<script type="math/tex; mode=display">
-\tilde{x}=\frac{x-min}{max-min}</script><p>Z-score标准化：</p>
-<script type="math/tex; mode=display">
-\tilde{x}=\frac{x-u}{\sigma }</script><p>sigmod函数：</p>
-<script type="math/tex; mode=display">
-f(x)=\frac{1}{1+e^{-x}}</script><p><strong>备注</strong>：</p>
-<ol>
-<li>当$\sigma=1$就是中心化公式，所以中心化可以说是一种特殊的标准化</li>
-<li>sigmod函数其实主要是在激活函数中对上一层神经层结果进行标准化，但也可以理解成对下一层神经层的输入做标准化。</li>
-</ol>
-<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ol>
-<li>提升精度：消除量纲，针对梯度下降相关的算法，不同量纲的数据会产生干扰，可能本来是A特征对结果的影响更大，但因为其量纲较小，导致其影响力还不如量纲大的特征，从来导致精度的下降。</li>
-<li>提神速度：同样，由于消除了量纲，在梯度下降过程中，将会容易收敛到最优解。</li>
-</ol>
-<p><strong>备注</strong>：但是对于非梯度下降优化器或者是树模型是可以不标准的，因为数据的量纲并不影响树模型的分裂，对于特征而言该在哪里分裂就还是在那里分裂。</p>
-]]></content>
-      <categories>
-        <category>基础知识</category>
-      </categories>
-      <tags>
-        <tag>数据预处理</tag>
       </tags>
   </entry>
   <entry>
@@ -1308,6 +1306,35 @@ f(x)=\frac{1}{1+e^{-x}}</script><p><strong>备注</strong>：</p>
       </categories>
       <tags>
         <tag>异常检测</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>数据标准化和中心化</title>
+    <url>/2021/08/19/%E6%95%B0%E6%8D%AE%E6%A0%87%E5%87%86%E5%8C%96%E5%92%8C%E4%B8%AD%E5%BF%83%E5%8C%96/</url>
+    <content><![CDATA[<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>标准化：也叫归一化，常用的有最小—最大标准化、Z-score标准化、Sigmod函数等，利用上述标准化操作，将原始数据化为<strong>无量纲</strong>的数值。这在回归和神经网络类模型是很必要的。</p>
+<p>中心化：也叫去均质化，让数据通过中心化处理，得到均值为0的数据【如果方差为1，那就是Z-score标准化】。同时中心化后的数据对向量来说也容易描述，因为是以原点为基准的。</p>
+<h2 id="公式"><a href="#公式" class="headerlink" title="公式"></a>公式</h2><p>最小—最大标准化：将数据变为0-1</p>
+<script type="math/tex; mode=display">
+\tilde{x}=\frac{x-min}{max-min}</script><p>Z-score标准化：</p>
+<script type="math/tex; mode=display">
+\tilde{x}=\frac{x-u}{\sigma }</script><p>sigmod函数：</p>
+<script type="math/tex; mode=display">
+f(x)=\frac{1}{1+e^{-x}}</script><p><strong>备注</strong>：</p>
+<ol>
+<li>当$\sigma=1$就是中心化公式，所以中心化可以说是一种特殊的标准化</li>
+<li>sigmod函数其实主要是在激活函数中对上一层神经层结果进行标准化，但也可以理解成对下一层神经层的输入做标准化。</li>
+</ol>
+<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ol>
+<li>提升精度：消除量纲，针对梯度下降相关的算法，不同量纲的数据会产生干扰，可能本来是A特征对结果的影响更大，但因为其量纲较小，导致其影响力还不如量纲大的特征，从来导致精度的下降。</li>
+<li>提神速度：同样，由于消除了量纲，在梯度下降过程中，将会容易收敛到最优解。</li>
+</ol>
+<p><strong>备注</strong>：但是对于非梯度下降优化器或者是树模型是可以不标准的，因为数据的量纲并不影响树模型的分裂，对于特征而言该在哪里分裂就还是在那里分裂。</p>
+]]></content>
+      <categories>
+        <category>基础知识</category>
+      </categories>
+      <tags>
+        <tag>数据预处理</tag>
       </tags>
   </entry>
   <entry>
