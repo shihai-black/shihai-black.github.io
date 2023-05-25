@@ -213,6 +213,33 @@ Aggregate_{k}^{pool}=max(\{\sigma (W_{pool}h_{u_{i}}^{k}+b),\forall u_{i}\in N(v
       </tags>
   </entry>
   <entry>
+    <title>NLP预处理：词干提取和词性还原</title>
+    <url>/2021/06/04/NLP%E9%A2%84%E5%A4%84%E7%90%86%EF%BC%9A%E8%AF%8D%E5%B9%B2%E6%8F%90%E5%8F%96%E5%92%8C%E8%AF%8D%E6%80%A7%E8%BF%98%E5%8E%9F/</url>
+    <content><![CDATA[<blockquote>
+<p>最近在做的项目里面需要做一个关键词多属性提取，然后由于以前接触的都是中文的项目，所以就会拿中文分词的一些操作来用，但在英文的项目，其实就有词干提取和词性还原两种非常好用的方法</p>
+</blockquote>
+<p>自然语言处理中一个很重要的操作就是所谓的stemming 和 lemmatization，二者非常类似。它们是词形规范化的两类重要方式，都能够达到有效归并词形的目的，二者既有联系也有区别。</p>
+<h2 id="词干提取"><a href="#词干提取" class="headerlink" title="词干提取"></a>词干提取</h2><p>NLTK中提供了三种最常用的词干提取器接口，即 Porter stemmer, Lancaster Stemmer 和 Snowball Stemmer。而且词干提取主要是基于规则的算法。</p>
+<p><strong>Porter</strong></p>
+<p>1980年最原始的词干提取法</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem.porter <span class="keyword">import</span> PorterStemmer</span><br><span class="line">text=<span class="string">&#x27;chineses&#x27;</span></span><br><span class="line">porter_stemmer = PorterStemmer()</span><br><span class="line">stem_text = porter_stemmer.stem(text)</span><br><span class="line"><span class="built_in">print</span>(stem_text)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: <span class="string">&#x27;chines&#x27;</span></span><br></pre></td></tr></table></figure>
+<p><strong>Snowball</strong></p>
+<p>也称为Porter2.0，本人说提取的比1好，这个不清楚，但确实相比较1.0会快一些，感觉上效率有提升1/3.</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem.snowball <span class="keyword">import</span> EnglishStemmer</span><br><span class="line">text=<span class="string">&#x27;chineses&#x27;</span></span><br><span class="line">porter_stemmer = PorterStemmer()</span><br><span class="line">stem_text = porter_stemmer.stem(text)</span><br><span class="line"><span class="built_in">print</span>(stem_text)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: ‘chines’</span><br></pre></td></tr></table></figure>
+<p><strong>Lancaster</strong></p>
+<p>据说比较激进，没什么人用过</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem <span class="keyword">import</span> LancasterStemmer</span><br><span class="line">text=<span class="string">&#x27;chineses&#x27;</span></span><br><span class="line">lancas_stemmer = LancasterStemmer()</span><br><span class="line">stem_text = lancas_stemmer.stem(text)</span><br><span class="line"><span class="built_in">print</span>(stem_text)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: ‘chines’</span><br></pre></td></tr></table></figure>
+<h2 id="词性还原"><a href="#词性还原" class="headerlink" title="词性还原"></a>词性还原</h2><p>基于字典的映射，而且在NLTK中要求标明词性，否则会出问题。一般需要先走词性标注，再走词性还原，因此整体链路相较于词干提取较长。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem <span class="keyword">import</span> WordNetLemmatizer  </span><br><span class="line">lemmatizer = WordNetLemmatizer()  </span><br><span class="line">word = lemmatizer.lemmatize(<span class="string">&#x27;leaves&#x27;</span>,pos=<span class="string">&#x27;n&#x27;</span>) </span><br><span class="line"><span class="built_in">print</span>(word)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: <span class="string">&#x27;leaf&#x27;</span></span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>特征工程</category>
+      </categories>
+      <tags>
+        <tag>NLP</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Louvain算法</title>
     <url>/2021/09/16/Louvain%E7%AE%97%E6%B3%95/</url>
     <content><![CDATA[<blockquote>
@@ -326,30 +353,66 @@ P_{ij}=\frac{K_i*K_j}{2m}=K_i*\frac{K_j}{2m}</script><p>$K<em>j/2m$表示节点j
       </categories>
   </entry>
   <entry>
-    <title>NLP预处理：词干提取和词性还原</title>
-    <url>/2021/06/04/NLP%E9%A2%84%E5%A4%84%E7%90%86%EF%BC%9A%E8%AF%8D%E5%B9%B2%E6%8F%90%E5%8F%96%E5%92%8C%E8%AF%8D%E6%80%A7%E8%BF%98%E5%8E%9F/</url>
+    <title>关联挖掘</title>
+    <url>/2021/09/18/%E5%85%B3%E8%81%94%E6%8C%96%E6%8E%98/</url>
     <content><![CDATA[<blockquote>
-<p>最近在做的项目里面需要做一个关键词多属性提取，然后由于以前接触的都是中文的项目，所以就会拿中文分词的一些操作来用，但在英文的项目，其实就有词干提取和词性还原两种非常好用的方法</p>
+<p>对商品订单进行类目级别的关联挖掘，因为订单太少，无法用到商品这个级别，并且主要是因为做关联挖掘的目的是为了投放广告</p>
 </blockquote>
-<p>自然语言处理中一个很重要的操作就是所谓的stemming 和 lemmatization，二者非常类似。它们是词形规范化的两类重要方式，都能够达到有效归并词形的目的，二者既有联系也有区别。</p>
-<h2 id="词干提取"><a href="#词干提取" class="headerlink" title="词干提取"></a>词干提取</h2><p>NLTK中提供了三种最常用的词干提取器接口，即 Porter stemmer, Lancaster Stemmer 和 Snowball Stemmer。而且词干提取主要是基于规则的算法。</p>
-<p><strong>Porter</strong></p>
-<p>1980年最原始的词干提取法</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem.porter <span class="keyword">import</span> PorterStemmer</span><br><span class="line">text=<span class="string">&#x27;chineses&#x27;</span></span><br><span class="line">porter_stemmer = PorterStemmer()</span><br><span class="line">stem_text = porter_stemmer.stem(text)</span><br><span class="line"><span class="built_in">print</span>(stem_text)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: <span class="string">&#x27;chines&#x27;</span></span><br></pre></td></tr></table></figure>
-<p><strong>Snowball</strong></p>
-<p>也称为Porter2.0，本人说提取的比1好，这个不清楚，但确实相比较1.0会快一些，感觉上效率有提升1/3.</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem.snowball <span class="keyword">import</span> EnglishStemmer</span><br><span class="line">text=<span class="string">&#x27;chineses&#x27;</span></span><br><span class="line">porter_stemmer = PorterStemmer()</span><br><span class="line">stem_text = porter_stemmer.stem(text)</span><br><span class="line"><span class="built_in">print</span>(stem_text)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: ‘chines’</span><br></pre></td></tr></table></figure>
-<p><strong>Lancaster</strong></p>
-<p>据说比较激进，没什么人用过</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem <span class="keyword">import</span> LancasterStemmer</span><br><span class="line">text=<span class="string">&#x27;chineses&#x27;</span></span><br><span class="line">lancas_stemmer = LancasterStemmer()</span><br><span class="line">stem_text = lancas_stemmer.stem(text)</span><br><span class="line"><span class="built_in">print</span>(stem_text)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: ‘chines’</span><br></pre></td></tr></table></figure>
-<h2 id="词性还原"><a href="#词性还原" class="headerlink" title="词性还原"></a>词性还原</h2><p>基于字典的映射，而且在NLTK中要求标明词性，否则会出问题。一般需要先走词性标注，再走词性还原，因此整体链路相较于词干提取较长。</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> nltk.stem <span class="keyword">import</span> WordNetLemmatizer  </span><br><span class="line">lemmatizer = WordNetLemmatizer()  </span><br><span class="line">word = lemmatizer.lemmatize(<span class="string">&#x27;leaves&#x27;</span>,pos=<span class="string">&#x27;n&#x27;</span>) </span><br><span class="line"><span class="built_in">print</span>(word)</span><br><span class="line">--------------------</span><br><span class="line">Out[<span class="number">148</span>]: <span class="string">&#x27;leaf&#x27;</span></span><br></pre></td></tr></table></figure>
+<h2 id="指标定义"><a href="#指标定义" class="headerlink" title="指标定义"></a>指标定义</h2><p><strong>项于项集</strong></p>
+<p>项，指我们分析数据中的<strong>一个对象</strong>，如啤酒；项集，就是<strong>若干项</strong>的项构成的集合，如集合{啤酒，面包}是一个2项集。</p>
+<p><strong>支持度（support）</strong></p>
+<p>某项集在数据集中出现的概率，支持度体现的是某个项集的频繁程度，只有<strong>项集达到一定程度</strong>，我们才会研究该项集的必要。</p>
+<p>其计算公式为：</p>
+
+$$
+support(A\cup B)=\frac{{A\cup B}}{All}
+$$
+
+<p>举个例子：AB在订单中同时出现了100次，总共有1000个订单，那$A\cup B$项集的支持度就是0.1</p>
+<p><strong>置信度（confidence）</strong></p>
+<p>当用户购买了商品A后有多大概率会购买商品B，表示关联性的强弱。</p>
+<p>其计算公式为:<br>
+$$
+confidence(A\rightarrow B)=\frac{support(A\cup B)}{support(A)}
+$$
+<br>举个例子，AB同时出现的订单有100次，而A购买的订单次数有200次，那置信度就是0.5</p>
+<p><strong>提升度（lift）</strong></p>
+<p>商品A的出现，对商品B的出现概率提升的程度，一般是大于1说明A的出现有组与商品B的出现</p>
+<p>其计算公式为：</p>
+
+$$
+lift(A\rightarrow B) = \frac{confidence(A\rightarrow B)}{support(B)}
+$$
+
+<p>举个例子，已知总订单100，AB同时出现时20：</p>
+<ul>
+<li>如果B的订单是20，A的订单时40，那么提升度为5，说明B商品强依赖于A，A的出现有利于B的出现</li>
+<li>同样，如果B的订单是50，A的订单是50，那么提升度为0.8，说明B商品和A商品没有强依赖关系。</li>
+</ul>
+<h2 id="经典算法"><a href="#经典算法" class="headerlink" title="经典算法"></a>经典算法</h2><h3 id="Apriori"><a href="#Apriori" class="headerlink" title="Apriori"></a>Apriori</h3><p>具体步骤</p>
+<ol>
+<li>计算项集K=1的所有支持度</li>
+<li>选出大于最小支持度的数据</li>
+<li>如果项集为空，则对应 K-1 项集的结果为最终结果。否则重复1，2</li>
+</ol>
+<p>该算法时间负责度比较高，相当于，针对每个K都要计算一次数据集。因此用学者利用树来优化算法</p>
+<h3 id="FP-Growth"><a href="#FP-Growth" class="headerlink" title="FP-Growth"></a>FP-Growth</h3><p>具体步骤</p>
+<ol>
+<li>扫描数据，得到所有频繁1项集的的计数。然后删除支持度低于阈值的项，将1项集放入项头表，并按照支持度降序排列</li>
+<li>扫描数据，将读到的原始数据剔除非频繁1项集，并按照支持度降序排列。</li>
+<li>读入排序后的数据集，插入FP树，插入时按照排序后的顺序，插入FP树中，排序靠前的节点是祖先节点，而靠后的是子孙节点。如果有共用的祖先，则对应的公用祖先节点计数加1。插入后，如果有新节点出现，则项头表对应的节点会通过节点链表链接上新节点。直到所有的数据都插入到FP树后，FP树的建立完成。</li>
+<li>从项头表的底部项依次向上找到项头表项对应的条件模式基。从条件模式基递归挖掘得到项头表项项的频繁项集。</li>
+<li>如果不限制频繁项集的项数，则返回步骤4所有的频繁项集，否则只返回满足项数要求的频繁项集。</li>
+</ol>
+<p>该算法只需要扫面两次数据集就可以得出所有结果，因此相较于Apriori速度会有所提神，不过也得看具体可以提出多大的K</p>
+<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><p>对于apriori主要有两个包可以用efficient_apriori,mlxtend.frequent_patterns。前者是比较方便，但是问题在于没有具体的数字，后面这个包就比较舒服了，可以直接输出对应的指标。不过主要是我现在用的数据集小，如果数据集很大，那可能FP-Growth更合适一些不过要看具体场景,他的包fptools。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> efficient_apriori <span class="keyword">import</span> apriori</span><br><span class="line"><span class="keyword">from</span> mlxtend.preprocessing <span class="keyword">import</span> TransactionEncoder</span><br><span class="line"><span class="keyword">from</span> mlxtend.frequent_patterns <span class="keyword">import</span> apriori <span class="keyword">as</span> apr</span><br><span class="line"><span class="keyword">from</span> mlxtend.frequent_patterns <span class="keyword">import</span> association_rules</span><br><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">import</span> fptools <span class="keyword">as</span> fp</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">data=[(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>),(<span class="string">&#x27;可乐&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>, <span class="string">&#x27;鸡蛋&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;可乐&#x27;</span>)]</span><br><span class="line"></span><br><span class="line"><span class="comment"># efficient_apriori包的使用</span></span><br><span class="line">itemsets, rules = apriori(data, min_support=<span class="number">0.5</span>,  min_confidence=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># mlxtend.frequent_patterns包的使用</span></span><br><span class="line">Encoder = TransactionEncoder()</span><br><span class="line">encoded_data = Encoder.fit_transform(data)</span><br><span class="line">df = pd.DataFrame(encoded_data, columns=Encoder.columns_)</span><br><span class="line">frequent_items = apr(df, min_support=<span class="number">0.5</span>, use_colnames=<span class="literal">True</span>, max_len=<span class="number">4</span>).sort_values(by=<span class="string">&#x27;support&#x27;</span>, ascending=<span class="literal">False</span>)</span><br><span class="line">df_re = association_rules(frequent_items, metric=<span class="string">&#x27;lift&#x27;</span>, min_threshold=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#fp</span></span><br><span class="line">data = [(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;可乐&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>, <span class="string">&#x27;鸡蛋&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;可乐&#x27;</span>)]</span><br><span class="line">fis = [iset <span class="keyword">for</span> iset <span class="keyword">in</span> fp.frequent_itemsets(data, <span class="number">2</span>)]</span><br><span class="line">mfis = [iset <span class="keyword">for</span> iset <span class="keyword">in</span> fp.maximal_frequent_itemsets(data, <span class="number">2</span>)]</span><br></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://zhuanlan.zhihu.com/p/198842818">知乎1</a></p>
+<p><a href="https://zhuanlan.zhihu.com/p/66944900">知乎2</a></p>
+<p><a href="https://www.cnblogs.com/zhengxingpeng/p/6679280.html">博客</a></p>
 ]]></content>
-      <categories>
-        <category>特征工程</category>
-      </categories>
       <tags>
-        <tag>NLP</tag>
+        <tag>机器学习</tag>
       </tags>
   </entry>
   <entry>
@@ -460,6 +523,160 @@ S_{i}=\frac{e^{i}}{\Sigma_{j} e^{j}}</script><p>那我们看到Softmax需要经�
       </categories>
       <tags>
         <tag>NLP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>初识NLP</title>
+    <url>/2021/04/11/%E5%88%9D%E8%AF%86NLP/</url>
+    <content><![CDATA[<h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>此文档为了更好的理解自然语言处理（natural language processing），自然语言处理(NLP)就是开发能够理解人类语言的应用程序或服务。接下来会讨论一些NLP在国内外的发展状况和实际应用的一些例子，了解当前最前沿的NLP应用并掌握一定的NLP技术是接下来自己需要做的。</p>
+<h1 id="NLP简述"><a href="#NLP简述" class="headerlink" title="NLP简述"></a>NLP简述</h1><p>NLP是研究人与人交际中以及在人与计算机交际中的语言问题的一门学科。NLP主要有五个主要任务：分类、匹配、翻译、结构化预测、与序贯决策过程。NLP中的绝大多数问题皆可归入其中的一个，如下表所示。在这些任务中，单词、词组、语句、段落甚至文档通常被看作标记（字符串）序列而采取相似的处理，尽管它们的复杂度并不相同。事实上，语句是 NLP 中最常用的处理单元。</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">任务</th>
+<th style="text-align:left">描述</th>
+<th style="text-align:left">应用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">分类</td>
+<td style="text-align:left">给每个string指定一个标签</td>
+<td style="text-align:left">文本分类、情感分析</td>
+</tr>
+<tr>
+<td style="text-align:left">匹配</td>
+<td style="text-align:left">匹配两个strings</td>
+<td style="text-align:left">信息检索、问答系统</td>
+</tr>
+<tr>
+<td style="text-align:left">翻译</td>
+<td style="text-align:left">翻译某种语言</td>
+<td style="text-align:left">机器翻译、自动语音识别</td>
+</tr>
+<tr>
+<td style="text-align:left">结构化预测</td>
+<td style="text-align:left">将每个string映射为一种结构</td>
+<td style="text-align:left">命名实体识别、中文分词、词性标注、句法分析</td>
+</tr>
+<tr>
+<td style="text-align:left">有序决策过程</td>
+<td style="text-align:left">对一个动态的过程做出反应</td>
+<td style="text-align:left">多伦对话系统</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="应用简介"><a href="#应用简介" class="headerlink" title="应用简介"></a>应用简介</h2><p><strong>文本分类</strong>：用电脑对文本集(或其他实体或物件)按照一定的分类体系或标准进行自动分类标记。</p>
+<p><strong>情感分析</strong>：又称意见挖掘、倾向性分析等。简单而言,是对带有情感色彩的主观性文本进行分析、处理、归纳和推理的过程。</p>
+<p><strong>信息检索</strong>：信息按一定的方式进行加工、整理、组织并存储起来，再根据信息用户特定的需要将相关信息准确的查找出来的过程。</p>
+<p><strong>问答系统</strong>：用准确、简洁的自然语言回答用户用自然语言提出的问题。</p>
+<p><strong>机器翻译</strong>：是利用计算机将一种自然语言(源语言)转换为另一种自然语言(目标语言)的过程，除了传统的文本翻译之外，还有比较特殊的手语翻译和唇语翻译。</p>
+<p><strong>自动语音识别</strong>：一种将人的语音转换为文本的技术。</p>
+<p><strong>命名实体识别</strong>：是指识别文本中具有特定意义的实体，主要包括人名、地名、机构名、专有名词等。</p>
+<p><strong>中文分词</strong>：指的是将一个汉字序列切分成一个个单独的词。</p>
+<p><strong>词性标注</strong>：利用语料库内单词的词性按其含义和上下文内容进行标记的文本数据处理技术。</p>
+<p><strong>句法分析</strong>：依存句法分析接口可自动分析文本中的依存句法结构信息，利用句子中词与词之间的依存关系来表示词语的句法结构信息（如“主谓”、“动宾”、“定中”等结构关系），并用树状结构来表示整句的结构（如“主谓宾”、“定状补”等）。</p>
+<p><strong>多伦对话系统</strong>：（封闭域）多轮对话是一种，在人机对话中，初步明确用户意图之后，获取必要信息以最终得到明确用户指令的方式。</p>
+<h1 id="国内外NLP的应用"><a href="#国内外NLP的应用" class="headerlink" title="国内外NLP的应用"></a>国内外NLP的应用</h1><p>由于NLP领域在工业界内还属于探索状态，下表只是罗列了一下了解到的行业内较为优异的公司从事的领域和相关产品</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:center"><strong>公司</strong></th>
+<th style="text-align:center"><strong>关注点</strong></th>
+<th style="text-align:center"><strong>产品</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">谷歌</td>
+<td style="text-align:center">机器翻译、知识图谱（智能化搜索引擎）</td>
+<td style="text-align:center">谷歌翻译、谷歌浏览器</td>
+</tr>
+<tr>
+<td style="text-align:center">微软</td>
+<td style="text-align:center">机器翻译、对话平台、中国文化、阅读理解</td>
+<td style="text-align:center">微软翻译、小娜、小冰、微软对联</td>
+</tr>
+<tr>
+<td style="text-align:center">IBM</td>
+<td style="text-align:center">对话平台运用在医疗、金融、物联网</td>
+<td style="text-align:center">沃森</td>
+</tr>
+<tr>
+<td style="text-align:center">百度</td>
+<td style="text-align:center">机器翻译、知识图谱、对话平台</td>
+<td style="text-align:center">度秘、百度检索、小度机器人</td>
+</tr>
+<tr>
+<td style="text-align:center">阿里</td>
+<td style="text-align:center">智能导购（技术快速的跟业务对接）</td>
+<td style="text-align:center">优酷、YunOS、蚂蚁金服、资讯搜索</td>
+</tr>
+<tr>
+<td style="text-align:center">腾讯</td>
+<td style="text-align:center">社交、内容、游戏</td>
+<td style="text-align:center">腾讯觅影、微信、qq</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h1 id="NLP技术支持"><a href="#NLP技术支持" class="headerlink" title="NLP技术支持"></a>NLP技术支持</h1><p>接下来研究的重点在于文本分类和情感分析方向，百度，bosonnlp，阿里（收费），腾讯（收费）等公司都提供了优秀的api接口。下面是关于两方面的简单应用。</p>
+<h2 id="百度API"><a href="#百度API" class="headerlink" title="百度API"></a>百度API</h2><h3 id="文本分类"><a href="#文本分类" class="headerlink" title="文本分类"></a>文本分类</h3><p>对文章按照内容类型进行自动分类，首批支持娱乐、体育、科技等26个主流内容类型，为文章聚类、文本内容分析等应用提供基础技术支持。 目前支持的一级粗粒度分类类目如下：1、国际 2、体育 3、娱乐 4、社会 5、财经 6、时事 7、科技 8、情感 9、汽车 10、教育 11、时尚 12、游戏 13、军事 14、旅游 15、美食 16、文化 17、健康养生 18、搞笑 19、家居 20、动漫 21、宠物 22、母婴育儿 23、星座运势 24、历史 25、音乐 26、综合。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> aip <span class="keyword">import</span> AipNlp</span><br><span class="line">APP_ID = <span class="string">&#x27;15438079&#x27;</span></span><br><span class="line">API_KEY = <span class="string">&#x27;rwAgYHnVN0bGkuksdvk7piio&#x27;</span></span><br><span class="line">SECRET_KEY = <span class="string">&#x27;PAw4ffLotYoUMKcOS57oF2WrOtCjWTRC&#x27;</span></span><br><span class="line">client = AipNlp(APP_ID,API_KEY, SECRET_KEY)</span><br><span class="line">title = <span class="string">&#x27;欧洲冠军杯足球赛&#x27;</span></span><br><span class="line">content = <span class="string">&quot;欧洲冠军联赛是欧洲足球协会联盟主办的年度足球比赛，代表欧洲俱乐部足球最高荣誉和水平，被认为是全世界最高素质、最具影响力以及最高水平的俱乐部赛事，亦是世界上奖金最高的足球赛事和体育赛事之一。&quot;</span></span><br><span class="line">client.topic(title, content)</span><br><span class="line"></span><br><span class="line"><span class="comment">##结果展示</span></span><br><span class="line">&#123;<span class="string">&#x27;log_id&#x27;</span>: <span class="number">6074973177044352305</span>,</span><br><span class="line"> <span class="string">&#x27;item&#x27;</span>: &#123;<span class="string">&#x27;lv2_tag_list&#x27;</span>: [&#123;<span class="string">&#x27;score&#x27;</span>: <span class="number">0.915631</span>, <span class="string">&#x27;tag&#x27;</span>: <span class="string">&#x27;足球&#x27;</span>&#125;,</span><br><span class="line">   &#123;<span class="string">&#x27;score&#x27;</span>: <span class="number">0.803507</span>, <span class="string">&#x27;tag&#x27;</span>: <span class="string">&#x27;国际足球&#x27;</span>&#125;,</span><br><span class="line">   &#123;<span class="string">&#x27;score&#x27;</span>: <span class="number">0.77813</span>, <span class="string">&#x27;tag&#x27;</span>: <span class="string">&#x27;英超&#x27;</span>&#125;],</span><br><span class="line">  <span class="string">&#x27;lv1_tag_list&#x27;</span>: [&#123;<span class="string">&#x27;score&#x27;</span>: <span class="number">0.830915</span>, <span class="string">&#x27;tag&#x27;</span>: <span class="string">&#x27;体育&#x27;</span>&#125;]&#125;&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="情感倾向分析"><a href="#情感倾向分析" class="headerlink" title="情感倾向分析"></a>情感倾向分析</h3><p>对包含主观观点信息的文本进行情感极性类别（积极、消极、中性）的判断，并给出相应的置信度。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> aip <span class="keyword">import</span> AipNlp</span><br><span class="line">APP_ID = <span class="string">&#x27;15438079&#x27;</span></span><br><span class="line">API_KEY = <span class="string">&#x27;rwAgYHnVN0bGkuksdvk7piio&#x27;</span></span><br><span class="line">SECRET_KEY = <span class="string">&#x27;PAw4ffLotYoUMKcOS57oF2WrOtCjWTRC&#x27;</span></span><br><span class="line">client = AipNlp(APP_ID,API_KEY, SECRET_KEY)</span><br><span class="line">text = <span class="string">&quot;苹果是一家伟大的公司&quot;</span></span><br><span class="line">client.sentimentClassify(text)</span><br><span class="line"></span><br><span class="line"><span class="comment">##结果展示</span></span><br><span class="line">&#123;<span class="string">&#x27;log_id&#x27;</span>: <span class="number">9106725229255700145</span>,</span><br><span class="line"> <span class="string">&#x27;text&#x27;</span>: <span class="string">&#x27;苹果是一家伟大的公司&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;items&#x27;</span>: [&#123;<span class="string">&#x27;positive_prob&#x27;</span>: <span class="number">0.727802</span>,   //表示属于积极类别的概率</span><br><span class="line">   <span class="string">&#x27;confidence&#x27;</span>: <span class="number">0.395115</span>,   //表示分类的置信度</span><br><span class="line">   <span class="string">&#x27;negative_prob&#x27;</span>: <span class="number">0.272198</span>,   //表示属于消极类别的概率</span><br><span class="line">   <span class="string">&#x27;sentiment&#x27;</span>: <span class="number">2</span>&#125;]&#125;    //表示情感极性分类结果</span><br></pre></td></tr></table></figure>
+<h3 id="百度API优势"><a href="#百度API优势" class="headerlink" title="百度API优势"></a>百度API优势</h3><ol>
+<li><strong>永久免费</strong>。2018年5月11日，百度自然语言处理技术宣布对外永久免费，且不限调用量。</li>
+<li><strong>功能丰富</strong>。包括词法分析、依存句法分析、词向量表示、DNN语言模型、词义相似度、短文本相似度、评论观点抽取、情感倾向分析、文章标签、文章分类等。</li>
+<li><strong>接口易用</strong>。标准化接口封装，通过云计算调用可快速使用工具，降低开发人力成本。</li>
+</ol>
+<h2 id="bosonnlp"><a href="#bosonnlp" class="headerlink" title="bosonnlp"></a>bosonnlp</h2><h3 id="新闻分类"><a href="#新闻分类" class="headerlink" title="新闻分类"></a>新闻分类</h3><p>将新闻文本归类到预设的 14 个分类当中：0、体育 1、教育 2、财经 3、社会 4、娱乐 5、军事 6、国内 7、科技 8、互联网 9、房地产 10、国际 11、女人 12、汽车 13、游戏。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">from bosonnlp import BosonNLP</span><br><span class="line">import os</span><br><span class="line">nlp &#x3D; BosonNLP(&#39;HpikDzL0.32936.Hi3mJFXh1P1b&#39;)</span><br><span class="line">nlp.classify([&#39;俄否决安理会谴责叙军战机空袭阿勒颇平民&#39;,</span><br><span class="line">            &#39;邓紫棋谈男友林宥嘉：我觉得我比他唱得好&#39;,</span><br><span class="line">             &#39;Facebook收购印度初创公司&#39;])</span><br><span class="line">             </span><br><span class="line">##结果展示</span><br><span class="line">[5, 4, 8]</span><br></pre></td></tr></table></figure>
+<h3 id="情感分析"><a href="#情感分析" class="headerlink" title="情感分析"></a>情感分析</h3><p>其接口将文本的情感分为负面和非负面两类。本引擎用微博、新闻、汽车、餐饮等不同行业语料进行标注和机器学习，调用时请通过 URL 参数选择特定的模型，以获得最佳的情感判断准确率。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> bosonnlp <span class="keyword">import</span> BosonNLP</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line">nlp = BosonNLP(<span class="string">&#x27;HpikDzL0.32936.Hi3mJFXh1P1b&#x27;</span>)</span><br><span class="line">s = [<span class="string">&#x27;苹果是一家垃圾公司&#x27;</span>, <span class="string">&#x27;美好的世界&#x27;</span>]</span><br><span class="line">result = nlp.sentiment(s)</span><br><span class="line"><span class="built_in">print</span>(result)</span><br><span class="line"></span><br><span class="line"><span class="comment">##结果展示</span></span><br><span class="line">[[<span class="number">0.01819305539338867</span>, <span class="number">0.9818069446066113</span>], [<span class="number">0.92706110187413</span>, <span class="number">0.07293889812586994</span>]]</span><br></pre></td></tr></table></figure>
+<h3 id="bosonnlp的优势"><a href="#bosonnlp的优势" class="headerlink" title="bosonnlp的优势"></a>bosonnlp的优势</h3><p>BOSON实验室的优点在于对于某一个单文本或者多文本，他能够得出一个<strong>综合的分析结果</strong>。</p>
+<ol>
+<li><strong>单文本分析</strong>：只输入一段文本，输出的分析结果包括词性分析、实体识别、依存文法、情感分析、新闻摘要、新闻分类、关键词提取、语义联系。</li>
+<li><strong>多文本分析</strong>：同时输入多段文本、新闻，输出的分析结果包括话题聚类、情感分析、词云图、词频图。</li>
+</ol>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><h2 id="NLP最新进展"><a href="#NLP最新进展" class="headerlink" title="NLP最新进展"></a>NLP最新进展</h2><h3 id="文本分类通用规律"><a href="#文本分类通用规律" class="headerlink" title="文本分类通用规律"></a>文本分类通用规律</h3><p>2018年7月，谷歌做了45万次不同类型的文本分类后，总结出一个对于文本分类和情感分析而言通用的“模型选择算法”。</p>
+<p><strong>文本分类的流程图</strong></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">graph LR</span><br><span class="line">搜集数据--&gt;探索数据</span><br><span class="line">探索数据--&gt;选择模型</span><br><span class="line">选择模型--&gt;准备数据</span><br><span class="line">准备数据--&gt;构建训练和评估模型</span><br><span class="line">构建训练和评估模型--&gt;调优超参数</span><br><span class="line">调优超参数--&gt;部署模型</span><br></pre></td></tr></table></figure>
+<p>我们预处理数据的方式将取决于我们选择的模型。模型可以大致分为两类：使用单词排序信息的模型（序列模型），以及仅将文本视为单词的“bags”（sets）的模型（n-gram模型）。</p>
+<ul>
+<li><p><strong>序列模型</strong>:卷积神经网络（CNN），递归神经网络（RNN）及其变体。</p>
+</li>
+<li><p><strong>n-gram模型</strong>:逻辑回归（LR）,支持向量机（SVM）,梯度提升树等。</p>
+</li>
+</ul>
+<p><strong>结论</strong>：</p>
+<p>在实验中，其观察到“样本数”（S）与“每个样本的单词数”（W）的比率与模型的性能具有相关性。</p>
+<p>当该<strong>比率的值很小（&lt;1500）</strong>时，以n-gram作为输入的小型多层感知机表现得更好，或者说至少与序列模型一样好。 MLP易于定义和理解，而且比序列模型花费的计算时间更少。（感觉如果数据量特别大的python这个工具也不一定能用）</p>
+<p>当此<strong>比率的值很大（&gt; = 1500）</strong>时，使用序列模型。</p>
+<h3 id="BERT"><a href="#BERT" class="headerlink" title="BERT"></a>BERT</h3><p>2018年10月，谷歌新发布的一种模型<strong>BERT</strong>(Bidirectional Encoder Representations from Transformers)，在NLP业内引起巨大反响。BERT在机器阅读理解测试SQuAD1.1中表现出惊人的成绩：全部两个衡量指标上全面超越人类，并且还在11种不同NLP任务中创出最佳成绩。</p>
+<p><strong>具体做法：</strong></p>
+<ol>
+<li>采取新的预训练的目标函数：the “masked language model” (MLM) 对于mask随机输入一些单词（80%的时间真的用[MASK]取代被选中的词，10%的时间用一个随机词取代它，10%的时间保持不变），然后在预训练中对它们进行预测。这样做的好处是学习到的表征能够融合两个方向上的内容。</li>
+<li>增加句子级别的任务：“next sentence prediction”。作者同时预训练了一个“next sentence prediction”任务。具体做法是随机替换一些句子，然后利用上一句进行此句是否为下一句的预测。</li>
+</ol>
+<p><strong>模型框架</strong>：</p>
+<p>BASE：L=12, H=768, A=12, Total Parameters=110M</p>
+<p>LARGE：L=24, H=1024, A=16, Total Parameters=340M</p>
+<p>这里的L为神经网络层数，H为隐藏向量参数，A为自注意力头数</p>
+<p><strong>结论</strong>：</p>
+<ul>
+<li>在大数据中效果好，但如果模型经过足够的预训练，在小任务中大模型也能增长。</li>
+<li>计算成本相当高，作者动用了谷歌 Cloud AI 资源，用了 64 颗 TPU，算了 4 天，模型参数寻优的训练过程才收敛。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>基础知识</category>
+      </categories>
+      <tags>
+        <tag>基础知识</tag>
       </tags>
   </entry>
   <entry>
@@ -628,223 +845,6 @@ S_{i}=\frac{e^{i}}{\Sigma_{j} e^{j}}</script><p>那我们看到Softmax需要经�
       </tags>
   </entry>
   <entry>
-    <title>关联挖掘</title>
-    <url>/2021/09/18/%E5%85%B3%E8%81%94%E6%8C%96%E6%8E%98/</url>
-    <content><![CDATA[<blockquote>
-<p>对商品订单进行类目级别的关联挖掘，因为订单太少，无法用到商品这个级别，并且主要是因为做关联挖掘的目的是为了投放广告</p>
-</blockquote>
-<h2 id="指标定义"><a href="#指标定义" class="headerlink" title="指标定义"></a>指标定义</h2><p><strong>项于项集</strong></p>
-<p>项，指我们分析数据中的<strong>一个对象</strong>，如啤酒；项集，就是<strong>若干项</strong>的项构成的集合，如集合{啤酒，面包}是一个2项集。</p>
-<p><strong>支持度（support）</strong></p>
-<p>某项集在数据集中出现的概率，支持度体现的是某个项集的频繁程度，只有<strong>项集达到一定程度</strong>，我们才会研究该项集的必要。</p>
-<p>其计算公式为：</p>
-
-$$
-support(A\cup B)=\frac{{A\cup B}}{All}
-$$
-
-<p>举个例子：AB在订单中同时出现了100次，总共有1000个订单，那$A\cup B$项集的支持度就是0.1</p>
-<p><strong>置信度（confidence）</strong></p>
-<p>当用户购买了商品A后有多大概率会购买商品B，表示关联性的强弱。</p>
-<p>其计算公式为:<br>
-$$
-confidence(A\rightarrow B)=\frac{support(A\cup B)}{support(A)}
-$$
-<br>举个例子，AB同时出现的订单有100次，而A购买的订单次数有200次，那置信度就是0.5</p>
-<p><strong>提升度（lift）</strong></p>
-<p>商品A的出现，对商品B的出现概率提升的程度，一般是大于1说明A的出现有组与商品B的出现</p>
-<p>其计算公式为：</p>
-
-$$
-lift(A\rightarrow B) = \frac{confidence(A\rightarrow B)}{support(B)}
-$$
-
-<p>举个例子，已知总订单100，AB同时出现时20：</p>
-<ul>
-<li>如果B的订单是20，A的订单时40，那么提升度为5，说明B商品强依赖于A，A的出现有利于B的出现</li>
-<li>同样，如果B的订单是50，A的订单是50，那么提升度为0.8，说明B商品和A商品没有强依赖关系。</li>
-</ul>
-<h2 id="经典算法"><a href="#经典算法" class="headerlink" title="经典算法"></a>经典算法</h2><h3 id="Apriori"><a href="#Apriori" class="headerlink" title="Apriori"></a>Apriori</h3><p>具体步骤</p>
-<ol>
-<li>计算项集K=1的所有支持度</li>
-<li>选出大于最小支持度的数据</li>
-<li>如果项集为空，则对应 K-1 项集的结果为最终结果。否则重复1，2</li>
-</ol>
-<p>该算法时间负责度比较高，相当于，针对每个K都要计算一次数据集。因此用学者利用树来优化算法</p>
-<h3 id="FP-Growth"><a href="#FP-Growth" class="headerlink" title="FP-Growth"></a>FP-Growth</h3><p>具体步骤</p>
-<ol>
-<li>扫描数据，得到所有频繁1项集的的计数。然后删除支持度低于阈值的项，将1项集放入项头表，并按照支持度降序排列</li>
-<li>扫描数据，将读到的原始数据剔除非频繁1项集，并按照支持度降序排列。</li>
-<li>读入排序后的数据集，插入FP树，插入时按照排序后的顺序，插入FP树中，排序靠前的节点是祖先节点，而靠后的是子孙节点。如果有共用的祖先，则对应的公用祖先节点计数加1。插入后，如果有新节点出现，则项头表对应的节点会通过节点链表链接上新节点。直到所有的数据都插入到FP树后，FP树的建立完成。</li>
-<li>从项头表的底部项依次向上找到项头表项对应的条件模式基。从条件模式基递归挖掘得到项头表项项的频繁项集。</li>
-<li>如果不限制频繁项集的项数，则返回步骤4所有的频繁项集，否则只返回满足项数要求的频繁项集。</li>
-</ol>
-<p>该算法只需要扫面两次数据集就可以得出所有结果，因此相较于Apriori速度会有所提神，不过也得看具体可以提出多大的K</p>
-<h2 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h2><p>对于apriori主要有两个包可以用efficient_apriori,mlxtend.frequent_patterns。前者是比较方便，但是问题在于没有具体的数字，后面这个包就比较舒服了，可以直接输出对应的指标。不过主要是我现在用的数据集小，如果数据集很大，那可能FP-Growth更合适一些不过要看具体场景,他的包fptools。</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> efficient_apriori <span class="keyword">import</span> apriori</span><br><span class="line"><span class="keyword">from</span> mlxtend.preprocessing <span class="keyword">import</span> TransactionEncoder</span><br><span class="line"><span class="keyword">from</span> mlxtend.frequent_patterns <span class="keyword">import</span> apriori <span class="keyword">as</span> apr</span><br><span class="line"><span class="keyword">from</span> mlxtend.frequent_patterns <span class="keyword">import</span> association_rules</span><br><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">import</span> fptools <span class="keyword">as</span> fp</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">data=[(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>),(<span class="string">&#x27;可乐&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>, <span class="string">&#x27;鸡蛋&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">        (<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;可乐&#x27;</span>)]</span><br><span class="line"></span><br><span class="line"><span class="comment"># efficient_apriori包的使用</span></span><br><span class="line">itemsets, rules = apriori(data, min_support=<span class="number">0.5</span>,  min_confidence=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># mlxtend.frequent_patterns包的使用</span></span><br><span class="line">Encoder = TransactionEncoder()</span><br><span class="line">encoded_data = Encoder.fit_transform(data)</span><br><span class="line">df = pd.DataFrame(encoded_data, columns=Encoder.columns_)</span><br><span class="line">frequent_items = apr(df, min_support=<span class="number">0.5</span>, use_colnames=<span class="literal">True</span>, max_len=<span class="number">4</span>).sort_values(by=<span class="string">&#x27;support&#x27;</span>, ascending=<span class="literal">False</span>)</span><br><span class="line">df_re = association_rules(frequent_items, metric=<span class="string">&#x27;lift&#x27;</span>, min_threshold=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#fp</span></span><br><span class="line">data = [(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;可乐&#x27;</span>,<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;牛奶&#x27;</span>,<span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>, <span class="string">&#x27;鸡蛋&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;啤酒&#x27;</span>),</span><br><span class="line">(<span class="string">&#x27;面包&#x27;</span>, <span class="string">&#x27;牛奶&#x27;</span>, <span class="string">&#x27;尿布&#x27;</span>, <span class="string">&#x27;可乐&#x27;</span>)]</span><br><span class="line">fis = [iset <span class="keyword">for</span> iset <span class="keyword">in</span> fp.frequent_itemsets(data, <span class="number">2</span>)]</span><br><span class="line">mfis = [iset <span class="keyword">for</span> iset <span class="keyword">in</span> fp.maximal_frequent_itemsets(data, <span class="number">2</span>)]</span><br></pre></td></tr></table></figure>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://zhuanlan.zhihu.com/p/198842818">知乎1</a></p>
-<p><a href="https://zhuanlan.zhihu.com/p/66944900">知乎2</a></p>
-<p><a href="https://www.cnblogs.com/zhengxingpeng/p/6679280.html">博客</a></p>
-]]></content>
-      <tags>
-        <tag>机器学习</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>初识NLP</title>
-    <url>/2021/04/11/%E5%88%9D%E8%AF%86NLP/</url>
-    <content><![CDATA[<h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>此文档为了更好的理解自然语言处理（natural language processing），自然语言处理(NLP)就是开发能够理解人类语言的应用程序或服务。接下来会讨论一些NLP在国内外的发展状况和实际应用的一些例子，了解当前最前沿的NLP应用并掌握一定的NLP技术是接下来自己需要做的。</p>
-<h1 id="NLP简述"><a href="#NLP简述" class="headerlink" title="NLP简述"></a>NLP简述</h1><p>NLP是研究人与人交际中以及在人与计算机交际中的语言问题的一门学科。NLP主要有五个主要任务：分类、匹配、翻译、结构化预测、与序贯决策过程。NLP中的绝大多数问题皆可归入其中的一个，如下表所示。在这些任务中，单词、词组、语句、段落甚至文档通常被看作标记（字符串）序列而采取相似的处理，尽管它们的复杂度并不相同。事实上，语句是 NLP 中最常用的处理单元。</p>
-<div class="table-container">
-<table>
-<thead>
-<tr>
-<th style="text-align:left">任务</th>
-<th style="text-align:left">描述</th>
-<th style="text-align:left">应用</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left">分类</td>
-<td style="text-align:left">给每个string指定一个标签</td>
-<td style="text-align:left">文本分类、情感分析</td>
-</tr>
-<tr>
-<td style="text-align:left">匹配</td>
-<td style="text-align:left">匹配两个strings</td>
-<td style="text-align:left">信息检索、问答系统</td>
-</tr>
-<tr>
-<td style="text-align:left">翻译</td>
-<td style="text-align:left">翻译某种语言</td>
-<td style="text-align:left">机器翻译、自动语音识别</td>
-</tr>
-<tr>
-<td style="text-align:left">结构化预测</td>
-<td style="text-align:left">将每个string映射为一种结构</td>
-<td style="text-align:left">命名实体识别、中文分词、词性标注、句法分析</td>
-</tr>
-<tr>
-<td style="text-align:left">有序决策过程</td>
-<td style="text-align:left">对一个动态的过程做出反应</td>
-<td style="text-align:left">多伦对话系统</td>
-</tr>
-</tbody>
-</table>
-</div>
-<h2 id="应用简介"><a href="#应用简介" class="headerlink" title="应用简介"></a>应用简介</h2><p><strong>文本分类</strong>：用电脑对文本集(或其他实体或物件)按照一定的分类体系或标准进行自动分类标记。</p>
-<p><strong>情感分析</strong>：又称意见挖掘、倾向性分析等。简单而言,是对带有情感色彩的主观性文本进行分析、处理、归纳和推理的过程。</p>
-<p><strong>信息检索</strong>：信息按一定的方式进行加工、整理、组织并存储起来，再根据信息用户特定的需要将相关信息准确的查找出来的过程。</p>
-<p><strong>问答系统</strong>：用准确、简洁的自然语言回答用户用自然语言提出的问题。</p>
-<p><strong>机器翻译</strong>：是利用计算机将一种自然语言(源语言)转换为另一种自然语言(目标语言)的过程，除了传统的文本翻译之外，还有比较特殊的手语翻译和唇语翻译。</p>
-<p><strong>自动语音识别</strong>：一种将人的语音转换为文本的技术。</p>
-<p><strong>命名实体识别</strong>：是指识别文本中具有特定意义的实体，主要包括人名、地名、机构名、专有名词等。</p>
-<p><strong>中文分词</strong>：指的是将一个汉字序列切分成一个个单独的词。</p>
-<p><strong>词性标注</strong>：利用语料库内单词的词性按其含义和上下文内容进行标记的文本数据处理技术。</p>
-<p><strong>句法分析</strong>：依存句法分析接口可自动分析文本中的依存句法结构信息，利用句子中词与词之间的依存关系来表示词语的句法结构信息（如“主谓”、“动宾”、“定中”等结构关系），并用树状结构来表示整句的结构（如“主谓宾”、“定状补”等）。</p>
-<p><strong>多伦对话系统</strong>：（封闭域）多轮对话是一种，在人机对话中，初步明确用户意图之后，获取必要信息以最终得到明确用户指令的方式。</p>
-<h1 id="国内外NLP的应用"><a href="#国内外NLP的应用" class="headerlink" title="国内外NLP的应用"></a>国内外NLP的应用</h1><p>由于NLP领域在工业界内还属于探索状态，下表只是罗列了一下了解到的行业内较为优异的公司从事的领域和相关产品</p>
-<div class="table-container">
-<table>
-<thead>
-<tr>
-<th style="text-align:center"><strong>公司</strong></th>
-<th style="text-align:center"><strong>关注点</strong></th>
-<th style="text-align:center"><strong>产品</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:center">谷歌</td>
-<td style="text-align:center">机器翻译、知识图谱（智能化搜索引擎）</td>
-<td style="text-align:center">谷歌翻译、谷歌浏览器</td>
-</tr>
-<tr>
-<td style="text-align:center">微软</td>
-<td style="text-align:center">机器翻译、对话平台、中国文化、阅读理解</td>
-<td style="text-align:center">微软翻译、小娜、小冰、微软对联</td>
-</tr>
-<tr>
-<td style="text-align:center">IBM</td>
-<td style="text-align:center">对话平台运用在医疗、金融、物联网</td>
-<td style="text-align:center">沃森</td>
-</tr>
-<tr>
-<td style="text-align:center">百度</td>
-<td style="text-align:center">机器翻译、知识图谱、对话平台</td>
-<td style="text-align:center">度秘、百度检索、小度机器人</td>
-</tr>
-<tr>
-<td style="text-align:center">阿里</td>
-<td style="text-align:center">智能导购（技术快速的跟业务对接）</td>
-<td style="text-align:center">优酷、YunOS、蚂蚁金服、资讯搜索</td>
-</tr>
-<tr>
-<td style="text-align:center">腾讯</td>
-<td style="text-align:center">社交、内容、游戏</td>
-<td style="text-align:center">腾讯觅影、微信、qq</td>
-</tr>
-</tbody>
-</table>
-</div>
-<h1 id="NLP技术支持"><a href="#NLP技术支持" class="headerlink" title="NLP技术支持"></a>NLP技术支持</h1><p>接下来研究的重点在于文本分类和情感分析方向，百度，bosonnlp，阿里（收费），腾讯（收费）等公司都提供了优秀的api接口。下面是关于两方面的简单应用。</p>
-<h2 id="百度API"><a href="#百度API" class="headerlink" title="百度API"></a>百度API</h2><h3 id="文本分类"><a href="#文本分类" class="headerlink" title="文本分类"></a>文本分类</h3><p>对文章按照内容类型进行自动分类，首批支持娱乐、体育、科技等26个主流内容类型，为文章聚类、文本内容分析等应用提供基础技术支持。 目前支持的一级粗粒度分类类目如下：1、国际 2、体育 3、娱乐 4、社会 5、财经 6、时事 7、科技 8、情感 9、汽车 10、教育 11、时尚 12、游戏 13、军事 14、旅游 15、美食 16、文化 17、健康养生 18、搞笑 19、家居 20、动漫 21、宠物 22、母婴育儿 23、星座运势 24、历史 25、音乐 26、综合。</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> aip <span class="keyword">import</span> AipNlp</span><br><span class="line">APP_ID = <span class="string">&#x27;15438079&#x27;</span></span><br><span class="line">API_KEY = <span class="string">&#x27;rwAgYHnVN0bGkuksdvk7piio&#x27;</span></span><br><span class="line">SECRET_KEY = <span class="string">&#x27;PAw4ffLotYoUMKcOS57oF2WrOtCjWTRC&#x27;</span></span><br><span class="line">client = AipNlp(APP_ID,API_KEY, SECRET_KEY)</span><br><span class="line">title = <span class="string">&#x27;欧洲冠军杯足球赛&#x27;</span></span><br><span class="line">content = <span class="string">&quot;欧洲冠军联赛是欧洲足球协会联盟主办的年度足球比赛，代表欧洲俱乐部足球最高荣誉和水平，被认为是全世界最高素质、最具影响力以及最高水平的俱乐部赛事，亦是世界上奖金最高的足球赛事和体育赛事之一。&quot;</span></span><br><span class="line">client.topic(title, content)</span><br><span class="line"></span><br><span class="line"><span class="comment">##结果展示</span></span><br><span class="line">&#123;<span class="string">&#x27;log_id&#x27;</span>: <span class="number">6074973177044352305</span>,</span><br><span class="line"> <span class="string">&#x27;item&#x27;</span>: &#123;<span class="string">&#x27;lv2_tag_list&#x27;</span>: [&#123;<span class="string">&#x27;score&#x27;</span>: <span class="number">0.915631</span>, <span class="string">&#x27;tag&#x27;</span>: <span class="string">&#x27;足球&#x27;</span>&#125;,</span><br><span class="line">   &#123;<span class="string">&#x27;score&#x27;</span>: <span class="number">0.803507</span>, <span class="string">&#x27;tag&#x27;</span>: <span class="string">&#x27;国际足球&#x27;</span>&#125;,</span><br><span class="line">   &#123;<span class="string">&#x27;score&#x27;</span>: <span class="number">0.77813</span>, <span class="string">&#x27;tag&#x27;</span>: <span class="string">&#x27;英超&#x27;</span>&#125;],</span><br><span class="line">  <span class="string">&#x27;lv1_tag_list&#x27;</span>: [&#123;<span class="string">&#x27;score&#x27;</span>: <span class="number">0.830915</span>, <span class="string">&#x27;tag&#x27;</span>: <span class="string">&#x27;体育&#x27;</span>&#125;]&#125;&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="情感倾向分析"><a href="#情感倾向分析" class="headerlink" title="情感倾向分析"></a>情感倾向分析</h3><p>对包含主观观点信息的文本进行情感极性类别（积极、消极、中性）的判断，并给出相应的置信度。</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> aip <span class="keyword">import</span> AipNlp</span><br><span class="line">APP_ID = <span class="string">&#x27;15438079&#x27;</span></span><br><span class="line">API_KEY = <span class="string">&#x27;rwAgYHnVN0bGkuksdvk7piio&#x27;</span></span><br><span class="line">SECRET_KEY = <span class="string">&#x27;PAw4ffLotYoUMKcOS57oF2WrOtCjWTRC&#x27;</span></span><br><span class="line">client = AipNlp(APP_ID,API_KEY, SECRET_KEY)</span><br><span class="line">text = <span class="string">&quot;苹果是一家伟大的公司&quot;</span></span><br><span class="line">client.sentimentClassify(text)</span><br><span class="line"></span><br><span class="line"><span class="comment">##结果展示</span></span><br><span class="line">&#123;<span class="string">&#x27;log_id&#x27;</span>: <span class="number">9106725229255700145</span>,</span><br><span class="line"> <span class="string">&#x27;text&#x27;</span>: <span class="string">&#x27;苹果是一家伟大的公司&#x27;</span>,</span><br><span class="line"> <span class="string">&#x27;items&#x27;</span>: [&#123;<span class="string">&#x27;positive_prob&#x27;</span>: <span class="number">0.727802</span>,   //表示属于积极类别的概率</span><br><span class="line">   <span class="string">&#x27;confidence&#x27;</span>: <span class="number">0.395115</span>,   //表示分类的置信度</span><br><span class="line">   <span class="string">&#x27;negative_prob&#x27;</span>: <span class="number">0.272198</span>,   //表示属于消极类别的概率</span><br><span class="line">   <span class="string">&#x27;sentiment&#x27;</span>: <span class="number">2</span>&#125;]&#125;    //表示情感极性分类结果</span><br></pre></td></tr></table></figure>
-<h3 id="百度API优势"><a href="#百度API优势" class="headerlink" title="百度API优势"></a>百度API优势</h3><ol>
-<li><strong>永久免费</strong>。2018年5月11日，百度自然语言处理技术宣布对外永久免费，且不限调用量。</li>
-<li><strong>功能丰富</strong>。包括词法分析、依存句法分析、词向量表示、DNN语言模型、词义相似度、短文本相似度、评论观点抽取、情感倾向分析、文章标签、文章分类等。</li>
-<li><strong>接口易用</strong>。标准化接口封装，通过云计算调用可快速使用工具，降低开发人力成本。</li>
-</ol>
-<h2 id="bosonnlp"><a href="#bosonnlp" class="headerlink" title="bosonnlp"></a>bosonnlp</h2><h3 id="新闻分类"><a href="#新闻分类" class="headerlink" title="新闻分类"></a>新闻分类</h3><p>将新闻文本归类到预设的 14 个分类当中：0、体育 1、教育 2、财经 3、社会 4、娱乐 5、军事 6、国内 7、科技 8、互联网 9、房地产 10、国际 11、女人 12、汽车 13、游戏。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">from bosonnlp import BosonNLP</span><br><span class="line">import os</span><br><span class="line">nlp &#x3D; BosonNLP(&#39;HpikDzL0.32936.Hi3mJFXh1P1b&#39;)</span><br><span class="line">nlp.classify([&#39;俄否决安理会谴责叙军战机空袭阿勒颇平民&#39;,</span><br><span class="line">            &#39;邓紫棋谈男友林宥嘉：我觉得我比他唱得好&#39;,</span><br><span class="line">             &#39;Facebook收购印度初创公司&#39;])</span><br><span class="line">             </span><br><span class="line">##结果展示</span><br><span class="line">[5, 4, 8]</span><br></pre></td></tr></table></figure>
-<h3 id="情感分析"><a href="#情感分析" class="headerlink" title="情感分析"></a>情感分析</h3><p>其接口将文本的情感分为负面和非负面两类。本引擎用微博、新闻、汽车、餐饮等不同行业语料进行标注和机器学习，调用时请通过 URL 参数选择特定的模型，以获得最佳的情感判断准确率。</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> bosonnlp <span class="keyword">import</span> BosonNLP</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line">nlp = BosonNLP(<span class="string">&#x27;HpikDzL0.32936.Hi3mJFXh1P1b&#x27;</span>)</span><br><span class="line">s = [<span class="string">&#x27;苹果是一家垃圾公司&#x27;</span>, <span class="string">&#x27;美好的世界&#x27;</span>]</span><br><span class="line">result = nlp.sentiment(s)</span><br><span class="line"><span class="built_in">print</span>(result)</span><br><span class="line"></span><br><span class="line"><span class="comment">##结果展示</span></span><br><span class="line">[[<span class="number">0.01819305539338867</span>, <span class="number">0.9818069446066113</span>], [<span class="number">0.92706110187413</span>, <span class="number">0.07293889812586994</span>]]</span><br></pre></td></tr></table></figure>
-<h3 id="bosonnlp的优势"><a href="#bosonnlp的优势" class="headerlink" title="bosonnlp的优势"></a>bosonnlp的优势</h3><p>BOSON实验室的优点在于对于某一个单文本或者多文本，他能够得出一个<strong>综合的分析结果</strong>。</p>
-<ol>
-<li><strong>单文本分析</strong>：只输入一段文本，输出的分析结果包括词性分析、实体识别、依存文法、情感分析、新闻摘要、新闻分类、关键词提取、语义联系。</li>
-<li><strong>多文本分析</strong>：同时输入多段文本、新闻，输出的分析结果包括话题聚类、情感分析、词云图、词频图。</li>
-</ol>
-<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><h2 id="NLP最新进展"><a href="#NLP最新进展" class="headerlink" title="NLP最新进展"></a>NLP最新进展</h2><h3 id="文本分类通用规律"><a href="#文本分类通用规律" class="headerlink" title="文本分类通用规律"></a>文本分类通用规律</h3><p>2018年7月，谷歌做了45万次不同类型的文本分类后，总结出一个对于文本分类和情感分析而言通用的“模型选择算法”。</p>
-<p><strong>文本分类的流程图</strong></p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">graph LR</span><br><span class="line">搜集数据--&gt;探索数据</span><br><span class="line">探索数据--&gt;选择模型</span><br><span class="line">选择模型--&gt;准备数据</span><br><span class="line">准备数据--&gt;构建训练和评估模型</span><br><span class="line">构建训练和评估模型--&gt;调优超参数</span><br><span class="line">调优超参数--&gt;部署模型</span><br></pre></td></tr></table></figure>
-<p>我们预处理数据的方式将取决于我们选择的模型。模型可以大致分为两类：使用单词排序信息的模型（序列模型），以及仅将文本视为单词的“bags”（sets）的模型（n-gram模型）。</p>
-<ul>
-<li><p><strong>序列模型</strong>:卷积神经网络（CNN），递归神经网络（RNN）及其变体。</p>
-</li>
-<li><p><strong>n-gram模型</strong>:逻辑回归（LR）,支持向量机（SVM）,梯度提升树等。</p>
-</li>
-</ul>
-<p><strong>结论</strong>：</p>
-<p>在实验中，其观察到“样本数”（S）与“每个样本的单词数”（W）的比率与模型的性能具有相关性。</p>
-<p>当该<strong>比率的值很小（&lt;1500）</strong>时，以n-gram作为输入的小型多层感知机表现得更好，或者说至少与序列模型一样好。 MLP易于定义和理解，而且比序列模型花费的计算时间更少。（感觉如果数据量特别大的python这个工具也不一定能用）</p>
-<p>当此<strong>比率的值很大（&gt; = 1500）</strong>时，使用序列模型。</p>
-<h3 id="BERT"><a href="#BERT" class="headerlink" title="BERT"></a>BERT</h3><p>2018年10月，谷歌新发布的一种模型<strong>BERT</strong>(Bidirectional Encoder Representations from Transformers)，在NLP业内引起巨大反响。BERT在机器阅读理解测试SQuAD1.1中表现出惊人的成绩：全部两个衡量指标上全面超越人类，并且还在11种不同NLP任务中创出最佳成绩。</p>
-<p><strong>具体做法：</strong></p>
-<ol>
-<li>采取新的预训练的目标函数：the “masked language model” (MLM) 对于mask随机输入一些单词（80%的时间真的用[MASK]取代被选中的词，10%的时间用一个随机词取代它，10%的时间保持不变），然后在预训练中对它们进行预测。这样做的好处是学习到的表征能够融合两个方向上的内容。</li>
-<li>增加句子级别的任务：“next sentence prediction”。作者同时预训练了一个“next sentence prediction”任务。具体做法是随机替换一些句子，然后利用上一句进行此句是否为下一句的预测。</li>
-</ol>
-<p><strong>模型框架</strong>：</p>
-<p>BASE：L=12, H=768, A=12, Total Parameters=110M</p>
-<p>LARGE：L=24, H=1024, A=16, Total Parameters=340M</p>
-<p>这里的L为神经网络层数，H为隐藏向量参数，A为自注意力头数</p>
-<p><strong>结论</strong>：</p>
-<ul>
-<li>在大数据中效果好，但如果模型经过足够的预训练，在小任务中大模型也能增长。</li>
-<li>计算成本相当高，作者动用了谷歌 Cloud AI 资源，用了 64 颗 TPU，算了 4 天，模型参数寻优的训练过程才收敛。</li>
-</ul>
-]]></content>
-      <categories>
-        <category>基础知识</category>
-      </categories>
-      <tags>
-        <tag>基础知识</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>多进程、多线程</title>
     <url>/2021/04/11/%E5%A4%9A%E8%BF%9B%E7%A8%8B%E3%80%81%E5%A4%9A%E7%BA%BF%E7%A8%8B%EF%BC%88python%EF%BC%89/</url>
     <content><![CDATA[<blockquote>
@@ -901,35 +901,6 @@ $$
       </categories>
       <tags>
         <tag>工程开发</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>数据标准化和中心化</title>
-    <url>/2021/08/19/%E6%95%B0%E6%8D%AE%E6%A0%87%E5%87%86%E5%8C%96%E5%92%8C%E4%B8%AD%E5%BF%83%E5%8C%96/</url>
-    <content><![CDATA[<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>标准化：也叫归一化，常用的有最小—最大标准化、Z-score标准化、Sigmod函数等，利用上述标准化操作，将原始数据化为<strong>无量纲</strong>的数值。这在回归和神经网络类模型是很必要的。</p>
-<p>中心化：也叫去均质化，让数据通过中心化处理，得到均值为0的数据【如果方差为1，那就是Z-score标准化】。同时中心化后的数据对向量来说也容易描述，因为是以原点为基准的。</p>
-<h2 id="公式"><a href="#公式" class="headerlink" title="公式"></a>公式</h2><p>最小—最大标准化：将数据变为0-1</p>
-<script type="math/tex; mode=display">
-\tilde{x}=\frac{x-min}{max-min}</script><p>Z-score标准化：</p>
-<script type="math/tex; mode=display">
-\tilde{x}=\frac{x-u}{\sigma }</script><p>sigmod函数：</p>
-<script type="math/tex; mode=display">
-f(x)=\frac{1}{1+e^{-x}}</script><p><strong>备注</strong>：</p>
-<ol>
-<li>当$\sigma=1$就是中心化公式，所以中心化可以说是一种特殊的标准化</li>
-<li>sigmod函数其实主要是在激活函数中对上一层神经层结果进行标准化，但也可以理解成对下一层神经层的输入做标准化。</li>
-</ol>
-<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ol>
-<li>提升精度：消除量纲，针对梯度下降相关的算法，不同量纲的数据会产生干扰，可能本来是A特征对结果的影响更大，但因为其量纲较小，导致其影响力还不如量纲大的特征，从来导致精度的下降。</li>
-<li>提神速度：同样，由于消除了量纲，在梯度下降过程中，将会容易收敛到最优解。</li>
-</ol>
-<p><strong>备注</strong>：但是对于非梯度下降优化器或者是树模型是可以不标准的，因为数据的量纲并不影响树模型的分裂，对于特征而言该在哪里分裂就还是在那里分裂。</p>
-]]></content>
-      <categories>
-        <category>基础知识</category>
-      </categories>
-      <tags>
-        <tag>数据预处理</tag>
       </tags>
   </entry>
   <entry>
@@ -1060,56 +1031,6 @@ L = -log\frac{e^{sim(h_{i},{h_{i}}^{+})/\tau}}{\sum_{j=1}^{N}(e^{sim(h_{i},{h_{j
       </categories>
       <tags>
         <tag>对比学习</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>熵</title>
-    <url>/2021/05/31/%E7%86%B5/</url>
-    <content><![CDATA[<blockquote>
-<p>工作了一年多才深度理解熵的各种关系，因此梳理一下形成这篇博客</p>
-</blockquote>
-<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><ol>
-<li>什么是信息熵，相对熵，交叉熵</li>
-<li>KL散度到底是什么</li>
-<li>为什么在机器学习中分类任务经常用交叉熵作为损失函数来衡量一个算法的区别</li>
-<li>交叉熵和均方误差的区别和联系</li>
-</ol>
-<p>我个人认为带着问题去思考会更有组与理解事情的本质，更容易聚焦</p>
-<h2 id="信息熵"><a href="#信息熵" class="headerlink" title="信息熵"></a>信息熵</h2><p><strong>定义</strong></p>
-<p>公式：<img src="/images/shang.webp" alt="shang"></p>
-<p><strong>信息熵表达了什么？</strong></p>
-<ul>
-<li>信息量和事件发生的概率有关，事件发生的概率越低，信息熵越大。</li>
-<li>信息熵非负，表明信息量不为0，因此信息熵是个常数。</li>
-<li>信息量可以叠加，两个事件独立的联合事件，其信息熵为两者之和。</li>
-</ul>
-<h2 id="相对熵"><a href="#相对熵" class="headerlink" title="相对熵"></a>相对熵</h2><p><strong>定义</strong></p>
-<p>​    也称为KL散度，对于x有P(x)和P(y)两种分布,其公式为</p>
-<script type="math/tex; mode=display">
-\begin{align*}
- D_{kl}(p||q) &=\sum_{i=1}^{n}p(x_{i})log(\frac{p(x_{i})}{q(x_{i})})  \\ 
- &=\sum_{i=1}^{n}p(x_{i})log(p(x_{i})-\sum_{i=1}^{n}p(x_{i})log(q(x_{i}) \\
- &=-H(x)+H(p,q)
-\end{align*}</script><p>前者是信息熵，后者就是我们常见的交叉熵</p>
-<p><strong>相对熵表达了什么？</strong></p>
-<ol>
-<li>相对熵和交叉熵呈正比，因为信息熵是常数。</li>
-<li>相对熵主要用于评价两者分布之间的差异，相对熵越大，分布差距越大。</li>
-</ol>
-<h2 id="交叉熵"><a href="#交叉熵" class="headerlink" title="交叉熵"></a>交叉熵</h2><p><strong>为什么机器学习使用交叉熵</strong></p>
-<p>在机器学习中，我们会将p(x)作为真实分布，q(x)作为预测分布，从相对熵的公式我们看出了相对熵和交叉熵的结果是呈正比的，有由于相对熵计算较为复炸，因此经常会有交叉熵来代替相对熵作为衡量真是分布和预测分布的差距。当然像VAE中用的就是KL散度我猜测是因为预测分布用的是（0，1）分布，可以比较方便使用。</p>
-<p><strong>其和MSE的区别和联系</strong></p>
-<p><strong>MSE</strong>：用于回归任务</p>
-<p><strong>交叉熵</strong>：用于分类任务</p>
-<p>由于交叉熵通常会和激活函数使用，如果用的是MSE在梯度传递过程中，容易出现梯度消失，因此比较多的会选用交叉熵+sigmod联合使用。</p>
-<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><p><a href="https://zhuanlan.zhihu.com/p/70804197">知乎1</a></p>
-<p><a href="https://zhuanlan.zhihu.com/p/149186719">知乎2</a></p>
-]]></content>
-      <categories>
-        <category>机器学习</category>
-      </categories>
-      <tags>
-        <tag>基础知识</tag>
       </tags>
   </entry>
   <entry>
@@ -1358,6 +1279,85 @@ L = -log\frac{e^{sim(h_{i},{h_{i}}^{+})/\tau}}{\sum_{j=1}^{N}(e^{sim(h_{i},{h_{j
       </categories>
       <tags>
         <tag>异常检测</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>熵</title>
+    <url>/2021/05/31/%E7%86%B5/</url>
+    <content><![CDATA[<blockquote>
+<p>工作了一年多才深度理解熵的各种关系，因此梳理一下形成这篇博客</p>
+</blockquote>
+<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><ol>
+<li>什么是信息熵，相对熵，交叉熵</li>
+<li>KL散度到底是什么</li>
+<li>为什么在机器学习中分类任务经常用交叉熵作为损失函数来衡量一个算法的区别</li>
+<li>交叉熵和均方误差的区别和联系</li>
+</ol>
+<p>我个人认为带着问题去思考会更有组与理解事情的本质，更容易聚焦</p>
+<h2 id="信息熵"><a href="#信息熵" class="headerlink" title="信息熵"></a>信息熵</h2><p><strong>定义</strong></p>
+<p>公式：<img src="/images/shang.webp" alt="shang"></p>
+<p><strong>信息熵表达了什么？</strong></p>
+<ul>
+<li>信息量和事件发生的概率有关，事件发生的概率越低，信息熵越大。</li>
+<li>信息熵非负，表明信息量不为0，因此信息熵是个常数。</li>
+<li>信息量可以叠加，两个事件独立的联合事件，其信息熵为两者之和。</li>
+</ul>
+<h2 id="相对熵"><a href="#相对熵" class="headerlink" title="相对熵"></a>相对熵</h2><p><strong>定义</strong></p>
+<p>​    也称为KL散度，对于x有P(x)和P(y)两种分布,其公式为</p>
+<script type="math/tex; mode=display">
+\begin{align*}
+ D_{kl}(p||q) &=\sum_{i=1}^{n}p(x_{i})log(\frac{p(x_{i})}{q(x_{i})})  \\ 
+ &=\sum_{i=1}^{n}p(x_{i})log(p(x_{i})-\sum_{i=1}^{n}p(x_{i})log(q(x_{i}) \\
+ &=-H(x)+H(p,q)
+\end{align*}</script><p>前者是信息熵，后者就是我们常见的交叉熵</p>
+<p><strong>相对熵表达了什么？</strong></p>
+<ol>
+<li>相对熵和交叉熵呈正比，因为信息熵是常数。</li>
+<li>相对熵主要用于评价两者分布之间的差异，相对熵越大，分布差距越大。</li>
+</ol>
+<h2 id="交叉熵"><a href="#交叉熵" class="headerlink" title="交叉熵"></a>交叉熵</h2><p><strong>为什么机器学习使用交叉熵</strong></p>
+<p>在机器学习中，我们会将p(x)作为真实分布，q(x)作为预测分布，从相对熵的公式我们看出了相对熵和交叉熵的结果是呈正比的，有由于相对熵计算较为复炸，因此经常会有交叉熵来代替相对熵作为衡量真是分布和预测分布的差距。当然像VAE中用的就是KL散度我猜测是因为预测分布用的是（0，1）分布，可以比较方便使用。</p>
+<p><strong>其和MSE的区别和联系</strong></p>
+<p><strong>MSE</strong>：用于回归任务</p>
+<p><strong>交叉熵</strong>：用于分类任务</p>
+<p>由于交叉熵通常会和激活函数使用，如果用的是MSE在梯度传递过程中，容易出现梯度消失，因此比较多的会选用交叉熵+sigmod联合使用。</p>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><p><a href="https://zhuanlan.zhihu.com/p/70804197">知乎1</a></p>
+<p><a href="https://zhuanlan.zhihu.com/p/149186719">知乎2</a></p>
+]]></content>
+      <categories>
+        <category>机器学习</category>
+      </categories>
+      <tags>
+        <tag>基础知识</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>数据标准化和中心化</title>
+    <url>/2021/08/19/%E6%95%B0%E6%8D%AE%E6%A0%87%E5%87%86%E5%8C%96%E5%92%8C%E4%B8%AD%E5%BF%83%E5%8C%96/</url>
+    <content><![CDATA[<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>标准化：也叫归一化，常用的有最小—最大标准化、Z-score标准化、Sigmod函数等，利用上述标准化操作，将原始数据化为<strong>无量纲</strong>的数值。这在回归和神经网络类模型是很必要的。</p>
+<p>中心化：也叫去均质化，让数据通过中心化处理，得到均值为0的数据【如果方差为1，那就是Z-score标准化】。同时中心化后的数据对向量来说也容易描述，因为是以原点为基准的。</p>
+<h2 id="公式"><a href="#公式" class="headerlink" title="公式"></a>公式</h2><p>最小—最大标准化：将数据变为0-1</p>
+<script type="math/tex; mode=display">
+\tilde{x}=\frac{x-min}{max-min}</script><p>Z-score标准化：</p>
+<script type="math/tex; mode=display">
+\tilde{x}=\frac{x-u}{\sigma }</script><p>sigmod函数：</p>
+<script type="math/tex; mode=display">
+f(x)=\frac{1}{1+e^{-x}}</script><p><strong>备注</strong>：</p>
+<ol>
+<li>当$\sigma=1$就是中心化公式，所以中心化可以说是一种特殊的标准化</li>
+<li>sigmod函数其实主要是在激活函数中对上一层神经层结果进行标准化，但也可以理解成对下一层神经层的输入做标准化。</li>
+</ol>
+<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ol>
+<li>提升精度：消除量纲，针对梯度下降相关的算法，不同量纲的数据会产生干扰，可能本来是A特征对结果的影响更大，但因为其量纲较小，导致其影响力还不如量纲大的特征，从来导致精度的下降。</li>
+<li>提神速度：同样，由于消除了量纲，在梯度下降过程中，将会容易收敛到最优解。</li>
+</ol>
+<p><strong>备注</strong>：但是对于非梯度下降优化器或者是树模型是可以不标准的，因为数据的量纲并不影响树模型的分裂，对于特征而言该在哪里分裂就还是在那里分裂。</p>
+]]></content>
+      <categories>
+        <category>基础知识</category>
+      </categories>
+      <tags>
+        <tag>数据预处理</tag>
       </tags>
   </entry>
 </search>
